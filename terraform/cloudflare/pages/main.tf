@@ -30,7 +30,7 @@ resource "cloudflare_pages_project" "frontend" {
   build_config {
     build_command   = "pnpm -r build"
     destination_dir = "projects/frontend/project/dist"
-    root_dir        = "."
+    root_dir        = ""
   }
 
   deployment_configs {
