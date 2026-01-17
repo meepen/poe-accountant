@@ -1,0 +1,7 @@
+version: '3'
+
+tasks:
+  scrape:
+    desc: Scrape data from PoE website and generate JSON files
+    cmds:
+      - pnpm run scrape

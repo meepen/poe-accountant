@@ -2,21 +2,12 @@
 *.js
 node_modules
 dist
-projects/common/docs
-
-
-*.tar.gz
-
-*.tgz
+projects/common/project/docs
 
 .direnv
-
 .tmp
-
 .eslintcache
-
 .env
-
 .terraform
 
 # Local Kubernetes config

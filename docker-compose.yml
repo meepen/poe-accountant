@@ -1,8 +1,0 @@
-name: poe-accountant
-
-include:
-  - path: ./infrastructure/docker-compose.yml
-
-networks:
-  default:
-    name: ${LOCAL_DOCKER_NETWORK}

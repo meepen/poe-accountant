@@ -9,6 +9,6 @@ flake.*
 Taskfile*.yml
 *.tgz
 
-# For yarn:
+# Node.js:
 **/dist
 **/node_modules

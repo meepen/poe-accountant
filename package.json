@@ -4,35 +4,5 @@
   "description": "Poe Accountant is a project designed to manage and analyze data related to the game Path of Exile",
   "license": "MPL-2.0",
   "private": true,
-  "workspaces": [
-    "projects/*"
-  ],
-  "scripts": {
-    "build": "yarn workspaces foreach -A --topological-dev run build",
-    "test": "yarn workspaces foreach -A --topological-dev run test",
-    "lint": "eslint --cache",
-    "clean": "yarn workspaces foreach -A --topological-dev run clean",
-    "start:backend": "yarn workspace @meepen/poe-accountant-ninja-server start",
-    "start:frontend": "yarn workspace @meepen/poe-accountant-frontend start",
-    "build:frontend": "yarn workspace @meepen/poe-accountant-frontend build"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.33.0",
-    "@vitest/coverage-v8": "^3.2.4",
-    "eslint": "^9.33.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.4",
-    "jiti": "^2.5.1",
-    "prettier": "^3.6.2",
-    "typescript": "^5.9.2",
-    "typescript-eslint": "^8.39.0",
-    "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.2.4"
-  },
-  "engines": {
-    "node": ">=22.0.0",
-    "yarn": "^4.9.2"
-  },
-  "packageManager": "yarn@4.9.2",
-  "type": "module"
+  "packageManager": "pnpm@10.26.1"
 }

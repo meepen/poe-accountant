@@ -3,44 +3,51 @@ version: '3'
 dotenv: ['.env.local', '.env']
 
 includes:
-  remote:
-    taskfile: ./infrastructure/Taskfile.remote.yml
-    dir: ./infrastructure
-  local:
-    taskfile: ./infrastructure/Taskfile.local.yml
-    dir: ./infrastructure
-  projects:
-    taskfile: ./projects/Taskfile.yml
-    dir: ./projects
+  tf:
+    taskfile: ./terraform/Taskfile.yml
+    dir: ./terraform
+    
+  api:
+    taskfile: ./projects/api/Taskfile.yml
+    dir: ./projects/api
+  frontend:
+    taskfile: ./projects/frontend/Taskfile.yml
+    dir: ./projects/frontend
+  common:
+    taskfile: ./projects/common/Taskfile.yml
+    dir: ./projects/common
+  ninja:
+    taskfile: ./projects/ninja/Taskfile.yml
+    dir: ./projects/ninja-server
 
 tasks:
   install:
-    desc: Run yarn install
     cmds:
-      - yarn install
+      - pnpm install
 
   start:
-    desc: Run yarn start
     cmds:
-      - yarn start
+      - docker compose up -d
 
   test:
-    desc: Run yarn test
     cmds:
-      - yarn test
+      - pnpm -r test
 
   lint:
-    desc: Run yarn lint
     cmds:
-      - yarn lint
+      - pnpm -r lint
 
-  setup-env:
-    desc: Set up environment variables
+  build:
+    deps: [install]
     cmds:
-      - ./scripts/setup-env.sh
+      - pnpm -r build
 
-  start-local:
-    desc: Start local infrastructure and deploy to local Kubernetes
+  docker:build:
     cmds:
-      - task: infrastructure:local:start
-      - echo "✅ Local environment is up and running!"
+      - docker buildx bake --progress=plain
+
+  setup:
+    cmds:
+      - cp .env.example .env
+      - task: install
+      - task: build

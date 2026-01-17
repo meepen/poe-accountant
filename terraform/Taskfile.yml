@@ -1,0 +1,242 @@
+version: '3'
+
+vars:
+  TERRAFORM_DIR: .
+  PROJECT_NAME: poe-accountant
+
+tasks:
+  tofu:
+    desc: Run OpenTofu command in the Terraform directory
+    dir: "{{.TERRAFORM_DIR}}"
+    cmds:
+      - tofu {{.CLI_ARGS}}
+
+  init:
+    desc: Initialize Terraform in the infrastructure/terraform directory
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "init"
+
+  init:upgrade:
+    desc: Initialize Terraform with provider upgrades
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "init -upgrade"
+
+  plan:
+    desc: Run Terraform plan to see what changes will be made
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "plan"
+
+  plan:destroy:
+    desc: Run Terraform plan for destroy to see what will be destroyed
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "destroy"
+
+  apply:
+    desc: Apply Terraform changes
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "apply"
+
+  apply:auto:
+    desc: Apply Terraform changes without interactive approval
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "apply -auto-approve"
+
+  redeploy:helm:
+    desc: Force redeploy Helm release by tainting and applying
+    cmds:
+      - task: taint:helm
+      - task: apply:auto
+
+  destroy:
+    desc: Destroy Terraform-managed infrastructure
+    prompt: Are you sure you want to DESTROY all Terraform-managed infrastructure?
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "destroy"
+
+  destroy:auto:
+    desc: Destroy Terraform-managed infrastructure without interactive approval
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "destroy -auto-approve"
+
+  validate:
+    desc: Validate Terraform configuration files
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "validate"
+
+  format:
+    desc: Format Terraform configuration files
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "fmt -recursive"
+
+  format:check:
+    desc: Check if Terraform files are properly formatted
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "fmt -check -recursive"
+
+  show:
+    desc: Show current Terraform state
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "show"
+
+  state:list:
+    desc: List all resources in Terraform state
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "state list"
+
+  state:show:
+    desc: "Show details of a specific resource (usage: task terraform:state:show -- <resource_name>)"
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "state show {{.CLI_ARGS}}"
+
+  taint:helm:
+    desc: Taint the Helm release to force recreation on next apply
+    cmds:
+      - task: taint
+        vars:
+          CLI_ARGS: "helm_release.poe_accountant"
+
+  taint:
+    desc: "Taint a specific resource (usage: task terraform:taint -- <resource_name>)"
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "taint {{.CLI_ARGS}}"
+
+  output:
+    desc: Show Terraform outputs
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "output"
+
+  output:json:
+    desc: Show Terraform outputs in JSON format
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "output -json"
+
+  kubectl:setup:
+    desc: Configure kubectl to connect to the Kubernetes cluster using Terraform outputs
+    dir: "{{.TERRAFORM_DIR}}"
+    cmds:
+      - |
+        echo "Setting up kubectl connection to Kubernetes cluster..."
+        
+        # Get cluster info from Terraform outputs
+        CLUSTER_ENDPOINT=$(tofu output -raw cluster_endpoint)
+        CLUSTER_TOKEN=$(tofu output -raw cluster_token)
+        CLUSTER_CA_CERT=$(tofu output -raw cluster_ca_certificate)
+        CLUSTER_NAME="{{.PROJECT_NAME}}-cluster"
+        
+        # Create temporary file for CA certificate
+        CA_CERT_FILE=$(mktemp)
+        echo "$CLUSTER_CA_CERT" | base64 -d > "$CA_CERT_FILE"
+        
+        # Create kubeconfig context
+        kubectl config set-cluster $CLUSTER_NAME \
+          --server="$CLUSTER_ENDPOINT" \
+          --certificate-authority="$CA_CERT_FILE" \
+          --embed-certs=true
+        
+        kubectl config set-credentials $CLUSTER_NAME-admin \
+          --token="$CLUSTER_TOKEN"
+        
+        kubectl config set-context $CLUSTER_NAME \
+          --cluster=$CLUSTER_NAME \
+          --user=$CLUSTER_NAME-admin
+        
+        kubectl config use-context $CLUSTER_NAME
+        
+        # Clean up temporary file
+        rm -f "$CA_CERT_FILE"
+        
+        echo "✅ kubectl configured successfully!"
+        echo "Current context: $(kubectl config current-context)"
+        echo "Cluster info:"
+        kubectl cluster-info
+
+  workspace:list:
+    desc: List Terraform workspaces
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "workspace list"
+
+  workspace:new:
+    desc: "Create new Terraform workspace (usage: task terraform:workspace:new -- <workspace_name>)"
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "workspace new {{.CLI_ARGS}}"
+
+  workspace:select:
+    desc: "Select Terraform workspace (usage: task terraform:workspace:select -- <workspace_name>)"
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "workspace select {{.CLI_ARGS}}"
+
+  clean:
+    desc: Clean Terraform cache and temporary files
+    cmds:
+      - rm -rf .terraform
+      - rm -f .terraform.lock.hcl
+      - rm -f terraform.tfstate.backup
+
+  refresh:
+    desc: Refresh Terraform state to match real infrastructure
+    dir: "{{.TERRAFORM_DIR}}"
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "refresh"
+
+  import:
+    desc: "Import existing resource into Terraform state (usage: task terraform:import -- <resource_type.name> <resource_id>)"
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "import {{.CLI_ARGS}}"
+
+  graph:
+    desc: Generate and display Terraform dependency graph
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "graph | dot -Tsvg > terraform-graph.svg"
+
+  version:
+    desc: Show OpenTofu version
+    cmds:
+      - task: tofu
+        vars:
+          CLI_ARGS: "version"
