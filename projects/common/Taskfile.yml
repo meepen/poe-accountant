@@ -5,3 +5,9 @@ includes:
     taskfile: ../../base/node/Taskfile.yml
     dir: ./project
 
+tasks:
+  scrape:
+    desc: Run the scrape script to update the scrape types
+    dir: ./project
+    cmds:
+      - pnpm run scrape

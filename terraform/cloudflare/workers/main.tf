@@ -28,9 +28,9 @@ resource "cloudflare_pages_project" "api_worker" {
   }
 
   build_config {
-    build_command   = "npm run build"
-    destination_dir = "dist"
-    root_dir        = "projects/api/project"
+    build_command   = "pnpm -r build"
+    destination_dir = "projects/api/project/dist"
+    root_dir        = ""
   }
 
   deployment_configs {

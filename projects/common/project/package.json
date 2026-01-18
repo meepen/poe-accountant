@@ -1,7 +1,8 @@
 {
     "name": "@meepen/poe-common",
+    "private": true,
     "license": "MPL-2.0",
-    "version": "2.1.0",
+    "version": "3.0.0",
     "description": "Common schemas for the Path of Exile API",
     "keywords": [
         "poe",
@@ -23,12 +24,9 @@
     },
     "devDependencies": {
         "@types/jsdom": "^21.1.7",
-        "@types/node": "^22.0.0",
+        "@types/node": "^24",
         "axios": "^1.10.0",
-        "class-transformer": "^0.5.1",
-        "class-validator": "^0.14.2",
         "jsdom": "^26.1.0",
-        "reflect-metadata": "^0.2.2",
         "rimraf": "^6.0.1",
         "tsx": "^4.20.3",
         "typescript": "^5.8.3",
@@ -39,7 +37,8 @@
         "jiti": "^2.6.1",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.4",
-        "globals": "^17.0.0"
+        "globals": "^17.0.0",
+        "zod": "^4.3.5"
     },
     "type": "module",
     "files": [
@@ -84,8 +83,6 @@
         "url": "https://github.com/poe-accountant/poe-accountant.git"
     },
     "peerDependencies": {
-        "class-transformer": "^0.5.1",
-        "class-validator": "^0.14.2",
-        "reflect-metadata": "^0.2.2"
+        "zod": "^4.3.5"
     }
 }

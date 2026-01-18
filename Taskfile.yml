@@ -16,9 +16,9 @@ includes:
   common:
     taskfile: ./projects/common/Taskfile.yml
     dir: ./projects/common
-  ninja:
-    taskfile: ./projects/ninja/Taskfile.yml
-    dir: ./projects/ninja-server
+  ggg:
+    taskfile: ./projects/ggg-processor/Taskfile.yml
+    dir: ./projects/ggg-processor
 
 tasks:
   install:
@@ -45,6 +45,18 @@ tasks:
   docker:build:
     cmds:
       - docker buildx bake --progress=plain
+
+  docker:push:
+    vars:
+      REGISTRY:
+        sh: cd terraform && tofu output -raw registry_endpoint
+    cmds:
+      - doctl auth init -t {{.TF_VAR_do_token}}
+      - doctl registry login
+      - REGISTRY="{{.REGISTRY}}" docker buildx bake --push --progress=plain
+      - docker buildx imagetools create \
+          --tag {{.REGISTRY}}/valkey-proxy:latest \
+          hiett/serverless-redis-http:latest
 
   setup:
     cmds:

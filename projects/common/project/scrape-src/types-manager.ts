@@ -1,12 +1,6 @@
 import { TypeDetails } from "./html-to-data.js";
 import { ObjectTypeDetails } from "./object-type-details.js";
 
-export interface TypeScriptTypeDetails {
-  isOptional?: true;
-  type: string;
-  decorators: string[];
-}
-
 class TokenLexer {
   constructor(
     private readonly valueType: string,
@@ -87,6 +81,18 @@ class TokenLexer {
   }
 }
 
+function tab(count: number): string {
+  return "  ".repeat(count);
+}
+
+function key(str: string): string {
+  const jsonKey = JSON.stringify(str);
+  if (jsonKey === `"${str}"`) {
+    return str;
+  }
+  return jsonKey;
+}
+
 /**
  * Manages the types being scraped and converts them to TypeScript types.
  */
@@ -97,29 +103,86 @@ export class ScrapeTypesManager {
   private static readonly rawTypes = new Map<
     string,
     {
-      typeName: string;
-      decorators: string[];
+      zod: string;
+      ts: string;
     }
   >([
     [
       "uint",
       {
-        typeName: "number",
-        decorators: ["IsInt({})", "Max(0xFFFFFFFF{,})", "Min(0{,})"],
+        zod: "z.uint32()",
+        ts: "number",
       },
-    ], // unsigned 32 bit integer
+    ],
     [
       "int",
       {
-        typeName: "number",
-        decorators: ["IsInt({})", "Max(0x7FFFFFFF{,})", "Min(-0x80000000{,})"],
+        zod: "z.int32()",
+        ts: "number",
       },
     ], // signed 32 bit integer
-    ["float", { typeName: "number", decorators: ["IsNumber({})"] }], // 32 bit floating point number
-    ["double", { typeName: "number", decorators: ["IsNumber({})"] }], // 64 bit floating point number
-    ["string", { typeName: "string", decorators: ["IsString({})"] }],
-    ["bool", { typeName: "boolean", decorators: ["IsBoolean({})"] }], // boolean value
+    ["float", { zod: "z.float32()", ts: "number" }],
+    ["double", { zod: "z.float64()", ts: "number" }],
+    ["string", { zod: "z.string()", ts: "string" }],
+    ["bool", { zod: "z.boolean()", ts: "boolean" }],
   ]);
+  private static readonly renameMap = new Map<string, string>([
+    ["Error", "ApiError"],
+  ]);
+
+  private getDependencies(valueType: string): string[] {
+    const dependencies: string[] = [];
+    if (!valueType.trim()) {
+      return [];
+    }
+
+    const isOptional = valueType.charAt(0) === "?";
+    const lex = new TokenLexer(valueType, isOptional ? 1 : 0);
+
+    if (lex.eof()) {
+      return [];
+    }
+
+    let currentToken = lex.next();
+
+    while (currentToken === "array" || currentToken === "dictionary") {
+      if (lex.peek() !== "of") {
+        break;
+      }
+      lex.next(); // consume 'of'
+      if (lex.eof()) {
+        break;
+      }
+      currentToken = lex.next();
+    }
+
+    for (;;) {
+      if (currentToken === "object" || currentToken === "array") {
+        // ignore
+      } else if (ScrapeTypesManager.rawTypes.has(currentToken)) {
+        if (lex.tryConsume("as")) {
+          const typeName = lex.next();
+          dependencies.push(ScrapeTypesManager.safeName(typeName));
+        }
+      } else {
+        dependencies.push(ScrapeTypesManager.safeName(currentToken));
+      }
+
+      if (lex.eof()) {
+        break;
+      }
+      if (lex.peek() !== "or") {
+        break;
+      }
+      lex.next(); // skips 'or'
+      if (lex.eof()) {
+        break;
+      }
+      currentToken = lex.next();
+    }
+
+    return dependencies;
+  }
 
   private addType(type: TypeDetails): void {
     const fullName = ScrapeTypesManager.safeName(type.name);
@@ -130,27 +193,27 @@ export class ScrapeTypesManager {
     this.typeMap.set(fullName, type);
 
     if (type.type === "object") {
-      for (const child of type.details) {
-        const lastIndex = child.valueType.lastIndexOf(" ");
-        const type =
-          lastIndex === -1
-            ? ScrapeTypesManager.safeName(child.valueType)
-            : ScrapeTypesManager.safeName(child.valueType.slice(lastIndex));
-        if (type === "array") {
-          continue; // 'array' is not a valid type, it is usually a tuple
+      const tryAddType = (typeName: string) => {
+        const allType = this.allTypes.get(typeName);
+        if (allType) {
+          this.addType(allType);
         }
-        if (child.children && child.children.length > 0) {
-          this.addType({
-            type: "object",
-            name: ScrapeTypesManager.fullName(fullName, child.key),
-            details: child.children,
-          });
-        } else {
-          const allType = this.allTypes.get(type);
-          if (!this.typeMap.has(type) && allType) {
-            this.addType(allType);
+      };
+
+      const collectDependencies = (details: ObjectTypeDetails) => {
+        const dependencies = this.getDependencies(details.valueType);
+        for (const dep of dependencies) {
+          tryAddType(dep);
+        }
+        if (details.children) {
+          for (const child of details.children) {
+            collectDependencies(child);
           }
         }
+      };
+
+      for (const child of type.details) {
+        collectDependencies(child);
       }
     }
 
@@ -167,7 +230,7 @@ export class ScrapeTypesManager {
   }
 
   public static safeName(name: string): string {
-    return name
+    const safeName = name
       .trim()
       .replace(/[^a-zA-Z0-9_ ]/g, "")
       .replace(/^[0-9]/, "_$&")
@@ -176,6 +239,13 @@ export class ScrapeTypesManager {
         index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1),
       )
       .join("");
+
+    const remap = ScrapeTypesManager.renameMap.get(safeName);
+    if (remap) {
+      return remap;
+    }
+
+    return safeName;
   }
 
   private static fullName(parentTypeName: string, key: string): string {
@@ -185,15 +255,150 @@ export class ScrapeTypesManager {
   }
 
   /**
-   * Translates a value type to a TypeScript type.
-   * @param details The details of the object type, including the value type.
-   * @param parentTypeName Optional parent type name for complex types.
-   * @return The TypeScript type as a string, e.g., 'number', 'string[]', 'Dictionary<string[]>'
+   * Translates a value type to a TypeScript interface/type field.
    */
   private translateValueTypeToTypeScript(
     details: ObjectTypeDetails,
+    indentationLevel: number = 0,
+  ): string {
+    const { valueType } = details;
+    const isOptional = valueType.charAt(0) === "?";
+    const lex = new TokenLexer(valueType, isOptional ? 1 : 0);
+
+    const ofParts: ("array" | "dictionary")[] = [];
+
+    let currentToken = lex.next();
+
+    while (currentToken === "array" || currentToken === "dictionary") {
+      if (lex.peek() !== "of") {
+        break;
+      }
+      lex.next(); // consume 'of'
+      ofParts.push(currentToken);
+
+      currentToken = lex.next();
+    }
+
+    const allTypes: string[] = [];
+
+    // parse types
+    for (;;) {
+      let currentType: string;
+      switch (currentToken) {
+        case "object":
+          if (details.children && details.children.length > 0) {
+            currentType = `{\n${details.children
+              .map((x) => {
+                const isChildOptional = x.valueType.startsWith("?");
+                return `${tab(indentationLevel + 2)}${key(x.key)}${isChildOptional ? "?" : ""}: ${this.translateValueTypeToTypeScript(x, indentationLevel + 1)};`;
+              })
+              .join("\n")}\n${tab(indentationLevel + 1)}}`;
+          } else {
+            currentType = "Record<string, any>";
+          }
+          break;
+        case "array":
+          if (!details.children) {
+            throw new Error(
+              `Array type "${details.key}" has no children in value type "${valueType}" at index ${lex.index}`,
+            );
+          }
+          currentType = `[${details.children.map((x) => this.translateValueTypeToTypeScript(x, indentationLevel)).join(", ")}]`;
+          break;
+        default:
+          if (ScrapeTypesManager.rawTypes.has(currentToken)) {
+            if (lex.tryConsume("as")) {
+              const typeName = lex.next();
+              const safeName = ScrapeTypesManager.safeName(typeName);
+              const type = this.allTypes.get(safeName);
+
+              if (type && type.type === "enum") {
+                currentType = `${safeName}Enum`;
+              } else if (ScrapeTypesManager.renameMap.has(safeName)) {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                currentType = ScrapeTypesManager.renameMap.get(safeName)!;
+              } else {
+                currentType = safeName;
+              }
+            } else {
+              const rawType = ScrapeTypesManager.rawTypes.get(currentToken);
+              if (!rawType) {
+                throw new Error(
+                  `Unknown raw type "${currentToken}" in value type "${valueType}" at index ${lex.index}`,
+                );
+              }
+              currentType = rawType.ts;
+            }
+          } else {
+            const safeName = ScrapeTypesManager.safeName(currentToken);
+            const type = this.allTypes.get(safeName);
+
+            if (type && type.type === "enum") {
+              currentType = `${safeName}Enum`;
+            } else if (ScrapeTypesManager.renameMap.has(safeName)) {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              currentType = ScrapeTypesManager.renameMap.get(safeName)!;
+            } else {
+              currentType = safeName;
+            }
+          }
+          break;
+      }
+
+      allTypes.push(currentType);
+      if (lex.eof()) {
+        break;
+      }
+      if (lex.peek() !== "or") {
+        break;
+      }
+      lex.next(); // skip 'or'
+      currentToken = lex.next();
+    }
+
+    let fullType = allTypes.join(" | ");
+
+    if (allTypes.length > 1) {
+      fullType = `(${fullType})`;
+    }
+
+    for (let i = ofParts.length - 1; i >= 0; i--) {
+      const part = ofParts[i];
+      switch (part) {
+        case "array":
+          fullType = `${fullType}[]`;
+          break;
+        case "dictionary":
+          fullType = `Record<string, ${fullType}>`;
+          break;
+      }
+    }
+
+    if (!lex.eof()) {
+      throw new Error(
+        `Unexpected token "${lex.peek()}" in value type "${valueType}" at index ${lex.index}`,
+      );
+    }
+
+    if (isOptional) {
+      fullType = `${fullType} | undefined`;
+    }
+
+    return fullType;
+  }
+
+  /**
+   * Translates a value type to a Zod type.
+   * @param details The details of the object type, including the value type.
+   * @param parentTypeName Optional parent type name for complex types.
+   * @return The Zod type as a string, e.g., 'z.string()', 'z.number().optional()', etc.
+   */
+  private translateValueTypeToZod(
+    details: ObjectTypeDetails,
     parentTypeName?: string,
-  ): TypeScriptTypeDetails {
+    indentationLevel: number = 0,
+    definedSchemas: Set<string> = new Set(),
+  ): string {
     const { valueType } = details;
 
     const isOptional = valueType.charAt(0) === "?";
@@ -213,74 +418,78 @@ export class ScrapeTypesManager {
       currentToken = lex.next();
     }
 
-    const types: {
-      type: string;
-      validationDecorators: string[];
-      transformDecorators: string[];
-    }[] = [];
+    const allTypes: string[] = [];
 
+    // parse types
     for (;;) {
-      const typeData: (typeof types)[0] = {
-        type: "",
-        validationDecorators: [],
-        transformDecorators: [],
-      };
-      types.push(typeData);
-      if (currentToken === "object") {
-        // always create a type for objects so we don't have to deal with unnamed types
-        if (details.children && details.children.length > 0) {
-          const typeName = parentTypeName
-            ? ScrapeTypesManager.fullName(parentTypeName, details.key)
-            : ScrapeTypesManager.safeName(details.key);
-          typeData.type = typeName;
-          typeData.transformDecorators.push(`Type(() => ${typeName})`); // use class-transformer to handle nested objects
-          typeData.validationDecorators.push("ValidateNested({})"); // use class-validator to handle nested objects
-        } else {
-          typeData.validationDecorators.push("IsObject({})"); // if no children, we just use 'IsObject' as the validation decorator
-          typeData.type = "Dictionary<object>"; // if no children, we just use 'Dictionary<object>' as the type
-        }
-      } else if (currentToken === "array") {
-        // actually a tuple type, so we need to handle it differently
-        // get the types of the elements in the array
-        if (!details.children) {
-          throw new Error(
-            `Array type "${details.key}" has no children in value type "${valueType}" at index ${lex.index}`,
-          );
-        }
-
-        const tupleTypes = details.children
-          .map((child) =>
-            this.translateValueTypeToTypeScript(child, parentTypeName),
-          )
-          .map((type) =>
-            type.isOptional ? type.type + " | undefined" : type.type,
-          );
-
-        typeData.type = `[${tupleTypes.join(", ")}]`;
-      } else if (ScrapeTypesManager.rawTypes.has(currentToken)) {
-        // if it contains ' as Type' we need to extract the type name from the rest of valueType
-        if (lex.tryConsume("as")) {
-          const typeName = lex.next();
-          if (typeName) {
-            typeData.type = ScrapeTypesManager.safeName(typeName);
+      let currentType: string;
+      switch (currentToken) {
+        case "object":
+          if (details.children && details.children.length > 0) {
+            currentType = `z.object({\n${details.children
+              .map(
+                (x) =>
+                  `${tab(indentationLevel + 2)}${key(x.key)}: ${this.translateValueTypeToZod(
+                    x,
+                    parentTypeName
+                      ? ScrapeTypesManager.fullName(parentTypeName, details.key)
+                      : details.key,
+                    indentationLevel + 1,
+                    definedSchemas,
+                  )},`,
+              )
+              .join("\n")}\n${tab(indentationLevel + 1)}})`;
+          } else {
+            currentType = "z.record(z.string(), z.any())"; // if no children, we just use 'Record<string, any>' as the type
           }
-        } else {
-          const rawType = ScrapeTypesManager.rawTypes.get(currentToken);
-          if (!rawType) {
+          break;
+        case "array":
+          // actually a tuple type, so we need to handle it differently
+          // get the types of the elements in the array
+          if (!details.children) {
             throw new Error(
-              `Unknown raw type "${currentToken}" in value type "${valueType}" at index ${lex.index}`,
+              `Array type "${details.key}" has no children in value type "${valueType}" at index ${lex.index}`,
             );
           }
-          typeData.type = rawType.typeName;
-          typeData.validationDecorators.push(...rawType.decorators);
-        }
-      } else {
-        typeData.type = currentToken; // this is a custom type, so we just use the name
-        typeData.transformDecorators.push(
-          `Type(() => ${ScrapeTypesManager.safeName(currentToken)})`,
-        );
-        typeData.validationDecorators.push("ValidateNested({})");
+
+          currentType = `z.tuple([\n${details.children.map((x) => `${tab(indentationLevel + 2)}${this.translateValueTypeToZod(x, parentTypeName, indentationLevel + 2, definedSchemas)}`).join(`,\n`)}\n${tab(indentationLevel + 1)}])`;
+          break;
+        default:
+          if (ScrapeTypesManager.rawTypes.has(currentToken)) {
+            // if it contains ' as Type' we need to extract the type name from the rest of valueType
+            if (lex.tryConsume("as")) {
+              const typeName = lex.next();
+              const safeName = ScrapeTypesManager.safeName(typeName);
+              const resolvedName = safeName;
+
+              if (definedSchemas.has(resolvedName)) {
+                currentType = resolvedName;
+              } else {
+                currentType = `z.lazy(() => ${resolvedName})`;
+              }
+            } else {
+              const rawType = ScrapeTypesManager.rawTypes.get(currentToken);
+              if (!rawType) {
+                throw new Error(
+                  `Unknown raw type "${currentToken}" in value type "${valueType}" at index ${lex.index}`,
+                );
+              }
+              currentType = rawType.zod;
+            }
+          } else {
+            const safeName = ScrapeTypesManager.safeName(currentToken);
+            const resolvedName = safeName;
+
+            if (definedSchemas.has(resolvedName)) {
+              currentType = resolvedName;
+            } else {
+              currentType = `z.lazy(() => ${resolvedName})`;
+            }
+          }
+          break;
       }
+
+      allTypes.push(currentType);
       if (lex.eof()) {
         break;
       }
@@ -291,77 +500,23 @@ export class ScrapeTypesManager {
       currentToken = lex.next();
     }
 
-    const fullType: (typeof types)[0] & { arrayType?: string } = {
-      type:
-        types.length === 1
-          ? types[0].type
-          : types.map((type) => type.type).join(" | "),
-      validationDecorators: [],
-      transformDecorators: [],
-    };
-    if (types.length > 1) {
-      fullType.validationDecorators = [
-        `IsAny([${types
-          .map(
-            ({ validationDecorators }) =>
-              `[${validationDecorators
-                .map((decorator) => decorator.replace(/\{,?\}/g, ""))
-                .join(", ")}]`,
-          )
-          .join(", ")}]{,})`,
-      ];
-      fullType.transformDecorators = types.flatMap(
-        ({ transformDecorators }) => transformDecorators,
-      );
-    } else {
-      fullType.validationDecorators = types[0].validationDecorators;
-      fullType.transformDecorators = types[0].transformDecorators;
-    }
+    // combine types into a single type
+    // TODO
+
+    let fullType =
+      allTypes.length === 1 ? allTypes[0] : `z.union([${allTypes.join(", ")}])`;
 
     for (let i = ofParts.length - 1; i >= 0; i--) {
       const part = ofParts[i];
       switch (part) {
         case "array":
-          fullType.arrayType = fullType.type; // save the type for later
-          fullType.type =
-            fullType.type.indexOf(" ") === -1
-              ? `${fullType.type}[]`
-              : `(${fullType.type})[]`; // if the type has a space, it is a complex type
-          fullType.validationDecorators = [
-            "IsArray({})",
-            ...fullType.validationDecorators.map((decorator) =>
-              decorator
-                .replace(/\{\}/g, "{ each: true }")
-                .replace(/\{,\}/g, ", { each: true }"),
-            ),
-          ];
+          fullType = `z.array(${fullType})`;
           break;
         case "dictionary":
-          fullType.transformDecorators = [
-            `IsDictionary([${[
-              ...fullType.transformDecorators,
-              ...fullType.validationDecorators,
-            ]
-              .map((decorator) => decorator.replace(/\{,?\}/g, ""))
-              .join(", ")}]{,})`,
-
-            this.typeMap.has(fullType.arrayType ?? fullType.type)
-              ? fullType.arrayType
-                ? `TransformDictionary(() => ${fullType.arrayType ?? fullType.type})`
-                : `TransformDictionary(${fullType.arrayType ?? fullType.type})`
-              : `Type(() => Dictionary<unknown>)`,
-          ];
-          fullType.type = `Dictionary<${fullType.type}>`;
-          fullType.validationDecorators = [];
-          delete fullType.arrayType;
+          fullType = `z.record(z.string(), ${fullType})`;
           break;
       }
     }
-
-    const finalDecorators = [
-      ...fullType.transformDecorators,
-      ...fullType.validationDecorators,
-    ].map((decorator) => decorator.replace(/\{,?\}/g, "")); // remove empty braces from decorators
 
     if (!lex.eof()) {
       throw new Error(
@@ -369,53 +524,95 @@ export class ScrapeTypesManager {
       );
     }
 
-    return {
-      type: fullType.type,
-      isOptional: isOptional ? true : undefined,
-      decorators: [
-        "@Expose()",
-        ...(isOptional ? ["@IsOptional()"] : []),
-        ...finalDecorators.map((decorator) => `@${decorator}`),
-      ],
-    };
+    if (isOptional) {
+      fullType = `${fullType}.optional()`;
+    }
+
+    return fullType;
   }
 
   *generateTypeScriptTypes(): Generator<string> {
-    yield `// This file is auto-generated from https://www.pathofexile.com/developer/docs/reference#types\n\n`;
-    yield `import { Type, Expose } from 'class-transformer';\n`;
-    const decorators = Array.from(ScrapeTypesManager.rawTypes.entries())
-      .flatMap(([, value]) => value.decorators)
-      .map((decorator) => decorator.match(/^(\w+)/)?.[1] ?? decorator);
-    yield `import { IsOptional, ValidateNested, IsArray, IsObject, ${Array.from(new Set(decorators)).join(", ")} } from 'class-validator';\n`;
-    yield `import { IsAny } from './is-any.js';\n`;
-    yield `import { Dictionary, IsDictionary, TransformDictionary } from './is-dictionary.js';\n\n`;
+    yield `import { z } from 'zod';\n`;
 
+    // I'm too lazy to figure out the non-standard parsing for Error objects from the api...
+
+    yield `/**\n * ApiError\n * Manually Generated from https://www.pathofexile.com/developer/docs/index#errors\n */\n`;
+    yield `export enum ErrorMessage {
+  Accepted = 0,
+  ResourceNotFound = 1,
+  InvalidQuery = 2,
+  RateLimitExceeded = 3,
+  InternalError = 4,
+  UnexpectedContentType = 5,
+  Forbidden = 6,
+  TemporarilyUnavailable = 7,
+  Unauthorized = 8,
+  MethodNotAllowed = 9,
+  UnprocessableEntity = 10,
+}\n\n`;
+    yield `export interface ApiError {
+  code: ErrorMessage;
+  message: string;
+}\n\n`;
+    yield `export const ApiError = z.object({
+  code: z.enum(ErrorMessage),
+  message: z.string(),
+});\n\n`;
+
+    const definedSchemas = new Set<string>([
+      "ApiError",
+      "Error",
+      "ErrorMessage",
+    ]);
+
+    // Pass 1: Interfaces and Enums
     for (const [name, type] of this.sortedTypeEntries) {
-      yield `/**\n * ${type.type} ${name}${type.subtitle ? `\n * ${type.subtitle}` : ""}\n * Generated from https://www.pathofexile.com/developer/docs/reference#types\n */\n`;
+      yield `/**\n * ${type.type} ${name}${type.subtitle ? `\n * ${type.subtitle}` : ""}\n * Generated from https://www.pathofexile.com/developer/docs/reference#type-${name}\n */\n`;
       switch (type.type) {
         case "enum":
-          yield `export enum ${name} {\n`;
+          yield `export enum ${name}Enum {\n`;
           for (const [value, key] of type.details.values.entries()) {
             yield `  ${ScrapeTypesManager.safeName(key)} = ${value}, // ${key}\n`;
           }
-          yield `}\n`;
+          yield `};\n\n`;
           break;
         case "object":
-          yield `export class ${name} {\n`;
+          yield `export interface ${name} {\n`;
           for (const value of type.details) {
-            const typeScriptType = this.translateValueTypeToTypeScript(
+            if (type.subtitle) {
+              yield `  /**\n   * ${value.extraInfo || ""}\n   */\n`;
+            }
+            const isOpt = value.valueType.startsWith("?");
+            yield `  ${key(value.key)}${isOpt ? "?" : ""}: ${this.translateValueTypeToTypeScript(value, 0)};\n`;
+          }
+          yield `}\n\n`;
+          break;
+      }
+    }
+
+    // Pass 2: Zod Schemas
+    for (const [name, type] of this.sortedTypeEntries) {
+      switch (type.type) {
+        case "enum":
+          yield `export const ${name} = z.enum(${name}Enum);\n`;
+          definedSchemas.add(name);
+          break;
+        case "object":
+          yield `export const ${name}: z.ZodType<${name}> = z.object({\n`;
+          for (const value of type.details) {
+            const zodType = this.translateValueTypeToZod(
               value,
               name,
+              0,
+              definedSchemas,
             );
             if (type.subtitle) {
               yield `  /**\n   * ${value.extraInfo || ""}\n   */\n`;
             }
-            for (const decorator of typeScriptType.decorators) {
-              yield `  ${decorator}\n`;
-            }
-            yield `  ${ScrapeTypesManager.safeName(value.key)}${typeScriptType.isOptional ? "?" : "!"}: ${typeScriptType.type};\n`;
+            yield `  ${key(value.key)}: ${zodType},\n`;
           }
-          yield `}\n`;
+          yield `})\n`;
+          definedSchemas.add(name);
           break;
       }
     }

@@ -1,0 +1,52 @@
+{
+    "name": "@meepen/poe-accountant-db-schema",
+    "private": true,
+    "license": "MPL-2.0",
+    "version": "0.0.1",
+    "description": "",
+    "scripts": {
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "prebuild": "rimraf dist",
+        "build": "tsc --project tsconfig.lib.json",
+        "lint": "eslint ."
+    },
+    "type": "module",
+    "files": [
+        "src/**/*.d.ts",
+        "dist/**/*.js",
+        "dist/**/*.js.map",
+        "dist/**/*.d.ts",
+        "package.json"
+    ],
+    "exports": {
+        ".": {
+            "types": "./dist/src/index.d.ts",
+            "import": "./dist/src/index.js",
+            "require": "./dist/src/index.js"
+        }
+    },
+    "author": {
+        "email": "meep@meepen.dev",
+        "name": "Devin 'Meepen' Korb",
+        "url": "https://github.com/meepen"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/poe-accountant/poe-accountant.git"
+    },
+    "peerDependencies": {
+        "drizzle-orm": "^0.45.1"
+    },
+    "devDependencies": {
+        "@types/node": "^24",
+        "rimraf": "^6.0.1",
+        "typescript": "^5.8.3",
+        "typescript-eslint": "^8.53.0",
+        "eslint": "^9.39.2",
+        "jiti": "^2.6.1",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-prettier": "^5.5.4",
+        "globals": "^17.0.0"
+    }
+}

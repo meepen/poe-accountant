@@ -9,6 +9,6 @@
         "./src/**/*.mock.ts"
     ],
     "references": [
-        { "path": "./tsconfig.lib.json" }
+        { "path": "./tsconfig.app.json" }
     ]
 }

@@ -1,57 +1,37 @@
-import { Type, plainToInstance } from 'class-transformer';
-import { IsArray, IsString, ValidateNested, IsInt, IsOptional } from 'class-validator';
-import "reflect-metadata";
+import { z } from "zod";
 
-export class TradeStatsEntryOption {
-  @IsInt()
-  id!: number;
+export const TradeStatsEntryOptionSchema = z.object({
+  id: z.number().int(),
+  text: z.string(),
+});
+export type TradeStatsEntryOption = z.infer<typeof TradeStatsEntryOptionSchema>;
 
-  @IsString()
-  text!: string;
-}
+export const TradeStatsEntryOptionsSchema = z.object({
+  options: z.array(TradeStatsEntryOptionSchema),
+});
+export type TradeStatsEntryOptions = z.infer<typeof TradeStatsEntryOptionsSchema>;
 
-export class TradeStatsEntryOptions {
-  @Type(() => TradeStatsEntryOption)
-  @IsArray()
-  @ValidateNested({ each: true })
-  options!: TradeStatsEntryOption[];
-}
+export const TradeStatsEntrySchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  type: z.string(),
+  option: TradeStatsEntryOptionsSchema.optional(),
+});
+export type TradeStatsEntry = z.infer<typeof TradeStatsEntrySchema>;
 
-export class TradeStatsEntry {
-  @IsString()
-  id!: string;
+export const TradeStatsGroupSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  entries: z.array(TradeStatsEntrySchema),
+});
+export type TradeStatsGroup = z.infer<typeof TradeStatsGroupSchema>;
 
-  @IsString()
-  text!: string;
+export const TradeStatsSchema = z.object({
+  result: z.array(TradeStatsGroupSchema),
+});
+export type TradeStats = z.infer<typeof TradeStatsSchema>;
 
-  @IsString()
-  type!: string;
-
-  @IsOptional()
-  option?: TradeStatsEntryOptions;
-}
-
-export class TradeStatsGroup {
-  @IsString()
-  id!: string;
-
-  @IsString()
-  label!: string;
-
-  @Type(() => TradeStatsEntry)
-  @IsArray()
-  @ValidateNested({ each: true })
-  entries!: TradeStatsEntry[];
-}
-
-export class TradeStats {
-  @Type(() => TradeStatsGroup)
-  @IsArray()
-  @ValidateNested({ each: true })
-  result!: TradeStatsGroup[];
-}
-
-export const tradeStats = plainToInstance(TradeStats, {
+export const tradeStats = TradeStatsSchema.parse({
   "result": [
     {
       "id": "pseudo",

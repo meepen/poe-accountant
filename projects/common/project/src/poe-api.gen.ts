@@ -1,4 +1,4 @@
-// This file is auto-generated from https://www.pathofexile.com/developer/docs/reference#types
+// This file is auto-generated from https://www.pathofexile.com/developer/docs/reference
 
 import { serverApiPaths } from "./poe.gen.js";
 

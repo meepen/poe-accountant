@@ -1,857 +1,340 @@
-// This file is auto-generated from https://www.pathofexile.com/developer/docs/reference#types
+// This file is auto-generated from https://www.pathofexile.com/developer/docs/reference
 
 
 
 // #region Type Information
-// This file is auto-generated from https://www.pathofexile.com/developer/docs/reference#types
-
-import { Type, Expose } from 'class-transformer';
-import { IsOptional, ValidateNested, IsArray, IsObject, IsInt, Max, Min, IsNumber, IsString, IsBoolean } from 'class-validator';
-import { IsAny } from './is-any.js';
-import { Dictionary, IsDictionary, TransformDictionary } from './is-dictionary.js';
-
+import { z } from 'zod';
 /**
- * object LeagueCategory
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * ApiError
+ * Manually Generated from https://www.pathofexile.com/developer/docs/index#errors
  */
-export class LeagueCategory {
-  @Expose()
-  @IsString()
-  id!: string;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  current?: boolean;
+export enum ErrorMessage {
+  Accepted = 0,
+  ResourceNotFound = 1,
+  InvalidQuery = 2,
+  RateLimitExceeded = 3,
+  InternalError = 4,
+  UnexpectedContentType = 5,
+  Forbidden = 6,
+  TemporarilyUnavailable = 7,
+  Unauthorized = 8,
+  MethodNotAllowed = 9,
+  UnprocessableEntity = 10,
 }
+
+export interface ApiError {
+  code: ErrorMessage;
+  message: string;
+}
+
+export const ApiError = z.object({
+  code: z.enum(ErrorMessage),
+  message: z.string(),
+});
+
 /**
  * object LeagueRule
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-LeagueRule
  */
-export class LeagueRule {
-  @Expose()
-  @IsString()
-  id!: string;
-  @Expose()
-  @IsString()
-  name!: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  description?: string;
+export interface LeagueRule {
+  id: string;
+  name: string;
+  description?: string | undefined;
 }
+
 /**
  * object League
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-League
  */
-export class League {
-  @Expose()
-  @IsString()
-  id!: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  realm?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  name?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  description?: string;
-  @Expose()
-  @IsOptional()
-  @Type(() => LeagueCategory)
-  @ValidateNested()
-  category?: LeagueCategory;
-  @Expose()
-  @IsOptional()
-  @Type(() => LeagueRule)
-  @IsArray()
-  @ValidateNested({ each: true })
-  rules?: LeagueRule[];
-  @Expose()
-  @IsOptional()
-  @IsString()
-  registerAt?: string;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  event?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  goal?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  url?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  startAt?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  endAt?: string;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  timedEvent?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  scoreEvent?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  delveEvent?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  ancestorEvent?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  leagueEvent?: boolean;
+export interface League {
+  id: string;
+  realm?: string | undefined;
+  name?: string | undefined;
+  description?: string | undefined;
+  category?: {
+    id: string;
+    current?: boolean | undefined;
+  } | undefined;
+  rules?: LeagueRule[] | undefined;
+  registerAt?: string | undefined;
+  event?: boolean | undefined;
+  goal?: string | undefined;
+  url?: string | undefined;
+  startAt?: string | undefined;
+  endAt?: string | undefined;
+  timedEvent?: boolean | undefined;
+  scoreEvent?: boolean | undefined;
+  delveEvent?: boolean | undefined;
+  ancestorEvent?: boolean | undefined;
+  leagueEvent?: boolean | undefined;
 }
-/**
- * object LadderEntryCharacterDepth
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class LadderEntryCharacterDepth {
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  default?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  solo?: number;
-}
-/**
- * object LadderEntryCharacter
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class LadderEntryCharacter {
-  @Expose()
-  @IsString()
-  id!: string;
-  @Expose()
-  @IsString()
-  name!: string;
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  level!: number;
-  @Expose()
-  @IsString()
-  class!: string;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  time?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  score?: number;
-  @Expose()
-  @IsOptional()
-  @IsObject()
-  progress?: Dictionary<object>;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  experience?: number;
-  @Expose()
-  @IsOptional()
-  @Type(() => LadderEntryCharacterDepth)
-  @ValidateNested()
-  depth?: LadderEntryCharacterDepth;
-}
+
 /**
  * object Guild
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-Guild
  */
-export class Guild {
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  id!: number;
-  @Expose()
-  @IsString()
-  name!: string;
-  @Expose()
-  @IsString()
-  tag!: string;
+export interface Guild {
+  id: number;
+  name: string;
+  tag: string;
 }
-/**
- * object AccountChallenges
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class AccountChallenges {
-  @Expose()
-  @IsString()
-  set!: string;
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  completed!: number;
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  max!: number;
-}
-/**
- * object AccountTwitchStream
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class AccountTwitchStream {
-  @Expose()
-  @IsString()
-  name!: string;
-  @Expose()
-  @IsString()
-  image!: string;
-  @Expose()
-  @IsString()
-  status!: string;
-}
-/**
- * object AccountTwitch
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class AccountTwitch {
-  @Expose()
-  @IsString()
-  name!: string;
-  @Expose()
-  @IsOptional()
-  @Type(() => AccountTwitchStream)
-  @ValidateNested()
-  stream?: AccountTwitchStream;
-}
+
 /**
  * object Account
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-Account
  */
-export class Account {
-  @Expose()
-  @IsString()
-  name!: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  realm?: string;
-  @Expose()
-  @IsOptional()
-  @Type(() => Guild)
-  @ValidateNested()
-  guild?: Guild;
-  @Expose()
-  @IsOptional()
-  @Type(() => AccountChallenges)
-  @ValidateNested()
-  challenges?: AccountChallenges;
-  @Expose()
-  @IsOptional()
-  @Type(() => AccountTwitch)
-  @ValidateNested()
-  twitch?: AccountTwitch;
+export interface Account {
+  name: string;
+  realm?: string | undefined;
+  guild?: Guild | undefined;
+  challenges?: {
+    set: string;
+    completed: number;
+    max: number;
+  } | undefined;
+  twitch?: {
+    name: string;
+    stream?: {
+      name: string;
+      image: string;
+      status: string;
+    } | undefined;
+  } | undefined;
 }
+
 /**
  * object LadderEntry
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-LadderEntry
  */
-export class LadderEntry {
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  rank!: number;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  dead?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  retired?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  ineligible?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  public?: boolean;
-  @Expose()
-  @Type(() => LadderEntryCharacter)
-  @ValidateNested()
-  character!: LadderEntryCharacter;
-  @Expose()
-  @IsOptional()
-  @Type(() => Account)
-  @ValidateNested()
-  account?: Account;
+export interface LadderEntry {
+  rank: number;
+  dead?: boolean | undefined;
+  retired?: boolean | undefined;
+  ineligible?: boolean | undefined;
+  public?: boolean | undefined;
+  character: {
+    id: string;
+    name: string;
+    level: number;
+    class: string;
+    time?: number | undefined;
+    score?: number | undefined;
+    progress?: Record<string, any> | undefined;
+    experience?: number | undefined;
+    depth?: {
+      default?: number | undefined;
+      solo?: number | undefined;
+    } | undefined;
+  };
+  account?: Account | undefined;
 }
-/**
- * object EventLadderEntryPrivate_league
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class EventLadderEntryPrivate_league {
-  @Expose()
-  @IsString()
-  name!: string;
-  @Expose()
-  @IsString()
-  url!: string;
-}
+
 /**
  * object EventLadderEntry
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-EventLadderEntry
  */
-export class EventLadderEntry {
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  rank!: number;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  ineligible?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  time?: number;
-  @Expose()
-  @Type(() => EventLadderEntryPrivate_league)
-  @ValidateNested()
-  private_league!: EventLadderEntryPrivate_league;
+export interface EventLadderEntry {
+  rank: number;
+  ineligible?: boolean | undefined;
+  time?: number | undefined;
+  private_league: {
+    name: string;
+    url: string;
+  };
 }
+
 /**
  * object PvPMatch
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-PvPMatch
  */
-export class PvPMatch {
-  @Expose()
-  @IsString()
-  id!: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  realm?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  startAt?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  endAt?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  url?: string;
-  @Expose()
-  @IsString()
-  description!: string;
-  @Expose()
-  @IsBoolean()
-  glickoRatings!: boolean;
-  @Expose()
-  @IsBoolean()
-  pvp!: boolean;
-  @Expose()
-  @IsString()
-  style!: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  registerAt?: string;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  complete?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  upcoming?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  inProgress?: boolean;
+export interface PvPMatch {
+  id: string;
+  realm?: string | undefined;
+  startAt?: string | undefined;
+  endAt?: string | undefined;
+  url?: string | undefined;
+  description: string;
+  glickoRatings: boolean;
+  pvp: boolean;
+  style: string;
+  registerAt?: string | undefined;
+  complete?: boolean | undefined;
+  upcoming?: boolean | undefined;
+  inProgress?: boolean | undefined;
 }
-/**
- * object PvPLadderTeamMemberCharacter
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class PvPLadderTeamMemberCharacter {
-  @Expose()
-  @IsString()
-  id!: string;
-  @Expose()
-  @IsString()
-  name!: string;
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  level!: number;
-  @Expose()
-  @IsString()
-  class!: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  league?: string;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  score?: number;
-}
+
 /**
  * object PvPLadderTeamMember
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-PvPLadderTeamMember
  */
-export class PvPLadderTeamMember {
-  @Expose()
-  @Type(() => Account)
-  @ValidateNested()
-  account!: Account;
-  @Expose()
-  @Type(() => PvPLadderTeamMemberCharacter)
-  @ValidateNested()
-  character!: PvPLadderTeamMemberCharacter;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  public?: boolean;
+export interface PvPLadderTeamMember {
+  account: Account;
+  character: {
+    id: string;
+    name: string;
+    level: number;
+    class: string;
+    league?: string | undefined;
+    score?: number | undefined;
+  };
+  public?: boolean | undefined;
 }
+
 /**
  * object PvPLadderTeamEntry
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-PvPLadderTeamEntry
  */
-export class PvPLadderTeamEntry {
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  rank!: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  rating?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  points?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  games_played?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  cumulative_opponent_points?: number;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  last_game_time?: string;
-  @Expose()
-  @Type(() => PvPLadderTeamMember)
-  @IsArray()
-  @ValidateNested({ each: true })
-  members!: PvPLadderTeamMember[];
+export interface PvPLadderTeamEntry {
+  rank: number;
+  rating?: number | undefined;
+  points?: number | undefined;
+  games_played?: number | undefined;
+  cumulative_opponent_points?: number | undefined;
+  last_game_time?: string | undefined;
+  members: PvPLadderTeamMember[];
 }
+
 /**
  * object ItemSocket
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-ItemSocket
  */
-export class ItemSocket {
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  group!: number;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  attr?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  sColour?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  type?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  item?: string;
+export interface ItemSocket {
+  group: number;
+  attr?: string | undefined;
+  sColour?: string | undefined;
+  type?: string | undefined;
+  item?: string | undefined;
 }
+
 /**
  * enum DisplayMode
  * Referenced by ItemProperty→displayMode.
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-DisplayMode
  */
-export enum DisplayMode {
+export enum DisplayModeEnum {
   NameShouldBeFollowedByValues = 0, // Name should be followed by values
   ValuesShouldBeFollowedByName = 1, // Values should be followed by name
   ProgressBar = 2, // Progress bar
   ValuesShouldBeInsertedIntoTheStringByIndex = 3, // Values should be inserted into the string by index
   Separator = 4, // Separator
-}
+};
+
 /**
  * object ItemProperty
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-ItemProperty
  */
-export class ItemProperty {
-  @Expose()
-  @IsString()
-  name!: string;
-  @Expose()
-  @IsArray()
-  values!: ([string, number])[];
-  @Expose()
-  @IsOptional()
-  displayMode?: DisplayMode;
-  @Expose()
-  @IsOptional()
-  @IsNumber()
-  progress?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  type?: number;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  suffix?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  icon?: string;
+export interface ItemProperty {
+  name: string;
+  values: [string, number][];
+  displayMode?: DisplayModeEnum | undefined;
+  progress?: number | undefined;
+  type?: number | undefined;
+  suffix?: string | undefined;
+  icon?: string | undefined;
 }
-/**
- * object ItemRewards
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class ItemRewards {
-  @Expose()
-  @IsString()
-  label!: string;
-  @Expose()
-  @IsDictionary([IsInt(), Max(0x7FFFFFFF), Min(-0x80000000)])
-  @Type(() => Dictionary<unknown>)
-  rewards!: Dictionary<number>;
-}
-/**
- * object ItemLogbookModsFaction
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class ItemLogbookModsFaction {
-  @Expose()
-  @IsString()
-  id!: string;
-  @Expose()
-  @IsString()
-  name!: string;
-}
-/**
- * object ItemLogbookMods
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class ItemLogbookMods {
-  @Expose()
-  @IsString()
-  name!: string;
-  @Expose()
-  @Type(() => ItemLogbookModsFaction)
-  @ValidateNested()
-  faction!: ItemLogbookModsFaction;
-  @Expose()
-  @IsArray()
-  @IsString({ each: true })
-  mods!: string[];
-}
-/**
- * object ItemUltimatumMods
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class ItemUltimatumMods {
-  @Expose()
-  @IsString()
-  type!: string;
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  tier!: number;
-}
+
 /**
  * object GemPage
  * Referenced by GemTab→pages.
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-GemPage
  */
-export class GemPage {
+export interface GemPage {
   /**
    * 
    */
-  @Expose()
-  @IsOptional()
-  @IsString()
-  skillName?: string;
+  skillName?: string | undefined;
   /**
    * 
    */
-  @Expose()
-  @IsOptional()
-  @IsString()
-  description?: string;
+  description?: string | undefined;
   /**
    * 
    */
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemProperty)
-  @IsArray()
-  @ValidateNested({ each: true })
-  properties?: ItemProperty[];
+  properties?: ItemProperty[] | undefined;
   /**
    * 
    */
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  stats?: string[];
+  stats?: string[] | undefined;
 }
+
 /**
  * object GemTab
  * Referenced by Item→gemTabs.
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-GemTab
  */
-export class GemTab {
+export interface GemTab {
   /**
    * 
    */
-  @Expose()
-  @IsOptional()
-  @IsString()
-  name?: string;
+  name?: string | undefined;
   /**
    * 
    */
-  @Expose()
-  @Type(() => GemPage)
-  @IsArray()
-  @ValidateNested({ each: true })
-  pages!: GemPage[];
+  pages: GemPage[];
 }
-/**
- * object ItemIncubatedItem
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class ItemIncubatedItem {
-  @Expose()
-  @IsString()
-  name!: string;
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  level!: number;
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  progress!: number;
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  total!: number;
-}
-/**
- * object ItemScourged
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class ItemScourged {
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  tier!: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  level?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  progress?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  total?: number;
-}
+
 /**
  * object CrucibleNode
  * Referenced by Item→crucible.
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-CrucibleNode
  */
-export class CrucibleNode {
+export interface CrucibleNode {
   /**
    * mod hash
    */
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  skill?: number;
+  skill?: number | undefined;
   /**
    * mod tier
    */
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  tier?: number;
+  tier?: number | undefined;
   /**
    * 
    */
-  @Expose()
-  @IsOptional()
-  @IsString()
-  icon?: string;
+  icon?: string | undefined;
   /**
    * always true if present
    */
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  allocated?: boolean;
+  allocated?: boolean | undefined;
   /**
    * always true if present
    */
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  isNotable?: boolean;
+  isNotable?: boolean | undefined;
   /**
    * always true if present
    */
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  isReward?: boolean;
+  isReward?: boolean | undefined;
   /**
    * stat descriptions
    */
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  stats?: string[];
+  stats?: string[] | undefined;
   /**
    * 
    */
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  reminderText?: string[];
+  reminderText?: string[] | undefined;
   /**
    * the column this node occupies
    */
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  orbit?: number;
+  orbit?: number | undefined;
   /**
    * the node's position within the column
    */
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  orbitIndex?: number;
+  orbitIndex?: number | undefined;
   /**
    * node identifiers of nodes this one connects to
    */
-  @Expose()
-  @IsArray()
-  @IsString({ each: true })
-  out!: string[];
+  out: string[];
   /**
    * node identifiers of nodes connected to this one
    */
-  @Expose()
-  @IsArray()
-  @IsString({ each: true })
-  in!: string[];
+  in: string[];
 }
-/**
- * object ItemCrucible
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class ItemCrucible {
-  @Expose()
-  @IsString()
-  layout!: string;
-  @Expose()
-  @IsDictionary([Type(() => CrucibleNode), ValidateNested()])
-  @TransformDictionary(CrucibleNode)
-  nodes!: Dictionary<CrucibleNode>;
-}
+
 /**
  * enum FrameType
  * Referenced by Item→frameType.
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-FrameType
  */
-export enum FrameType {
+export enum FrameTypeEnum {
   NormalFrame = 0, // Normal frame
   MagicFrame = 1, // Magic frame
   RareFrame = 2, // Rare frame
@@ -866,1509 +349,1135 @@ export enum FrameType {
   NecropolisFrame = 11, // Necropolis frame
   GoldFrame = 12, // Gold frame
   BreachSkillFrame = 13, // Breach Skill frame
-}
-/**
- * object ItemHybrid
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class ItemHybrid {
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  isVaalGem?: boolean;
-  @Expose()
-  @IsString()
-  baseTypeName!: string;
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemProperty)
-  @IsArray()
-  @ValidateNested({ each: true })
-  properties?: ItemProperty[];
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  explicitMods?: string[];
-  @Expose()
-  @IsOptional()
-  @IsString()
-  secDescrText?: string;
-}
-/**
- * object ItemExtended
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class ItemExtended {
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  prefixes?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  suffixes?: number;
-}
+};
+
 /**
  * object Item
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-Item
  */
-export class Item {
-  @Expose()
-  @IsOptional()
-  @IsString()
-  realm?: string;
-  @Expose()
-  @IsBoolean()
-  verified!: boolean;
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  w!: number;
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  h!: number;
-  @Expose()
-  @IsString()
-  icon!: string;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  support?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0x7FFFFFFF)
-  @Min(-0x80000000)
-  stackSize?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0x7FFFFFFF)
-  @Min(-0x80000000)
-  maxStackSize?: number;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  stackSizeText?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  iconTierText?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  league?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  id?: string;
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  gemSockets?: string[];
-  @Expose()
-  @IsOptional()
-  @IsObject()
-  influences?: Dictionary<object>;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  elder?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  shaper?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  searing?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  tangled?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  memoryItem?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  mutated?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  abyssJewel?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  delve?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  fractured?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  synthesised?: boolean;
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemSocket)
-  @IsArray()
-  @ValidateNested({ each: true })
-  sockets?: ItemSocket[];
-  @Expose()
-  @IsOptional()
-  @Type(() => Item)
-  @IsArray()
-  @ValidateNested({ each: true })
-  socketedItems?: Item[];
-  @Expose()
-  @IsString()
-  name!: string;
-  @Expose()
-  @IsString()
-  typeLine!: string;
-  @Expose()
-  @IsString()
-  baseType!: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  rarity?: string;
-  @Expose()
-  @IsBoolean()
-  identified!: boolean;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0x7FFFFFFF)
-  @Min(-0x80000000)
-  itemLevel?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0x7FFFFFFF)
-  @Min(-0x80000000)
-  unidentifiedTier?: number;
-  @Expose()
-  @IsInt()
-  @Max(0x7FFFFFFF)
-  @Min(-0x80000000)
-  ilvl!: number;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  note?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  forum_note?: string;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  lockedToCharacter?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  lockedToAccount?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  duplicated?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  split?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  corrupted?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  sanctified?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  unmodifiable?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  unmodifiableExceptChaos?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  cisRaceReward?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  seaRaceReward?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  thRaceReward?: boolean;
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemProperty)
-  @IsArray()
-  @ValidateNested({ each: true })
-  properties?: ItemProperty[];
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemProperty)
-  @IsArray()
-  @ValidateNested({ each: true })
-  notableProperties?: ItemProperty[];
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemProperty)
-  @IsArray()
-  @ValidateNested({ each: true })
-  requirements?: ItemProperty[];
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemProperty)
-  @IsArray()
-  @ValidateNested({ each: true })
-  weaponRequirements?: ItemProperty[];
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemProperty)
-  @IsArray()
-  @ValidateNested({ each: true })
-  supportGemRequirements?: ItemProperty[];
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemProperty)
-  @IsArray()
-  @ValidateNested({ each: true })
-  additionalProperties?: ItemProperty[];
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemProperty)
-  @IsArray()
-  @ValidateNested({ each: true })
-  nextLevelRequirements?: ItemProperty[];
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemProperty)
-  @IsArray()
-  @ValidateNested({ each: true })
-  grantedSkills?: ItemProperty[];
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0x7FFFFFFF)
-  @Min(-0x80000000)
-  talismanTier?: number;
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemRewards)
-  @IsArray()
-  @ValidateNested({ each: true })
-  rewards?: ItemRewards[];
-  @Expose()
-  @IsOptional()
-  @IsString()
-  secDescrText?: string;
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  utilityMods?: string[];
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemLogbookMods)
-  @IsArray()
-  @ValidateNested({ each: true })
-  logbookMods?: ItemLogbookMods[];
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  enchantMods?: string[];
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  runeMods?: string[];
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  scourgeMods?: string[];
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  implicitMods?: string[];
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemUltimatumMods)
-  @IsArray()
-  @ValidateNested({ each: true })
-  ultimatumMods?: ItemUltimatumMods[];
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  explicitMods?: string[];
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  craftedMods?: string[];
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  fracturedMods?: string[];
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  mutatedMods?: string[];
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  crucibleMods?: string[];
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  cosmeticMods?: string[];
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  veiledMods?: string[];
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  veiled?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  desecratedMods?: string[];
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  desecrated?: boolean;
-  @Expose()
-  @IsOptional()
-  @Type(() => GemTab)
-  @IsArray()
-  @ValidateNested({ each: true })
-  gemTabs?: GemTab[];
-  @Expose()
-  @IsOptional()
-  @IsString()
-  gemBackground?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  gemSkill?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  descrText?: string;
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  flavourText?: string[];
-  @Expose()
-  @IsOptional()
-  @IsString()
-  flavourTextNote?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  prophecyText?: string;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  isRelic?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0x7FFFFFFF)
-  @Min(-0x80000000)
-  foilVariation?: number;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  replica?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  foreseeing?: boolean;
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemIncubatedItem)
-  @ValidateNested()
-  incubatedItem?: ItemIncubatedItem;
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemScourged)
-  @ValidateNested()
-  scourged?: ItemScourged;
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemCrucible)
-  @ValidateNested()
-  crucible?: ItemCrucible;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  ruthless?: boolean;
-  @Expose()
-  @IsOptional()
-  frameType?: FrameType;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  artFilename?: string;
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemHybrid)
-  @ValidateNested()
-  hybrid?: ItemHybrid;
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemExtended)
-  @ValidateNested()
-  extended?: ItemExtended;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  x?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  y?: number;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  inventoryId?: string;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  socket?: number;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  colour?: string;
+export interface Item {
+  realm?: string | undefined;
+  verified: boolean;
+  w: number;
+  h: number;
+  icon: string;
+  support?: boolean | undefined;
+  stackSize?: number | undefined;
+  maxStackSize?: number | undefined;
+  stackSizeText?: string | undefined;
+  iconTierText?: string | undefined;
+  league?: string | undefined;
+  id?: string | undefined;
+  gemSockets?: string[] | undefined;
+  influences?: Record<string, any> | undefined;
+  elder?: boolean | undefined;
+  shaper?: boolean | undefined;
+  searing?: boolean | undefined;
+  tangled?: boolean | undefined;
+  memoryItem?: boolean | undefined;
+  mutated?: boolean | undefined;
+  abyssJewel?: boolean | undefined;
+  delve?: boolean | undefined;
+  fractured?: boolean | undefined;
+  synthesised?: boolean | undefined;
+  sockets?: ItemSocket[] | undefined;
+  socketedItems?: Item[] | undefined;
+  name: string;
+  typeLine: string;
+  baseType: string;
+  rarity?: string | undefined;
+  identified: boolean;
+  itemLevel?: number | undefined;
+  unidentifiedTier?: number | undefined;
+  ilvl: number;
+  note?: string | undefined;
+  forum_note?: string | undefined;
+  lockedToCharacter?: boolean | undefined;
+  lockedToAccount?: boolean | undefined;
+  duplicated?: boolean | undefined;
+  split?: boolean | undefined;
+  corrupted?: boolean | undefined;
+  doubleCorrupted?: boolean | undefined;
+  sanctified?: boolean | undefined;
+  unmodifiable?: boolean | undefined;
+  unmodifiableExceptChaos?: boolean | undefined;
+  cisRaceReward?: boolean | undefined;
+  seaRaceReward?: boolean | undefined;
+  thRaceReward?: boolean | undefined;
+  properties?: ItemProperty[] | undefined;
+  notableProperties?: ItemProperty[] | undefined;
+  requirements?: ItemProperty[] | undefined;
+  weaponRequirements?: ItemProperty[] | undefined;
+  supportGemRequirements?: ItemProperty[] | undefined;
+  additionalProperties?: ItemProperty[] | undefined;
+  nextLevelRequirements?: ItemProperty[] | undefined;
+  grantedSkills?: ItemProperty[] | undefined;
+  talismanTier?: number | undefined;
+  rewards?: {
+    label: string;
+    rewards: Record<string, number>;
+  }[] | undefined;
+  secDescrText?: string | undefined;
+  utilityMods?: string[] | undefined;
+  logbookMods?: {
+    name: string;
+    faction: {
+      id: string;
+      name: string;
+    };
+    mods: string[];
+  }[] | undefined;
+  enchantMods?: string[] | undefined;
+  runeMods?: string[] | undefined;
+  scourgeMods?: string[] | undefined;
+  implicitMods?: string[] | undefined;
+  ultimatumMods?: {
+    type: string;
+    tier: number;
+  }[] | undefined;
+  explicitMods?: string[] | undefined;
+  bondedMods?: string[] | undefined;
+  craftedMods?: string[] | undefined;
+  fracturedMods?: string[] | undefined;
+  mutatedMods?: string[] | undefined;
+  crucibleMods?: string[] | undefined;
+  cosmeticMods?: string[] | undefined;
+  veiledMods?: string[] | undefined;
+  veiled?: boolean | undefined;
+  desecratedMods?: string[] | undefined;
+  desecrated?: boolean | undefined;
+  gemTabs?: GemTab[] | undefined;
+  gemBackground?: string | undefined;
+  gemSkill?: string | undefined;
+  descrText?: string | undefined;
+  flavourText?: string[] | undefined;
+  flavourTextNote?: string | undefined;
+  prophecyText?: string | undefined;
+  isRelic?: boolean | undefined;
+  foilVariation?: number | undefined;
+  replica?: boolean | undefined;
+  foreseeing?: boolean | undefined;
+  incubatedItem?: {
+    name: string;
+    level: number;
+    progress: number;
+    total: number;
+  } | undefined;
+  scourged?: {
+    tier: number;
+    level?: number | undefined;
+    progress?: number | undefined;
+    total?: number | undefined;
+  } | undefined;
+  crucible?: {
+    layout: string;
+    nodes: Record<string, CrucibleNode>;
+  } | undefined;
+  ruthless?: boolean | undefined;
+  frameType?: FrameTypeEnum | undefined;
+  artFilename?: string | undefined;
+  hybrid?: {
+    isVaalGem?: boolean | undefined;
+    baseTypeName: string;
+    properties?: ItemProperty[] | undefined;
+    explicitMods?: string[] | undefined;
+    secDescrText?: string | undefined;
+  } | undefined;
+  extended?: {
+    prefixes?: number | undefined;
+    suffixes?: number | undefined;
+  } | undefined;
+  x?: number | undefined;
+  y?: number | undefined;
+  inventoryId?: string | undefined;
+  socket?: number | undefined;
+  colour?: string | undefined;
 }
+
 /**
  * object PublicStashChange
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-PublicStashChange
  */
-export class PublicStashChange {
-  @Expose()
-  @IsString()
-  id!: string;
-  @Expose()
-  @IsBoolean()
-  public!: boolean;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  accountName?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  stash?: string;
-  @Expose()
-  @IsString()
-  stashType!: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  league?: string;
-  @Expose()
-  @Type(() => Item)
-  @IsArray()
-  @ValidateNested({ each: true })
-  items!: Item[];
+export interface PublicStashChange {
+  id: string;
+  public: boolean;
+  accountName?: string | undefined;
+  stash?: string | undefined;
+  stashType: string;
+  league?: string | undefined;
+  items: Item[];
 }
-/**
- * object PassiveNodeMasteryEffects
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class PassiveNodeMasteryEffects {
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  effect!: number;
-  @Expose()
-  @IsArray()
-  @IsString({ each: true })
-  stats!: string[];
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  reminderText?: string[];
-}
-/**
- * object PassiveNodeExpansionJewel
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class PassiveNodeExpansionJewel {
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  size?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  index?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  proxy?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  parent?: number;
-}
+
 /**
  * object PassiveNode
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-PassiveNode
  */
-export class PassiveNode {
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  skill?: number;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  name?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  icon?: string;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  isKeystone?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  isNotable?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  isMastery?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  inactiveIcon?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  activeIcon?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  activeEffectImage?: string;
-  @Expose()
-  @IsOptional()
-  @Type(() => PassiveNodeMasteryEffects)
-  @IsArray()
-  @ValidateNested({ each: true })
-  masteryEffects?: PassiveNodeMasteryEffects[];
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  isBlighted?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  isTattoo?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  isProxy?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  isJewelSocket?: boolean;
-  @Expose()
-  @IsOptional()
-  @Type(() => PassiveNodeExpansionJewel)
-  @ValidateNested()
-  expansionJewel?: PassiveNodeExpansionJewel;
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  recipe?: string[];
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  grantedStrength?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  grantedDexterity?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  grantedIntelligence?: number;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  ascendancyName?: string;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  isAscendancyStart?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  isMultipleChoice?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  isMultipleChoiceOption?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  grantedPassivePoints?: number;
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  stats?: string[];
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  reminderText?: string[];
-  @Expose()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  flavourText?: string[];
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  classStartIndex?: number;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  group?: string;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  orbit?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  orbitIndex?: number;
-  @Expose()
-  @IsArray()
-  @IsString({ each: true })
-  out!: string[];
-  @Expose()
-  @IsArray()
-  @IsString({ each: true })
-  in!: string[];
+export interface PassiveNode {
+  skill?: number | undefined;
+  name?: string | undefined;
+  icon?: string | undefined;
+  isKeystone?: boolean | undefined;
+  isNotable?: boolean | undefined;
+  isMastery?: boolean | undefined;
+  inactiveIcon?: string | undefined;
+  activeIcon?: string | undefined;
+  activeEffectImage?: string | undefined;
+  masteryEffects?: {
+    effect: number;
+    stats: string[];
+    reminderText?: string[] | undefined;
+  }[] | undefined;
+  isBlighted?: boolean | undefined;
+  isTattoo?: boolean | undefined;
+  isProxy?: boolean | undefined;
+  isJewelSocket?: boolean | undefined;
+  expansionJewel?: {
+    size?: number | undefined;
+    index?: number | undefined;
+    proxy?: number | undefined;
+    parent?: number | undefined;
+  } | undefined;
+  recipe?: string[] | undefined;
+  grantedStrength?: number | undefined;
+  grantedDexterity?: number | undefined;
+  grantedIntelligence?: number | undefined;
+  ascendancyName?: string | undefined;
+  isAscendancyStart?: boolean | undefined;
+  isMultipleChoice?: boolean | undefined;
+  isMultipleChoiceOption?: boolean | undefined;
+  grantedPassivePoints?: number | undefined;
+  stats?: string[] | undefined;
+  reminderText?: string[] | undefined;
+  flavourText?: string[] | undefined;
+  classStartIndex?: number | undefined;
+  group?: string | undefined;
+  orbit?: number | undefined;
+  orbitIndex?: number | undefined;
+  out: string[];
+  in: string[];
 }
+
 /**
  * object PassiveGroup
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-PassiveGroup
  */
-export class PassiveGroup {
-  @Expose()
-  @IsNumber()
-  x!: number;
-  @Expose()
-  @IsNumber()
-  y!: number;
-  @Expose()
-  @IsArray()
-  @IsInt({ each: true })
-  @Max(0xFFFFFFFF, { each: true })
-  @Min(0, { each: true })
-  orbits!: number[];
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  isProxy?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  proxy?: string;
-  @Expose()
-  @IsArray()
-  @IsString({ each: true })
-  nodes!: string[];
+export interface PassiveGroup {
+  x: number;
+  y: number;
+  orbits: number[];
+  isProxy?: boolean | undefined;
+  proxy?: string | undefined;
+  nodes: string[];
 }
-/**
- * object ItemJewelDataSubgraph
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class ItemJewelDataSubgraph {
-  @Expose()
-  @IsDictionary([Type(() => PassiveGroup), ValidateNested()])
-  @TransformDictionary(PassiveGroup)
-  groups!: Dictionary<PassiveGroup>;
-  @Expose()
-  @IsDictionary([Type(() => PassiveNode), ValidateNested()])
-  @TransformDictionary(PassiveNode)
-  nodes!: Dictionary<PassiveNode>;
-}
+
 /**
  * object ItemJewelData
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-ItemJewelData
  */
-export class ItemJewelData {
-  @Expose()
-  @IsString()
-  type!: string;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  radius?: number;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  radiusMin?: number;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  radiusVisual?: string;
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemJewelDataSubgraph)
-  @ValidateNested()
-  subgraph?: ItemJewelDataSubgraph;
+export interface ItemJewelData {
+  type: string;
+  radius?: number | undefined;
+  radiusMin?: number | undefined;
+  radiusVisual?: string | undefined;
+  subgraph?: {
+    groups: Record<string, PassiveGroup>;
+    nodes: Record<string, PassiveNode>;
+  } | undefined;
 }
-/**
- * object CharacterPassives
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class CharacterPassives {
-  @Expose()
-  @IsArray()
-  @IsInt({ each: true })
-  @Max(0xFFFFFFFF, { each: true })
-  @Min(0, { each: true })
-  hashes!: number[];
-  @Expose()
-  @IsArray()
-  @IsInt({ each: true })
-  @Max(0xFFFFFFFF, { each: true })
-  @Min(0, { each: true })
-  hashes_ex!: number[];
-  @Expose()
-  @IsDictionary([IsInt(), Max(0x7FFFFFFF), Min(-0x80000000)])
-  @Type(() => Dictionary<unknown>)
-  mastery_effects!: Dictionary<number>;
-  @Expose()
-  @IsDictionary([IsArray(), IsInt({ each: true }), Max(0x7FFFFFFF, { each: true }), Min(-0x80000000, { each: true })])
-  @Type(() => Dictionary<unknown>)
-  specialisations!: Dictionary<number[]>;
-  @Expose()
-  @IsDictionary([Type(() => PassiveNode), ValidateNested()])
-  @TransformDictionary(PassiveNode)
-  skill_overrides!: Dictionary<PassiveNode>;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  bandit_choice?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  pantheon_major?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  pantheon_minor?: string;
-  @Expose()
-  @IsDictionary([Type(() => ItemJewelData), ValidateNested()])
-  @TransformDictionary(ItemJewelData)
-  jewel_data!: Dictionary<ItemJewelData>;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  alternate_ascendancy?: string;
-}
-/**
- * object CharacterMetadata
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class CharacterMetadata {
-  @Expose()
-  @IsOptional()
-  @IsString()
-  version?: string;
-}
+
 /**
  * object Character
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-Character
  */
-export class Character {
-  @Expose()
-  @IsString()
-  id!: string;
-  @Expose()
-  @IsString()
-  name!: string;
-  @Expose()
-  @IsString()
-  realm!: string;
-  @Expose()
-  @IsString()
-  class!: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  league?: string;
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  level!: number;
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  experience!: number;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  ruthless?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  expired?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  deleted?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  current?: boolean;
-  @Expose()
-  @IsOptional()
-  @Type(() => Item)
-  @IsArray()
-  @ValidateNested({ each: true })
-  equipment?: Item[];
-  @Expose()
-  @IsOptional()
-  @Type(() => Item)
-  @IsArray()
-  @ValidateNested({ each: true })
-  skills?: Item[];
-  @Expose()
-  @IsOptional()
-  @Type(() => Item)
-  @IsArray()
-  @ValidateNested({ each: true })
-  inventory?: Item[];
-  @Expose()
-  @IsOptional()
-  @Type(() => Item)
-  @IsArray()
-  @ValidateNested({ each: true })
-  rucksack?: Item[];
-  @Expose()
-  @IsOptional()
-  @Type(() => Item)
-  @IsArray()
-  @ValidateNested({ each: true })
-  jewels?: Item[];
-  @Expose()
-  @IsOptional()
-  @Type(() => CharacterPassives)
-  @ValidateNested()
-  passives?: CharacterPassives;
-  @Expose()
-  @IsOptional()
-  @Type(() => CharacterMetadata)
-  @ValidateNested()
-  metadata?: CharacterMetadata;
+export interface Character {
+  id: string;
+  name: string;
+  realm: string;
+  class: string;
+  league?: string | undefined;
+  level: number;
+  experience: number;
+  ruthless?: boolean | undefined;
+  expired?: boolean | undefined;
+  deleted?: boolean | undefined;
+  current?: boolean | undefined;
+  equipment?: Item[] | undefined;
+  skills?: Item[] | undefined;
+  inventory?: Item[] | undefined;
+  rucksack?: Item[] | undefined;
+  jewels?: Item[] | undefined;
+  passives?: {
+    hashes: number[];
+    hashes_ex: number[];
+    mastery_effects: Record<string, number>;
+    specialisations: Record<string, number[]>;
+    skill_overrides: Record<string, PassiveNode>;
+    bandit_choice?: string | undefined;
+    pantheon_major?: string | undefined;
+    pantheon_minor?: string | undefined;
+    jewel_data: Record<string, ItemJewelData>;
+    quest_stats?: string[] | undefined;
+    alternate_ascendancy?: string | undefined;
+  } | undefined;
+  metadata?: {
+    version?: string | undefined;
+  } | undefined;
 }
-/**
- * object StashTabMetadata
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class StashTabMetadata {
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  public?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  folder?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  colour?: string;
-  @Expose()
-  @IsOptional()
-  @IsObject()
-  map?: Dictionary<object>;
-}
+
 /**
  * object StashTab
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-StashTab
  */
-export class StashTab {
-  @Expose()
-  @IsString()
-  id!: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  parent?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  folder?: string;
-  @Expose()
-  @IsString()
-  name!: string;
-  @Expose()
-  @IsString()
-  type!: string;
-  @Expose()
-  @IsOptional()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  index?: number;
-  @Expose()
-  @Type(() => StashTabMetadata)
-  @ValidateNested()
-  metadata!: StashTabMetadata;
-  @Expose()
-  @IsOptional()
-  @Type(() => StashTab)
-  @IsArray()
-  @ValidateNested({ each: true })
-  children?: StashTab[];
-  @Expose()
-  @IsOptional()
-  @Type(() => Item)
-  @IsArray()
-  @ValidateNested({ each: true })
-  items?: Item[];
+export interface StashTab {
+  id: string;
+  parent?: string | undefined;
+  folder?: string | undefined;
+  name: string;
+  type: string;
+  index?: number | undefined;
+  metadata: {
+    public?: boolean | undefined;
+    folder?: boolean | undefined;
+    colour?: string | undefined;
+    map?: Record<string, any> | undefined;
+  };
+  children?: StashTab[] | undefined;
+  items?: Item[] | undefined;
 }
-/**
- * object LeagueAccountAtlas_passives
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class LeagueAccountAtlas_passives {
-  @Expose()
-  @IsArray()
-  @IsInt({ each: true })
-  @Max(0xFFFFFFFF, { each: true })
-  @Min(0, { each: true })
-  hashes!: number[];
-}
-/**
- * object LeagueAccountAtlas_passive_trees
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class LeagueAccountAtlas_passive_trees {
-  @Expose()
-  @IsString()
-  name!: string;
-  @Expose()
-  @IsArray()
-  @IsInt({ each: true })
-  @Max(0xFFFFFFFF, { each: true })
-  @Min(0, { each: true })
-  hashes!: number[];
-}
+
 /**
  * object LeagueAccount
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-LeagueAccount
  */
-export class LeagueAccount {
-  @Expose()
-  @IsOptional()
-  @Type(() => LeagueAccountAtlas_passives)
-  @ValidateNested()
-  atlas_passives?: LeagueAccountAtlas_passives;
-  @Expose()
-  @Type(() => LeagueAccountAtlas_passive_trees)
-  @IsArray()
-  @ValidateNested({ each: true })
-  atlas_passive_trees!: LeagueAccountAtlas_passive_trees[];
+export interface LeagueAccount {
+  atlas_passives?: {
+    hashes: number[];
+  } | undefined;
+  atlas_passive_trees: {
+    name: string;
+    hashes: number[];
+  }[];
 }
-/**
- * object ItemFilterValidation
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class ItemFilterValidation {
-  @Expose()
-  @IsBoolean()
-  valid!: boolean;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  version?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  validated?: string;
-}
+
 /**
  * object ItemFilter
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-ItemFilter
  */
-export class ItemFilter {
-  @Expose()
-  @IsString()
-  id!: string;
-  @Expose()
-  @IsString()
-  filter_name!: string;
-  @Expose()
-  @IsString()
-  realm!: string;
-  @Expose()
-  @IsString()
-  description!: string;
-  @Expose()
-  @IsString()
-  version!: string;
-  @Expose()
-  @IsString()
-  type!: string;
-  @Expose()
-  @IsOptional()
-  @IsBoolean()
-  public?: boolean;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  filter?: string;
-  @Expose()
-  @IsOptional()
-  @Type(() => ItemFilterValidation)
-  @ValidateNested()
-  validation?: ItemFilterValidation;
+export interface ItemFilter {
+  id: string;
+  filter_name: string;
+  realm: string;
+  description: string;
+  version: string;
+  type: string;
+  public?: boolean | undefined;
+  filter?: string | undefined;
+  validation?: {
+    valid: boolean;
+    version?: string | undefined;
+    validated?: string | undefined;
+  } | undefined;
 }
-/**
- * object AccountProfileGetProfileResponseTwitch
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class AccountProfileGetProfileResponseTwitch {
-  @Expose()
-  @IsString()
-  name!: string;
-}
+
 /**
  * object AccountProfileGetProfileResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-AccountProfileGetProfileResponse
  */
-export class AccountProfileGetProfileResponse {
-  @Expose()
-  @IsString()
-  uuid!: string;
-  @Expose()
-  @IsString()
-  name!: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  locale?: string;
-  @Expose()
-  @IsOptional()
-  @Type(() => AccountProfileGetProfileResponseTwitch)
-  @ValidateNested()
-  twitch?: AccountProfileGetProfileResponseTwitch;
+export interface AccountProfileGetProfileResponse {
+  uuid: string;
+  name: string;
+  locale?: string | undefined;
+  twitch?: {
+    name: string;
+  } | undefined;
 }
+
 /**
  * object AccountItemFiltersGetItemFiltersResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-AccountItemFiltersGetItemFiltersResponse
  */
-export class AccountItemFiltersGetItemFiltersResponse {
-  @Expose()
-  @Type(() => ItemFilter)
-  @IsArray()
-  @ValidateNested({ each: true })
-  filters!: ItemFilter[];
+export interface AccountItemFiltersGetItemFiltersResponse {
+  filters: ItemFilter[];
 }
+
 /**
  * object AccountItemFiltersGetItemFilterResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-AccountItemFiltersGetItemFilterResponse
  */
-export class AccountItemFiltersGetItemFilterResponse {
-  @Expose()
-  @Type(() => ItemFilter)
-  @ValidateNested()
-  filter!: ItemFilter;
+export interface AccountItemFiltersGetItemFilterResponse {
+  filter: ItemFilter;
 }
+
 /**
  * object AccountItemFiltersCreateItemFilterResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-AccountItemFiltersCreateItemFilterResponse
  */
-export class AccountItemFiltersCreateItemFilterResponse {
-  @Expose()
-  @Type(() => ItemFilter)
-  @ValidateNested()
-  filter!: ItemFilter;
+export interface AccountItemFiltersCreateItemFilterResponse {
+  filter: ItemFilter;
 }
+
 /**
  * object AccountItemFiltersUpdateItemFilterResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-AccountItemFiltersUpdateItemFilterResponse
  */
-export class AccountItemFiltersUpdateItemFilterResponse {
-  @Expose()
-  @Type(() => ItemFilter)
-  @ValidateNested()
-  filter!: ItemFilter;
-  @Expose()
-  @IsOptional()
-  @Type(() => Error)
-  @ValidateNested()
-  error?: Error;
+export interface AccountItemFiltersUpdateItemFilterResponse {
+  filter: ItemFilter;
+  error?: ApiError | undefined;
 }
+
 /**
  * object LeaguesListLeaguesResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-LeaguesListLeaguesResponse
  */
-export class LeaguesListLeaguesResponse {
-  @Expose()
-  @Type(() => League)
-  @IsArray()
-  @ValidateNested({ each: true })
-  leagues!: League[];
+export interface LeaguesListLeaguesResponse {
+  leagues: League[];
 }
+
 /**
  * object LeaguesGetLeagueResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-LeaguesGetLeagueResponse
  */
-export class LeaguesGetLeagueResponse {
-  @Expose()
-  @IsOptional()
-  @Type(() => League)
-  @ValidateNested()
-  league?: League;
+export interface LeaguesGetLeagueResponse {
+  league?: League | undefined;
 }
-/**
- * object LeaguesGetLeagueLadderPoE1OnlyResponseLadder
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class LeaguesGetLeagueLadderPoE1OnlyResponseLadder {
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  total!: number;
-  @Expose()
-  @IsOptional()
-  @IsString()
-  cached_since?: string;
-  @Expose()
-  @Type(() => LadderEntry)
-  @IsArray()
-  @ValidateNested({ each: true })
-  entries!: LadderEntry[];
-}
+
 /**
  * object LeaguesGetLeagueLadderPoE1OnlyResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-LeaguesGetLeagueLadderPoE1OnlyResponse
  */
-export class LeaguesGetLeagueLadderPoE1OnlyResponse {
-  @Expose()
-  @Type(() => League)
-  @ValidateNested()
-  league!: League;
-  @Expose()
-  @Type(() => LeaguesGetLeagueLadderPoE1OnlyResponseLadder)
-  @ValidateNested()
-  ladder!: LeaguesGetLeagueLadderPoE1OnlyResponseLadder;
+export interface LeaguesGetLeagueLadderPoE1OnlyResponse {
+  league: League;
+  ladder: {
+    total: number;
+    cached_since?: string | undefined;
+    entries: LadderEntry[];
+  };
 }
-/**
- * object LeaguesGetLeagueEventLadderPoE1OnlyResponseLadder
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class LeaguesGetLeagueEventLadderPoE1OnlyResponseLadder {
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  total!: number;
-  @Expose()
-  @Type(() => EventLadderEntry)
-  @IsArray()
-  @ValidateNested({ each: true })
-  entries!: EventLadderEntry[];
-}
+
 /**
  * object LeaguesGetLeagueEventLadderPoE1OnlyResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-LeaguesGetLeagueEventLadderPoE1OnlyResponse
  */
-export class LeaguesGetLeagueEventLadderPoE1OnlyResponse {
-  @Expose()
-  @Type(() => League)
-  @ValidateNested()
-  league!: League;
-  @Expose()
-  @Type(() => LeaguesGetLeagueEventLadderPoE1OnlyResponseLadder)
-  @ValidateNested()
-  ladder!: LeaguesGetLeagueEventLadderPoE1OnlyResponseLadder;
+export interface LeaguesGetLeagueEventLadderPoE1OnlyResponse {
+  league: League;
+  ladder: {
+    total: number;
+    entries: EventLadderEntry[];
+  };
 }
+
 /**
  * object PvPMatchesPoE1OnlyListPvPMatchesResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-PvPMatchesPoE1OnlyListPvPMatchesResponse
  */
-export class PvPMatchesPoE1OnlyListPvPMatchesResponse {
-  @Expose()
-  @Type(() => PvPMatch)
-  @IsArray()
-  @ValidateNested({ each: true })
-  matches!: PvPMatch[];
+export interface PvPMatchesPoE1OnlyListPvPMatchesResponse {
+  matches: PvPMatch[];
 }
+
 /**
  * object PvPMatchesPoE1OnlyGetPvPMatchResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-PvPMatchesPoE1OnlyGetPvPMatchResponse
  */
-export class PvPMatchesPoE1OnlyGetPvPMatchResponse {
-  @Expose()
-  @IsOptional()
-  @Type(() => PvPMatch)
-  @ValidateNested()
-  match?: PvPMatch;
+export interface PvPMatchesPoE1OnlyGetPvPMatchResponse {
+  match?: PvPMatch | undefined;
 }
-/**
- * object PvPMatchesPoE1OnlyGetPvPMatchLadderResponseLadder
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class PvPMatchesPoE1OnlyGetPvPMatchLadderResponseLadder {
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  total!: number;
-  @Expose()
-  @Type(() => PvPLadderTeamEntry)
-  @IsArray()
-  @ValidateNested({ each: true })
-  entries!: PvPLadderTeamEntry[];
-}
+
 /**
  * object PvPMatchesPoE1OnlyGetPvPMatchLadderResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-PvPMatchesPoE1OnlyGetPvPMatchLadderResponse
  */
-export class PvPMatchesPoE1OnlyGetPvPMatchLadderResponse {
-  @Expose()
-  @Type(() => PvPMatch)
-  @ValidateNested()
-  match!: PvPMatch;
-  @Expose()
-  @Type(() => PvPMatchesPoE1OnlyGetPvPMatchLadderResponseLadder)
-  @ValidateNested()
-  ladder!: PvPMatchesPoE1OnlyGetPvPMatchLadderResponseLadder;
+export interface PvPMatchesPoE1OnlyGetPvPMatchLadderResponse {
+  match: PvPMatch;
+  ladder: {
+    total: number;
+    entries: PvPLadderTeamEntry[];
+  };
 }
+
 /**
  * object AccountLeaguesPoE1OnlyGetLeaguesResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-AccountLeaguesPoE1OnlyGetLeaguesResponse
  */
-export class AccountLeaguesPoE1OnlyGetLeaguesResponse {
-  @Expose()
-  @Type(() => League)
-  @IsArray()
-  @ValidateNested({ each: true })
-  leagues!: League[];
+export interface AccountLeaguesPoE1OnlyGetLeaguesResponse {
+  leagues: League[];
 }
+
 /**
  * object AccountCharactersListCharactersResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-AccountCharactersListCharactersResponse
  */
-export class AccountCharactersListCharactersResponse {
-  @Expose()
-  @Type(() => Character)
-  @IsArray()
-  @ValidateNested({ each: true })
-  characters!: Character[];
+export interface AccountCharactersListCharactersResponse {
+  characters: Character[];
 }
+
 /**
  * object AccountCharactersGetCharacterResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-AccountCharactersGetCharacterResponse
  */
-export class AccountCharactersGetCharacterResponse {
-  @Expose()
-  @IsOptional()
-  @Type(() => Character)
-  @ValidateNested()
-  character?: Character;
+export interface AccountCharactersGetCharacterResponse {
+  character?: Character | undefined;
 }
+
 /**
  * object AccountStashesPoE1OnlyListStashesResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-AccountStashesPoE1OnlyListStashesResponse
  */
-export class AccountStashesPoE1OnlyListStashesResponse {
-  @Expose()
-  @Type(() => StashTab)
-  @IsArray()
-  @ValidateNested({ each: true })
-  stashes!: StashTab[];
+export interface AccountStashesPoE1OnlyListStashesResponse {
+  stashes: StashTab[];
 }
+
 /**
  * object AccountStashesPoE1OnlyGetStashResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-AccountStashesPoE1OnlyGetStashResponse
  */
-export class AccountStashesPoE1OnlyGetStashResponse {
-  @Expose()
-  @IsOptional()
-  @Type(() => StashTab)
-  @ValidateNested()
-  stash?: StashTab;
+export interface AccountStashesPoE1OnlyGetStashResponse {
+  stash?: StashTab | undefined;
 }
+
 /**
  * object LeagueAccountsPoE1OnlyGetLeagueAccountResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-LeagueAccountsPoE1OnlyGetLeagueAccountResponse
  */
-export class LeagueAccountsPoE1OnlyGetLeagueAccountResponse {
-  @Expose()
-  @Type(() => LeagueAccount)
-  @ValidateNested()
-  league_account!: LeagueAccount;
+export interface LeagueAccountsPoE1OnlyGetLeagueAccountResponse {
+  league_account: LeagueAccount;
 }
+
 /**
  * object GuildStashesPoE1OnlyListGuildStashesResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-GuildStashesPoE1OnlyListGuildStashesResponse
  */
-export class GuildStashesPoE1OnlyListGuildStashesResponse {
-  @Expose()
-  @Type(() => StashTab)
-  @IsArray()
-  @ValidateNested({ each: true })
-  stashes!: StashTab[];
+export interface GuildStashesPoE1OnlyListGuildStashesResponse {
+  stashes: StashTab[];
 }
+
 /**
  * object GuildStashesPoE1OnlyGetGuildStashResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-GuildStashesPoE1OnlyGetGuildStashResponse
  */
-export class GuildStashesPoE1OnlyGetGuildStashResponse {
-  @Expose()
-  @IsOptional()
-  @Type(() => StashTab)
-  @ValidateNested()
-  stash?: StashTab;
+export interface GuildStashesPoE1OnlyGetGuildStashResponse {
+  stash?: StashTab | undefined;
 }
+
 /**
  * object PublicStashesPoE1OnlyGetPublicStashesResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-PublicStashesPoE1OnlyGetPublicStashesResponse
  */
-export class PublicStashesPoE1OnlyGetPublicStashesResponse {
-  @Expose()
-  @IsString()
-  next_change_id!: string;
-  @Expose()
-  @Type(() => PublicStashChange)
-  @IsArray()
-  @ValidateNested({ each: true })
-  stashes!: PublicStashChange[];
+export interface PublicStashesPoE1OnlyGetPublicStashesResponse {
+  next_change_id: string;
+  stashes: PublicStashChange[];
 }
-/**
- * object CurrencyExchangeGetExchangeMarketsResponseMarkets
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
- */
-export class CurrencyExchangeGetExchangeMarketsResponseMarkets {
-  @Expose()
-  @IsString()
-  league!: string;
-  @Expose()
-  @IsString()
-  market_id!: string;
-  @Expose()
-  @IsDictionary([IsInt(), Max(0xFFFFFFFF), Min(0)])
-  @Type(() => Dictionary<unknown>)
-  volume_traded!: Dictionary<number>;
-  @Expose()
-  @IsDictionary([IsInt(), Max(0xFFFFFFFF), Min(0)])
-  @Type(() => Dictionary<unknown>)
-  lowest_stock!: Dictionary<number>;
-  @Expose()
-  @IsDictionary([IsInt(), Max(0xFFFFFFFF), Min(0)])
-  @Type(() => Dictionary<unknown>)
-  highest_stock!: Dictionary<number>;
-  @Expose()
-  @IsDictionary([IsInt(), Max(0xFFFFFFFF), Min(0)])
-  @Type(() => Dictionary<unknown>)
-  lowest_ratio!: Dictionary<number>;
-  @Expose()
-  @IsDictionary([IsInt(), Max(0xFFFFFFFF), Min(0)])
-  @Type(() => Dictionary<unknown>)
-  highest_ratio!: Dictionary<number>;
-}
+
 /**
  * object CurrencyExchangeGetExchangeMarketsResponse
- * Generated from https://www.pathofexile.com/developer/docs/reference#types
+ * Generated from https://www.pathofexile.com/developer/docs/reference#type-CurrencyExchangeGetExchangeMarketsResponse
  */
-export class CurrencyExchangeGetExchangeMarketsResponse {
-  @Expose()
-  @IsInt()
-  @Max(0xFFFFFFFF)
-  @Min(0)
-  next_change_id!: number;
-  @Expose()
-  @Type(() => CurrencyExchangeGetExchangeMarketsResponseMarkets)
-  @IsArray()
-  @ValidateNested({ each: true })
-  markets!: CurrencyExchangeGetExchangeMarketsResponseMarkets[];
+export interface CurrencyExchangeGetExchangeMarketsResponse {
+  next_change_id: number;
+  markets: {
+    league: string;
+    market_id: string;
+    volume_traded: Record<string, number>;
+    lowest_stock: Record<string, number>;
+    highest_stock: Record<string, number>;
+    lowest_ratio: Record<string, number>;
+    highest_ratio: Record<string, number>;
+  }[];
 }
+
+export const LeagueRule: z.ZodType<LeagueRule> = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+})
+export const League: z.ZodType<League> = z.object({
+  id: z.string(),
+  realm: z.string().optional(),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  category: z.object({
+    id: z.string(),
+    current: z.boolean().optional(),
+  }).optional(),
+  rules: z.array(LeagueRule).optional(),
+  registerAt: z.string().optional(),
+  event: z.boolean().optional(),
+  goal: z.string().optional(),
+  url: z.string().optional(),
+  startAt: z.string().optional(),
+  endAt: z.string().optional(),
+  timedEvent: z.boolean().optional(),
+  scoreEvent: z.boolean().optional(),
+  delveEvent: z.boolean().optional(),
+  ancestorEvent: z.boolean().optional(),
+  leagueEvent: z.boolean().optional(),
+})
+export const Guild: z.ZodType<Guild> = z.object({
+  id: z.uint32(),
+  name: z.string(),
+  tag: z.string(),
+})
+export const Account: z.ZodType<Account> = z.object({
+  name: z.string(),
+  realm: z.string().optional(),
+  guild: Guild.optional(),
+  challenges: z.object({
+    set: z.string(),
+    completed: z.uint32(),
+    max: z.uint32(),
+  }).optional(),
+  twitch: z.object({
+    name: z.string(),
+    stream: z.object({
+      name: z.string(),
+      image: z.string(),
+      status: z.string(),
+    }).optional(),
+  }).optional(),
+})
+export const LadderEntry: z.ZodType<LadderEntry> = z.object({
+  rank: z.uint32(),
+  dead: z.boolean().optional(),
+  retired: z.boolean().optional(),
+  ineligible: z.boolean().optional(),
+  public: z.boolean().optional(),
+  character: z.object({
+    id: z.string(),
+    name: z.string(),
+    level: z.uint32(),
+    class: z.string(),
+    time: z.uint32().optional(),
+    score: z.uint32().optional(),
+    progress: z.record(z.string(), z.any()).optional(),
+    experience: z.uint32().optional(),
+    depth: z.object({
+      default: z.uint32().optional(),
+      solo: z.uint32().optional(),
+    }).optional(),
+  }),
+  account: Account.optional(),
+})
+export const EventLadderEntry: z.ZodType<EventLadderEntry> = z.object({
+  rank: z.uint32(),
+  ineligible: z.boolean().optional(),
+  time: z.uint32().optional(),
+  private_league: z.object({
+    name: z.string(),
+    url: z.string(),
+  }),
+})
+export const PvPMatch: z.ZodType<PvPMatch> = z.object({
+  id: z.string(),
+  realm: z.string().optional(),
+  startAt: z.string().optional(),
+  endAt: z.string().optional(),
+  url: z.string().optional(),
+  description: z.string(),
+  glickoRatings: z.boolean(),
+  pvp: z.boolean(),
+  style: z.string(),
+  registerAt: z.string().optional(),
+  complete: z.boolean().optional(),
+  upcoming: z.boolean().optional(),
+  inProgress: z.boolean().optional(),
+})
+export const PvPLadderTeamMember: z.ZodType<PvPLadderTeamMember> = z.object({
+  account: Account,
+  character: z.object({
+    id: z.string(),
+    name: z.string(),
+    level: z.uint32(),
+    class: z.string(),
+    league: z.string().optional(),
+    score: z.uint32().optional(),
+  }),
+  public: z.boolean().optional(),
+})
+export const PvPLadderTeamEntry: z.ZodType<PvPLadderTeamEntry> = z.object({
+  rank: z.uint32(),
+  rating: z.uint32().optional(),
+  points: z.uint32().optional(),
+  games_played: z.uint32().optional(),
+  cumulative_opponent_points: z.uint32().optional(),
+  last_game_time: z.string().optional(),
+  members: z.array(PvPLadderTeamMember),
+})
+export const ItemSocket: z.ZodType<ItemSocket> = z.object({
+  group: z.uint32(),
+  attr: z.string().optional(),
+  sColour: z.string().optional(),
+  type: z.string().optional(),
+  item: z.string().optional(),
+})
+export const DisplayMode = z.enum(DisplayModeEnum);
+export const ItemProperty: z.ZodType<ItemProperty> = z.object({
+  name: z.string(),
+  values: z.array(z.tuple([
+    z.string(),
+    z.uint32()
+  ])),
+  displayMode: DisplayMode.optional(),
+  progress: z.float64().optional(),
+  type: z.uint32().optional(),
+  suffix: z.string().optional(),
+  icon: z.string().optional(),
+})
+export const GemPage: z.ZodType<GemPage> = z.object({
+  /**
+   * 
+   */
+  skillName: z.string().optional(),
+  /**
+   * 
+   */
+  description: z.string().optional(),
+  /**
+   * 
+   */
+  properties: z.array(ItemProperty).optional(),
+  /**
+   * 
+   */
+  stats: z.array(z.string()).optional(),
+})
+export const GemTab: z.ZodType<GemTab> = z.object({
+  /**
+   * 
+   */
+  name: z.string().optional(),
+  /**
+   * 
+   */
+  pages: z.array(GemPage),
+})
+export const CrucibleNode: z.ZodType<CrucibleNode> = z.object({
+  /**
+   * mod hash
+   */
+  skill: z.uint32().optional(),
+  /**
+   * mod tier
+   */
+  tier: z.uint32().optional(),
+  /**
+   * 
+   */
+  icon: z.string().optional(),
+  /**
+   * always true if present
+   */
+  allocated: z.boolean().optional(),
+  /**
+   * always true if present
+   */
+  isNotable: z.boolean().optional(),
+  /**
+   * always true if present
+   */
+  isReward: z.boolean().optional(),
+  /**
+   * stat descriptions
+   */
+  stats: z.array(z.string()).optional(),
+  /**
+   * 
+   */
+  reminderText: z.array(z.string()).optional(),
+  /**
+   * the column this node occupies
+   */
+  orbit: z.uint32().optional(),
+  /**
+   * the node's position within the column
+   */
+  orbitIndex: z.uint32().optional(),
+  /**
+   * node identifiers of nodes this one connects to
+   */
+  out: z.array(z.string()),
+  /**
+   * node identifiers of nodes connected to this one
+   */
+  in: z.array(z.string()),
+})
+export const FrameType = z.enum(FrameTypeEnum);
+export const Item: z.ZodType<Item> = z.object({
+  realm: z.string().optional(),
+  verified: z.boolean(),
+  w: z.uint32(),
+  h: z.uint32(),
+  icon: z.string(),
+  support: z.boolean().optional(),
+  stackSize: z.int32().optional(),
+  maxStackSize: z.int32().optional(),
+  stackSizeText: z.string().optional(),
+  iconTierText: z.string().optional(),
+  league: z.string().optional(),
+  id: z.string().optional(),
+  gemSockets: z.array(z.string()).optional(),
+  influences: z.record(z.string(), z.any()).optional(),
+  elder: z.boolean().optional(),
+  shaper: z.boolean().optional(),
+  searing: z.boolean().optional(),
+  tangled: z.boolean().optional(),
+  memoryItem: z.boolean().optional(),
+  mutated: z.boolean().optional(),
+  abyssJewel: z.boolean().optional(),
+  delve: z.boolean().optional(),
+  fractured: z.boolean().optional(),
+  synthesised: z.boolean().optional(),
+  sockets: z.array(ItemSocket).optional(),
+  socketedItems: z.array(z.lazy(() => Item)).optional(),
+  name: z.string(),
+  typeLine: z.string(),
+  baseType: z.string(),
+  rarity: z.string().optional(),
+  identified: z.boolean(),
+  itemLevel: z.int32().optional(),
+  unidentifiedTier: z.int32().optional(),
+  ilvl: z.int32(),
+  note: z.string().optional(),
+  forum_note: z.string().optional(),
+  lockedToCharacter: z.boolean().optional(),
+  lockedToAccount: z.boolean().optional(),
+  duplicated: z.boolean().optional(),
+  split: z.boolean().optional(),
+  corrupted: z.boolean().optional(),
+  doubleCorrupted: z.boolean().optional(),
+  sanctified: z.boolean().optional(),
+  unmodifiable: z.boolean().optional(),
+  unmodifiableExceptChaos: z.boolean().optional(),
+  cisRaceReward: z.boolean().optional(),
+  seaRaceReward: z.boolean().optional(),
+  thRaceReward: z.boolean().optional(),
+  properties: z.array(ItemProperty).optional(),
+  notableProperties: z.array(ItemProperty).optional(),
+  requirements: z.array(ItemProperty).optional(),
+  weaponRequirements: z.array(ItemProperty).optional(),
+  supportGemRequirements: z.array(ItemProperty).optional(),
+  additionalProperties: z.array(ItemProperty).optional(),
+  nextLevelRequirements: z.array(ItemProperty).optional(),
+  grantedSkills: z.array(ItemProperty).optional(),
+  talismanTier: z.int32().optional(),
+  rewards: z.array(z.object({
+    label: z.string(),
+    rewards: z.record(z.string(), z.int32()),
+  })).optional(),
+  secDescrText: z.string().optional(),
+  utilityMods: z.array(z.string()).optional(),
+  logbookMods: z.array(z.object({
+    name: z.string(),
+    faction: z.object({
+      id: z.string(),
+      name: z.string(),
+    }),
+    mods: z.array(z.string()),
+  })).optional(),
+  enchantMods: z.array(z.string()).optional(),
+  runeMods: z.array(z.string()).optional(),
+  scourgeMods: z.array(z.string()).optional(),
+  implicitMods: z.array(z.string()).optional(),
+  ultimatumMods: z.array(z.object({
+    type: z.string(),
+    tier: z.uint32(),
+  })).optional(),
+  explicitMods: z.array(z.string()).optional(),
+  bondedMods: z.array(z.string()).optional(),
+  craftedMods: z.array(z.string()).optional(),
+  fracturedMods: z.array(z.string()).optional(),
+  mutatedMods: z.array(z.string()).optional(),
+  crucibleMods: z.array(z.string()).optional(),
+  cosmeticMods: z.array(z.string()).optional(),
+  veiledMods: z.array(z.string()).optional(),
+  veiled: z.boolean().optional(),
+  desecratedMods: z.array(z.string()).optional(),
+  desecrated: z.boolean().optional(),
+  gemTabs: z.array(GemTab).optional(),
+  gemBackground: z.string().optional(),
+  gemSkill: z.string().optional(),
+  descrText: z.string().optional(),
+  flavourText: z.array(z.string()).optional(),
+  flavourTextNote: z.string().optional(),
+  prophecyText: z.string().optional(),
+  isRelic: z.boolean().optional(),
+  foilVariation: z.int32().optional(),
+  replica: z.boolean().optional(),
+  foreseeing: z.boolean().optional(),
+  incubatedItem: z.object({
+    name: z.string(),
+    level: z.uint32(),
+    progress: z.uint32(),
+    total: z.uint32(),
+  }).optional(),
+  scourged: z.object({
+    tier: z.uint32(),
+    level: z.uint32().optional(),
+    progress: z.uint32().optional(),
+    total: z.uint32().optional(),
+  }).optional(),
+  crucible: z.object({
+    layout: z.string(),
+    nodes: z.record(z.string(), CrucibleNode),
+  }).optional(),
+  ruthless: z.boolean().optional(),
+  frameType: FrameType.optional(),
+  artFilename: z.string().optional(),
+  hybrid: z.object({
+    isVaalGem: z.boolean().optional(),
+    baseTypeName: z.string(),
+    properties: z.array(ItemProperty).optional(),
+    explicitMods: z.array(z.string()).optional(),
+    secDescrText: z.string().optional(),
+  }).optional(),
+  extended: z.object({
+    prefixes: z.uint32().optional(),
+    suffixes: z.uint32().optional(),
+  }).optional(),
+  x: z.uint32().optional(),
+  y: z.uint32().optional(),
+  inventoryId: z.string().optional(),
+  socket: z.uint32().optional(),
+  colour: z.string().optional(),
+})
+export const PublicStashChange: z.ZodType<PublicStashChange> = z.object({
+  id: z.string(),
+  public: z.boolean(),
+  accountName: z.string().optional(),
+  stash: z.string().optional(),
+  stashType: z.string(),
+  league: z.string().optional(),
+  items: z.array(Item),
+})
+export const PassiveNode: z.ZodType<PassiveNode> = z.object({
+  skill: z.uint32().optional(),
+  name: z.string().optional(),
+  icon: z.string().optional(),
+  isKeystone: z.boolean().optional(),
+  isNotable: z.boolean().optional(),
+  isMastery: z.boolean().optional(),
+  inactiveIcon: z.string().optional(),
+  activeIcon: z.string().optional(),
+  activeEffectImage: z.string().optional(),
+  masteryEffects: z.array(z.object({
+    effect: z.uint32(),
+    stats: z.array(z.string()),
+    reminderText: z.array(z.string()).optional(),
+  })).optional(),
+  isBlighted: z.boolean().optional(),
+  isTattoo: z.boolean().optional(),
+  isProxy: z.boolean().optional(),
+  isJewelSocket: z.boolean().optional(),
+  expansionJewel: z.object({
+    size: z.uint32().optional(),
+    index: z.uint32().optional(),
+    proxy: z.uint32().optional(),
+    parent: z.uint32().optional(),
+  }).optional(),
+  recipe: z.array(z.string()).optional(),
+  grantedStrength: z.uint32().optional(),
+  grantedDexterity: z.uint32().optional(),
+  grantedIntelligence: z.uint32().optional(),
+  ascendancyName: z.string().optional(),
+  isAscendancyStart: z.boolean().optional(),
+  isMultipleChoice: z.boolean().optional(),
+  isMultipleChoiceOption: z.boolean().optional(),
+  grantedPassivePoints: z.uint32().optional(),
+  stats: z.array(z.string()).optional(),
+  reminderText: z.array(z.string()).optional(),
+  flavourText: z.array(z.string()).optional(),
+  classStartIndex: z.uint32().optional(),
+  group: z.string().optional(),
+  orbit: z.uint32().optional(),
+  orbitIndex: z.uint32().optional(),
+  out: z.array(z.string()),
+  in: z.array(z.string()),
+})
+export const PassiveGroup: z.ZodType<PassiveGroup> = z.object({
+  x: z.float32(),
+  y: z.float32(),
+  orbits: z.array(z.uint32()),
+  isProxy: z.boolean().optional(),
+  proxy: z.string().optional(),
+  nodes: z.array(z.string()),
+})
+export const ItemJewelData: z.ZodType<ItemJewelData> = z.object({
+  type: z.string(),
+  radius: z.uint32().optional(),
+  radiusMin: z.uint32().optional(),
+  radiusVisual: z.string().optional(),
+  subgraph: z.object({
+    groups: z.record(z.string(), PassiveGroup),
+    nodes: z.record(z.string(), PassiveNode),
+  }).optional(),
+})
+export const Character: z.ZodType<Character> = z.object({
+  id: z.string(),
+  name: z.string(),
+  realm: z.string(),
+  class: z.string(),
+  league: z.string().optional(),
+  level: z.uint32(),
+  experience: z.uint32(),
+  ruthless: z.boolean().optional(),
+  expired: z.boolean().optional(),
+  deleted: z.boolean().optional(),
+  current: z.boolean().optional(),
+  equipment: z.array(Item).optional(),
+  skills: z.array(Item).optional(),
+  inventory: z.array(Item).optional(),
+  rucksack: z.array(Item).optional(),
+  jewels: z.array(Item).optional(),
+  passives: z.object({
+    hashes: z.array(z.uint32()),
+    hashes_ex: z.array(z.uint32()),
+    mastery_effects: z.record(z.string(), z.int32()),
+    specialisations: z.record(z.string(), z.array(z.int32())),
+    skill_overrides: z.record(z.string(), PassiveNode),
+    bandit_choice: z.string().optional(),
+    pantheon_major: z.string().optional(),
+    pantheon_minor: z.string().optional(),
+    jewel_data: z.record(z.string(), ItemJewelData),
+    quest_stats: z.array(z.string()).optional(),
+    alternate_ascendancy: z.string().optional(),
+  }).optional(),
+  metadata: z.object({
+    version: z.string().optional(),
+  }).optional(),
+})
+export const StashTab: z.ZodType<StashTab> = z.object({
+  id: z.string(),
+  parent: z.string().optional(),
+  folder: z.string().optional(),
+  name: z.string(),
+  type: z.string(),
+  index: z.uint32().optional(),
+  metadata: z.object({
+    public: z.boolean().optional(),
+    folder: z.boolean().optional(),
+    colour: z.string().optional(),
+    map: z.record(z.string(), z.any()).optional(),
+  }),
+  children: z.array(z.lazy(() => StashTab)).optional(),
+  items: z.array(Item).optional(),
+})
+export const LeagueAccount: z.ZodType<LeagueAccount> = z.object({
+  atlas_passives: z.object({
+    hashes: z.array(z.uint32()),
+  }).optional(),
+  atlas_passive_trees: z.array(z.object({
+    name: z.string(),
+    hashes: z.array(z.uint32()),
+  })),
+})
+export const ItemFilter: z.ZodType<ItemFilter> = z.object({
+  id: z.string(),
+  filter_name: z.string(),
+  realm: z.string(),
+  description: z.string(),
+  version: z.string(),
+  type: z.string(),
+  public: z.boolean().optional(),
+  filter: z.string().optional(),
+  validation: z.object({
+    valid: z.boolean(),
+    version: z.string().optional(),
+    validated: z.string().optional(),
+  }).optional(),
+})
+export const AccountProfileGetProfileResponse: z.ZodType<AccountProfileGetProfileResponse> = z.object({
+  uuid: z.string(),
+  name: z.string(),
+  locale: z.string().optional(),
+  twitch: z.object({
+    name: z.string(),
+  }).optional(),
+})
+export const AccountItemFiltersGetItemFiltersResponse: z.ZodType<AccountItemFiltersGetItemFiltersResponse> = z.object({
+  filters: z.array(ItemFilter),
+})
+export const AccountItemFiltersGetItemFilterResponse: z.ZodType<AccountItemFiltersGetItemFilterResponse> = z.object({
+  filter: ItemFilter,
+})
+export const AccountItemFiltersCreateItemFilterResponse: z.ZodType<AccountItemFiltersCreateItemFilterResponse> = z.object({
+  filter: ItemFilter,
+})
+export const AccountItemFiltersUpdateItemFilterResponse: z.ZodType<AccountItemFiltersUpdateItemFilterResponse> = z.object({
+  filter: ItemFilter,
+  error: ApiError.optional(),
+})
+export const LeaguesListLeaguesResponse: z.ZodType<LeaguesListLeaguesResponse> = z.object({
+  leagues: z.array(League),
+})
+export const LeaguesGetLeagueResponse: z.ZodType<LeaguesGetLeagueResponse> = z.object({
+  league: League.optional(),
+})
+export const LeaguesGetLeagueLadderPoE1OnlyResponse: z.ZodType<LeaguesGetLeagueLadderPoE1OnlyResponse> = z.object({
+  league: League,
+  ladder: z.object({
+    total: z.uint32(),
+    cached_since: z.string().optional(),
+    entries: z.array(LadderEntry),
+  }),
+})
+export const LeaguesGetLeagueEventLadderPoE1OnlyResponse: z.ZodType<LeaguesGetLeagueEventLadderPoE1OnlyResponse> = z.object({
+  league: League,
+  ladder: z.object({
+    total: z.uint32(),
+    entries: z.array(EventLadderEntry),
+  }),
+})
+export const PvPMatchesPoE1OnlyListPvPMatchesResponse: z.ZodType<PvPMatchesPoE1OnlyListPvPMatchesResponse> = z.object({
+  matches: z.array(PvPMatch),
+})
+export const PvPMatchesPoE1OnlyGetPvPMatchResponse: z.ZodType<PvPMatchesPoE1OnlyGetPvPMatchResponse> = z.object({
+  match: PvPMatch.optional(),
+})
+export const PvPMatchesPoE1OnlyGetPvPMatchLadderResponse: z.ZodType<PvPMatchesPoE1OnlyGetPvPMatchLadderResponse> = z.object({
+  match: PvPMatch,
+  ladder: z.object({
+    total: z.uint32(),
+    entries: z.array(PvPLadderTeamEntry),
+  }),
+})
+export const AccountLeaguesPoE1OnlyGetLeaguesResponse: z.ZodType<AccountLeaguesPoE1OnlyGetLeaguesResponse> = z.object({
+  leagues: z.array(League),
+})
+export const AccountCharactersListCharactersResponse: z.ZodType<AccountCharactersListCharactersResponse> = z.object({
+  characters: z.array(Character),
+})
+export const AccountCharactersGetCharacterResponse: z.ZodType<AccountCharactersGetCharacterResponse> = z.object({
+  character: Character.optional(),
+})
+export const AccountStashesPoE1OnlyListStashesResponse: z.ZodType<AccountStashesPoE1OnlyListStashesResponse> = z.object({
+  stashes: z.array(StashTab),
+})
+export const AccountStashesPoE1OnlyGetStashResponse: z.ZodType<AccountStashesPoE1OnlyGetStashResponse> = z.object({
+  stash: StashTab.optional(),
+})
+export const LeagueAccountsPoE1OnlyGetLeagueAccountResponse: z.ZodType<LeagueAccountsPoE1OnlyGetLeagueAccountResponse> = z.object({
+  league_account: LeagueAccount,
+})
+export const GuildStashesPoE1OnlyListGuildStashesResponse: z.ZodType<GuildStashesPoE1OnlyListGuildStashesResponse> = z.object({
+  stashes: z.array(StashTab),
+})
+export const GuildStashesPoE1OnlyGetGuildStashResponse: z.ZodType<GuildStashesPoE1OnlyGetGuildStashResponse> = z.object({
+  stash: StashTab.optional(),
+})
+export const PublicStashesPoE1OnlyGetPublicStashesResponse: z.ZodType<PublicStashesPoE1OnlyGetPublicStashesResponse> = z.object({
+  next_change_id: z.string(),
+  stashes: z.array(PublicStashChange),
+})
+export const CurrencyExchangeGetExchangeMarketsResponse: z.ZodType<CurrencyExchangeGetExchangeMarketsResponse> = z.object({
+  next_change_id: z.uint32(),
+  markets: z.array(z.object({
+    league: z.string(),
+    market_id: z.string(),
+    volume_traded: z.record(z.string(), z.uint32()),
+    lowest_stock: z.record(z.string(), z.uint32()),
+    highest_stock: z.record(z.string(), z.uint32()),
+    lowest_ratio: z.record(z.string(), z.uint32()),
+    highest_ratio: z.record(z.string(), z.uint32()),
+  })),
+})
 
 
 // #endregion Type Information

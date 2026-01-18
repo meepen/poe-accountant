@@ -13,7 +13,7 @@ module "project" {
   resource_urns = [
     module.valkey.cluster_urn,
     module.postgres.cluster_urn,
-    module.ninja.app_urn
+    module.apps.app_urn
   ]
 }
 
@@ -51,30 +51,58 @@ module "registry" {
   registry_subscription_tier = var.registry_subscription_tier
 }
 
-module "ninja" {
+module "apps" {
   source = "./digitalocean/app"
 
   app_name = "${var.project_name}-ninja"
   region   = var.region
   project_id = module.project.project_id
+
+  registry_name = module.registry.registry_name
   
   postgres_cluster_name = module.postgres.postgres_name
 
   domain_name = ""
   
-  image_repository = "@poe-accountant/ninja" 
-  image_tag        = "latest"
-  
-  environment_variables = {
-      "REDIS_HOST"        = module.valkey.valkey_host
-      "REDIS_PORT"        = module.valkey.valkey_port
-      "REDIS_PASSWORD"    = module.valkey.valkey_password
-      "DATABASE_HOST"     = "$${db.HOSTNAME}"
-      "DATABASE_PORT"     = "$${db.PORT}"
-      "DATABASE_NAME"     = "$${db.DATABASE}"
-      "DATABASE_USERNAME" = "$${db.USERNAME}"
-      "DATABASE_PASSWORD" = "$${db.PASSWORD}"
+  workers = {
+    "ggg-processor" = {
+      image_repository = "ggg-processor" 
+      image_tag        = "latest"
+      registry_type    = "DOCR"
+      env = {
+          "REDIS_HOST"        = module.valkey.valkey_host
+          "REDIS_PORT"        = module.valkey.valkey_port
+          "REDIS_PASSWORD"    = module.valkey.valkey_password
+          "DATABASE_HOST"     = "$${db.HOSTNAME}"
+          "DATABASE_PORT"     = "$${db.PORT}"
+          "DATABASE_NAME"     = "$${db.DATABASE}"
+          "DATABASE_USERNAME" = "$${db.USERNAME}"
+          "DATABASE_PASSWORD" = "$${db.PASSWORD}"
+      }
+    }
   }
+
+  services = {
+    "valkey-proxy" = {
+      image_repository = "valkey-proxy"
+      image_tag        = "latest"
+      registry_type    = "DOCR"
+      http_port        = 80
+      env = {
+        "SRH_MODE"              = "env"
+        "SRH_PORT"              = "80"
+        "SRH_TOKEN"             = module.valkey.valkey_password
+        "SRH_CONNECTION_STRING" = "rediss://:${module.valkey.valkey_password}@${module.valkey.valkey_host}:${module.valkey.valkey_port}?ssl=true"
+      }
+    }
+  }
+
+  ingress_rules = [
+    {
+      component_name = "valkey-proxy"
+      path_prefix    = "/"
+    }
+  ]
 }
 
 module "frontend" {
@@ -111,6 +139,8 @@ module "api" {
   
   environment_variables = {
     DATABASE_URL = module.postgres.postgres_uri
+    VALKEY_URL   = module.apps.live_url
+    VALKEY_TOKEN = module.valkey.valkey_password
   }
 }
 

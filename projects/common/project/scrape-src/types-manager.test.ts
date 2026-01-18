@@ -1,12 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { ScrapeTypesManager } from "./types-manager.js";
 import ts from "typescript";
-import { plainToInstance } from "class-transformer";
-import { validate } from "class-validator";
+import { ScrapeTypesManager } from "./types-manager.js";
 import { pathToFileURL } from "node:url";
 import { basename, join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { cp, mkdir, rm, writeFile } from "node:fs/promises";
+import { z } from "zod";
 
 function collectCode(code: Generator<string>): string {
   const result: string[] = [];
@@ -76,16 +75,17 @@ describe("ScrapeTypesManager", () => {
       },
     ]);
 
-    const module = await importTypescriptCode(
-      collectCode(manager.generateTypeScriptTypes()),
-    );
+    const module = await importTypescriptCode<{
+      TestEnum: Record<string, string | number>;
+      Test: z.ZodType<any>;
+    }>(collectCode(manager.generateTypeScriptTypes()));
 
+    expect(module.TestEnum.One).toBe(1);
+    expect(module.TestEnum.Two).toBe(2);
     expect(module.Test).toBeDefined();
-    expect(module.Test.One).toBe(1);
-    expect(module.Test.Two).toBe(2);
   });
 
-  it("should register a class", async () => {
+  it("should register a schema", async () => {
     const manager = new ScrapeTypesManager([
       {
         type: "object",
@@ -103,24 +103,24 @@ describe("ScrapeTypesManager", () => {
       },
     ]);
 
-    const module = await importTypescriptCode(
-      collectCode(manager.generateTypeScriptTypes()),
-    );
-
-    expect(module.Test).toBeDefined();
-    const obj: any = plainToInstance(module.Test, {
+    const data = {
       prop1: "test",
       prop2: 123,
-    });
-    expect(obj).toBeInstanceOf(module.Test);
-    expect(obj.prop1).toBe("test");
-    expect(obj.prop2).toBe(123);
+    };
 
-    const errors = await validate(obj);
-    expect(errors).toStrictEqual([]);
+    const module = await importTypescriptCode<{
+      Test: z.ZodType<{ prop1: string; prop2: number }>;
+    }>(collectCode(manager.generateTypeScriptTypes()));
+
+    const result = module.Test.safeParse(data);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.prop1).toBe("test");
+      expect(result.data.prop2).toBe(123);
+    }
   });
 
-  it("should validate a class with dictionary properly", async () => {
+  it("should validate a schema with dictionary properly", async () => {
     const manager = new ScrapeTypesManager([
       {
         type: "object",
@@ -138,27 +138,25 @@ describe("ScrapeTypesManager", () => {
       },
     ]);
 
-    const module = await importTypescriptCode(
-      collectCode(manager.generateTypeScriptTypes()),
-    );
+    const module = await importTypescriptCode<{
+      Test: z.ZodType<{ prop1: Record<string, string>; prop2: number }>;
+    }>(collectCode(manager.generateTypeScriptTypes()));
 
-    expect(module.Test).toBeDefined();
-    const obj: any = plainToInstance(module.Test, {
-      prop1: {
-        test: "test",
-      },
+    const data = {
+      prop1: { test: "test" },
       prop2: 123,
-    });
-    expect(obj).toBeInstanceOf(module.Test);
-    expect(obj.prop1.constructor.name).toBe("Dictionary");
-    expect(obj.prop1.test).toBe("test");
-    expect(obj.prop2).toBe(123);
+    };
 
-    const errors = await validate(obj);
-    expect(errors).toStrictEqual([]);
+    const result = module.Test.safeParse(data);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.prop1).toBeInstanceOf(Object);
+      expect(result.data.prop1.test).toBe("test");
+      expect(result.data.prop2).toBe(123);
+    }
   });
 
-  it("should fail to validate a class with dictionary with incorrect types", async () => {
+  it("should fail to validate a schema with dictionary with incorrect types", async () => {
     const manager = new ScrapeTypesManager([
       {
         type: "object",
@@ -175,38 +173,31 @@ describe("ScrapeTypesManager", () => {
         ],
       },
     ]);
-    const module = await importTypescriptCode(
+    const module = await importTypescriptCode<{ Test: z.ZodType<any> }>(
       collectCode(manager.generateTypeScriptTypes()),
     );
-    expect(module.Test).toBeDefined();
-    const obj: any = plainToInstance(module.Test, {
+
+    const data1 = {
       prop1: {
         test: 123, // Incorrect type
       },
       prop2: 123,
-    });
-    expect(obj).toBeInstanceOf(module.Test);
-    expect(obj.prop1.constructor.name).toBe("Dictionary");
-    expect(obj.prop1.test).toBe(123);
-    expect(obj.prop2).toBe(123);
-    const errors = await validate(obj);
-    expect(errors.length).toBeGreaterThan(0);
+    };
 
-    const obj2: any = plainToInstance(module.Test, {
+    const result1 = module.Test.safeParse(data1);
+    expect(result1.success).toBe(false);
+
+    const data2 = {
       prop1: {
         test: [123], // Incorrect type
       },
       prop2: 123,
-    });
-    expect(obj2).toBeInstanceOf(module.Test);
-    expect(obj2.prop1.constructor.name).toBe("Dictionary");
-    expect(obj2.prop1.test).toEqual([123]);
-    expect(obj2.prop2).toBe(123);
-    const errors2 = await validate(obj2);
-    expect(errors2.length).toBeGreaterThan(0);
+    };
+    const result2 = module.Test.safeParse(data2);
+    expect(result2.success).toBe(false);
   });
 
-  it("should validate a class with dictionary of arrays properly", async () => {
+  it("should validate a schema with dictionary of arrays properly", async () => {
     const manager = new ScrapeTypesManager([
       {
         type: "object",
@@ -224,27 +215,26 @@ describe("ScrapeTypesManager", () => {
       },
     ]);
 
-    const module = await importTypescriptCode(
-      collectCode(manager.generateTypeScriptTypes()),
-    );
+    const module = await importTypescriptCode<{
+      Test: z.ZodType<{ prop1: Record<string, string[]>; prop2: number }>;
+    }>(collectCode(manager.generateTypeScriptTypes()));
 
-    expect(module.Test).toBeDefined();
-    const obj: any = plainToInstance(module.Test, {
+    const data = {
       prop1: {
         test: ["test1", "test2"],
       },
       prop2: 123,
-    });
-    expect(obj).toBeInstanceOf(module.Test);
-    expect(obj.prop1.constructor.name).toBe("Dictionary");
-    expect(obj.prop1.test).toEqual(["test1", "test2"]);
-    expect(obj.prop2).toBe(123);
+    };
 
-    const errors = await validate(obj);
-    expect(errors).toStrictEqual([]);
+    const result = module.Test.safeParse(data);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.prop1.test).toEqual(["test1", "test2"]);
+      expect(result.data.prop2).toBe(123);
+    }
   });
 
-  it("should fail to validate a class with dictionary of arrays with incorrect types", async () => {
+  it("should fail to validate a schema with dictionary of arrays with incorrect types", async () => {
     const manager = new ScrapeTypesManager([
       {
         type: "object",
@@ -262,24 +252,19 @@ describe("ScrapeTypesManager", () => {
       },
     ]);
 
-    const module = await importTypescriptCode(
+    const module = await importTypescriptCode<{ Test: z.ZodType<any> }>(
       collectCode(manager.generateTypeScriptTypes()),
     );
 
-    expect(module.Test).toBeDefined();
-    const obj: any = plainToInstance(module.Test, {
+    const data = {
       prop1: {
         test: ["test1", 123], // Incorrect type
       },
       prop2: 123,
-    });
-    expect(obj).toBeInstanceOf(module.Test);
-    expect(obj.prop1.constructor.name).toBe("Dictionary");
-    expect(obj.prop1.test).toEqual(["test1", 123]);
-    expect(obj.prop2).toBe(123);
+    };
 
-    const errors = await validate(obj);
-    expect(errors.length).toBeGreaterThan(0);
+    const result = module.Test.safeParse(data);
+    expect(result.success).toBe(false);
   });
 
   it("should validate nested objects with dictionaries", async () => {
@@ -310,31 +295,30 @@ describe("ScrapeTypesManager", () => {
       },
     ]);
 
-    const module = await importTypescriptCode(
-      collectCode(manager.generateTypeScriptTypes()),
-    );
+    const module = await importTypescriptCode<{
+      Test: z.ZodType<{
+        prop1: Record<string, { field: string }>;
+        prop2: number;
+      }>;
+      NestedObject: z.ZodType<any>;
+    }>(collectCode(manager.generateTypeScriptTypes()));
 
-    expect(module.Test).toBeDefined();
-    expect(module.NestedObject).toBeDefined();
-
-    const obj: any = plainToInstance(module.Test, {
+    const data = {
       prop1: {
         test: { field: "value1" },
         another: { field: "value2" },
       },
       prop2: 123,
-    });
+    };
 
-    expect(obj).toBeInstanceOf(module.Test);
-    expect(obj.prop1.constructor.name).toBe("Dictionary");
-    expect(obj.prop1.test).toBeInstanceOf(module.NestedObject);
-    expect(obj.prop1.test.field).toBe("value1");
+    const result = module.Test.safeParse(data);
+    expect(result.success).toBe(true);
 
-    expect(obj.prop1.another).toBeInstanceOf(module.NestedObject);
-    expect(obj.prop1.another.field).toBe("value2");
-    expect(obj.prop2).toBe(123);
-    const errors = await validate(obj);
-    expect(errors).toStrictEqual([]);
+    if (result.success) {
+      expect(result.data.prop1.test).toEqual({ field: "value1" });
+      expect(result.data.prop1.another).toEqual({ field: "value2" });
+      expect(result.data.prop2).toBe(123);
+    }
   });
 
   it("should fail to validate nested objects with dictionaries with incorrect types", async () => {
@@ -365,31 +349,21 @@ describe("ScrapeTypesManager", () => {
       },
     ]);
 
-    const module = await importTypescriptCode(
-      collectCode(manager.generateTypeScriptTypes()),
-    );
+    const module = await importTypescriptCode<{
+      Test: z.ZodType<any>;
+      NestedObject: z.ZodType<any>;
+    }>(collectCode(manager.generateTypeScriptTypes()));
 
-    expect(module.Test).toBeDefined();
-    expect(module.NestedObject).toBeDefined();
-
-    const obj: any = plainToInstance(module.Test, {
+    const data = {
       prop1: {
         test: { field: 123 }, // Incorrect type
         another: { field: "value2" },
       },
       prop2: 123,
-    });
+    };
 
-    expect(obj).toBeInstanceOf(module.Test);
-    expect(obj.prop1.constructor.name).toBe("Dictionary");
-    expect(obj.prop1.test).toBeInstanceOf(module.NestedObject);
-    expect(obj.prop1.test.field).toBe(123);
-
-    expect(obj.prop1.another).toBeInstanceOf(module.NestedObject);
-    expect(obj.prop1.another.field).toBe("value2");
-    expect(obj.prop2).toBe(123);
-    const errors = await validate(obj);
-    expect(errors.length).toBeGreaterThan(0);
+    const result = module.Test.safeParse(data);
+    expect(result.success).toBe(false);
   });
 
   it("should validate nested objects with dictionaries of arrays", async () => {
@@ -420,30 +394,28 @@ describe("ScrapeTypesManager", () => {
       },
     ]);
 
-    const module = await importTypescriptCode(
-      collectCode(manager.generateTypeScriptTypes()),
-    );
+    const module = await importTypescriptCode<{
+      Test: z.ZodType<{
+        prop1: Record<string, { field: string }[]>;
+        prop2: number;
+      }>;
+      NestedObject: z.ZodType<any>;
+    }>(collectCode(manager.generateTypeScriptTypes()));
 
-    expect(module.Test).toBeDefined();
-    expect(module.NestedObject).toBeDefined();
-
-    const obj: any = plainToInstance(module.Test, {
+    const data = {
       prop1: {
         test: [{ field: "value1" }, { field: "value2" }],
       },
       prop2: 123,
-    });
+    };
 
-    expect(obj).toBeInstanceOf(module.Test);
-    expect(obj.prop1.constructor.name).toBe("Dictionary");
-    expect(obj.prop1.test[0]).toBeInstanceOf(module.NestedObject);
-    expect(obj.prop1.test[0].field).toBe("value1");
-    expect(obj.prop1.test[1]).toBeInstanceOf(module.NestedObject);
-    expect(obj.prop1.test[1].field).toBe("value2");
-    expect(obj.prop2).toBe(123);
-
-    const errors = await validate(obj);
-    expect(errors).toStrictEqual([]);
+    const result = module.Test.safeParse(data);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.prop1.test[0].field).toBe("value1");
+      expect(result.data.prop1.test[1].field).toBe("value2");
+      expect(result.data.prop2).toBe(123);
+    }
   });
 
   it("should fail to validate nested objects with dictionaries of arrays with incorrect types", async () => {
@@ -474,30 +446,20 @@ describe("ScrapeTypesManager", () => {
       },
     ]);
 
-    const module = await importTypescriptCode(
-      collectCode(manager.generateTypeScriptTypes()),
-    );
+    const module = await importTypescriptCode<{
+      Test: z.ZodType<any>;
+      NestedObject: z.ZodType<any>;
+    }>(collectCode(manager.generateTypeScriptTypes()));
 
-    expect(module.Test).toBeDefined();
-    expect(module.NestedObject).toBeDefined();
-
-    const obj: any = plainToInstance(module.Test, {
+    const data = {
       prop1: {
         test: [{ field: 123 }, { field: "value2" }], // Incorrect type
       },
       prop2: 123,
-    });
+    };
 
-    expect(obj).toBeInstanceOf(module.Test);
-    expect(obj.prop1.constructor.name).toBe("Dictionary");
-    expect(obj.prop1.test[0]).toBeInstanceOf(module.NestedObject);
-    expect(obj.prop1.test[0].field).toBe(123);
-    expect(obj.prop1.test[1]).toBeInstanceOf(module.NestedObject);
-    expect(obj.prop1.test[1].field).toBe("value2");
-    expect(obj.prop2).toBe(123);
-
-    const errors = await validate(obj);
-    expect(errors.length).toBeGreaterThan(0);
+    const result = module.Test.safeParse(data);
+    expect(result.success).toBe(false);
   });
 
   it("should validate number types", async () => {
@@ -526,25 +488,30 @@ describe("ScrapeTypesManager", () => {
       },
     ]);
 
-    const module = await importTypescriptCode(
-      collectCode(manager.generateTypeScriptTypes()),
-    );
+    const module = await importTypescriptCode<{
+      Test: z.ZodType<{
+        prop1: number;
+        prop2: number;
+        prop3: number;
+        prop4: number;
+      }>;
+    }>(collectCode(manager.generateTypeScriptTypes()));
 
-    expect(module.Test).toBeDefined();
-    const obj: any = plainToInstance(module.Test, {
+    const data = {
       prop1: -123,
       prop2: 123.456,
       prop3: 123.456789,
       prop4: 123,
-    });
-    expect(obj).toBeInstanceOf(module.Test);
-    expect(obj.prop1).toBe(-123);
-    expect(obj.prop2).toBe(123.456);
-    expect(obj.prop3).toBe(123.456789);
-    expect(obj.prop4).toBe(123);
+    };
 
-    const errors = await validate(obj);
-    expect(errors).toStrictEqual([]);
+    const result = module.Test.safeParse(data);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.prop1).toBe(-123);
+      expect(result.data.prop2).toBe(123.456);
+      expect(result.data.prop3).toBe(123.456789);
+      expect(result.data.prop4).toBe(123);
+    }
   });
 
   it("should fail to validate number types with incorrect values", async () => {
@@ -573,25 +540,19 @@ describe("ScrapeTypesManager", () => {
       },
     ]);
 
-    const module = await importTypescriptCode(
+    const module = await importTypescriptCode<{ Test: z.ZodType<any> }>(
       collectCode(manager.generateTypeScriptTypes()),
     );
 
-    expect(module.Test).toBeDefined();
-    const obj: any = plainToInstance(module.Test, {
+    const data = {
       prop1: 1e100, // Too large for int
       prop2: "123.456",
       prop3: false,
       prop4: -123, // Negative value for uint
-    });
-    expect(obj).toBeInstanceOf(module.Test);
-    expect(obj.prop1).toBe(1e100);
-    expect(obj.prop2).toBe("123.456");
-    expect(obj.prop3).toBe(false);
-    expect(obj.prop4).toBe(-123);
+    };
 
-    const errors = await validate(obj);
-    expect(errors.length).toBe(4);
+    const result = module.Test.safeParse(data);
+    expect(result.success).toBe(false);
   });
 
   it("should generate a array of two different type options", async () => {
@@ -608,18 +569,18 @@ describe("ScrapeTypesManager", () => {
       },
     ]);
 
-    const module = await importTypescriptCode(
-      collectCode(manager.generateTypeScriptTypes()),
-    );
+    const module = await importTypescriptCode<{
+      Test: z.ZodType<{ prop1: (string | number)[] }>;
+    }>(collectCode(manager.generateTypeScriptTypes()));
 
-    expect(module.Test).toBeDefined();
-    const obj: any = plainToInstance(module.Test, {
+    const data = {
       prop1: ["test", 123],
-    });
-    expect(obj).toBeInstanceOf(module.Test);
-    expect(obj.prop1).toEqual(["test", 123]);
+    };
 
-    const errors = await validate(obj);
-    expect(errors).toStrictEqual([]);
+    const result = module.Test.safeParse(data);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.prop1).toEqual(["test", 123]);
+    }
   });
 });

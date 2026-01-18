@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "lib": ["esnext"],
+        "strict": true,
+        "esModuleInterop": true,
+        "sourceMap": true,
+        "inlineSourceMap": false,
+        "declaration": true,
+        "outDir": "dist",
+        "experimentalDecorators": true
+    },
+    "references": [
+        { "path": "./tsconfig.lib.json" },
+        { "path": "./tsconfig.test.json" },
+        { "path": "./tsconfig.configs.json" }
+    ],
+    "exclude": [
+        "dist"
+    ]
+}

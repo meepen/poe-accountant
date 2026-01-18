@@ -1,0 +1,38 @@
+{
+  "name": "@meepen/poe-accountant-ggg-processor",
+  "private": true,
+  "license": "MPL-2.0",
+  "version": "0.0.1",
+  "description": "",
+  "author": "",
+  "type": "module",
+  "scripts": {
+    "build": "tsup src/main.ts --tsconfig tsconfig.lib.json",
+    "start": "node dist/src/main.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@meepen/poe-accountant-api-schema": "workspace:^",
+    "@meepen/poe-common": "workspace:^"
+  },
+  "devDependencies": {
+    "@swc/cli": "^0.6.0",
+    "@swc/core": "^1.12.9",
+    "@types/node": "^24",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "globals": "^17.0.0",
+    "jiti": "^2.6.1",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.53.0",
+    "unplugin-swc": "^1.5.9",
+    "vitest": "^4.0.17"
+  },
+  "files": [
+    "dist"
+  ]
+}
