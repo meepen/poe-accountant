@@ -58,9 +58,9 @@ services:
       VALKEY_TOKEN: ${LOCAL_VALKEY_PASSWORD}
     restart: unless-stopped
 
-  ggg-processor:
-    image: poe-accountant/ggg-processor:latest
-    container_name: ggg-processor
+  background-processor:
+    image: poe-accountant/background-processor:latest
+    container_name: background-processor
     environment:
       DATABASE_URL: postgres://${LOCAL_POSTGRES_USER}:${LOCAL_POSTGRES_PASSWORD}@postgres:${LOCAL_POSTGRES_PORT}/${LOCAL_POSTGRES_DB}
       VALKEY_URL: redis://:${LOCAL_VALKEY_PASSWORD}@valkey:${LOCAL_VALKEY_PORT}

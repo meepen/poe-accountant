@@ -28,7 +28,6 @@
     "@cloudflare/workers-types": "^4.20260117.0",
     "@swc/cli": "^0.6.0",
     "@swc/core": "^1.12.9",
-    "@types/ioredis": "^5.0.0",
     "@types/node": "^24",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",

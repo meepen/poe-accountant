@@ -24,6 +24,11 @@
             "types": "./dist/src/index.d.ts",
             "import": "./dist/src/index.js",
             "require": "./dist/src/index.js"
+        },
+        "./queues/*": {
+            "types": "./dist/src/queues/*.d.ts",
+            "import": "./dist/src/queues/*.js",
+            "require": "./dist/src/queues/*.js"
         }
     },
     "author": {

@@ -48,8 +48,8 @@ resource "cloudflare_pages_project" "api_worker" {
 }
 
 resource "cloudflare_pages_domain" "api_worker" {
-  count        = var.custom_domain != null ? 1 : 0
+  for_each     = toset(var.custom_domains)
   account_id   = var.account_id
   project_name = cloudflare_pages_project.api_worker.name
-  domain       = var.custom_domain
+  domain       = each.value
 }

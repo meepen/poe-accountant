@@ -3,9 +3,9 @@ output "project_id" {
   value       = module.project.project_id
 }
 
-output "pages_url" {
+output "frontend_domain" {
   description = "URL of the Frontend on Cloudflare Pages"
-  value       = module.frontend.pages_url
+  value       = module.frontend.domain
 }
 
 output "valkey_id" {
@@ -75,7 +75,7 @@ output "registry_endpoint" {
   value       = module.registry.registry_endpoint
 }
 
-output "api_url" {
+output "api_domain" {
   description = "URL of the API on Cloudflare Workers"
-  value       = module.api.url
+  value       = module.api.domain
 }

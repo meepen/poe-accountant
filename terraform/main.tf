@@ -65,8 +65,8 @@ module "apps" {
   domain_name = ""
   
   workers = {
-    "ggg-processor" = {
-      image_repository = "ggg-processor" 
+    "background-processor" = {
+      image_repository = "background-processor" 
       image_tag        = "latest"
       registry_type    = "DOCR"
       env = {
@@ -122,7 +122,7 @@ module "frontend" {
   production_branch = var.production_branch
   
   environment_variables = {
-    VITE_API_URL = module.api.url
+    VITE_API_URL = "https://${var.api_subdomain}.${var.cloudflare_zone_name}"
   }
 }
 
@@ -135,7 +135,7 @@ module "api" {
   github_owner = var.github_owner
   github_repo  = var.github_repo
   
-  custom_domain = local.full_api_domain_name
+  custom_domains = [local.full_api_domain_name]
   
   environment_variables = {
     DATABASE_URL = module.postgres.postgres_uri
@@ -155,21 +155,29 @@ module "cloudflare_dns" {
     main = {
       name    = "@"
       type    = "CNAME"
-      value   = module.frontend.pages_dev_domain
+      value   = module.frontend.domain
       proxied = true
       ttl     = 1
     }
     www = {
       name    = "www"
       type    = "CNAME"
-      value   = module.frontend.pages_dev_domain
+      value   = module.frontend.domain
       proxied = true
       ttl     = 1
     }
     frontend = {
       name    = var.frontend_subdomain_name
       type    = "CNAME"
-      value   = module.frontend.pages_dev_domain
+      value   = module.frontend.domain
+      proxied = true
+      ttl     = 1
+    }
+
+    api = {
+      name    = var.api_subdomain
+      type    = "CNAME"
+      value   = module.api.domain
       proxied = true
       ttl     = 1
     }

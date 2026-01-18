@@ -6,9 +6,14 @@ variable "TAG" {
   default = "latest"
 }
 
+variable "CI" {
+  default = false
+}
+
 function "cache_to" {
   params = [name]
-  result = ["type=registry,ref=${REGISTRY}/cache:${name},mode=max"]
+  # Only push cache to registry if CI=true. Otherwise, do nothing.
+  result = CI ? ["type=registry,ref=${REGISTRY}/cache:${name},mode=max"] : []
 }
 
 function "cache_from" {
@@ -20,7 +25,7 @@ group "default" {
   targets = [
     "frontend",
     "api",
-    "ggg-processor"
+    "background-processor"
   ]
 }
 
@@ -69,13 +74,12 @@ target "api" {
   }
 }
 
-target "ggg-processor" {
-  context = "./projects/ggg-processor"
-  tags = ["${REGISTRY}/ggg-processor:${TAG}"]
+target "background-processor" {
+  context = "./projects/background-processor"
+  tags = ["${REGISTRY}/background-processor:${TAG}"]
   
-  cache-to   = cache_to("ggg-processor")
-  cache-from = cache_from("ggg-processor")
-
+  cache-to   = cache_to("background-processor")
+  cache-from = cache_from("background-processor")
   contexts = {
     base = "target:base-node"
   }

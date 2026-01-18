@@ -30,8 +30,8 @@ variable "environment_variables" {
   default     = {}
 }
 
-variable "custom_domain" {
-  description = "Custom domain for the worker"
-  type        = string
-  default     = null
+variable "custom_domains" {
+  description = "Custom domains for the worker"
+  type        = list(string)
+  default     = []
 }
