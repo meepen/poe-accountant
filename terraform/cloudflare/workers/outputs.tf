@@ -1,8 +1,8 @@
 output "name" {
-  value = cloudflare_pages_project.api_worker.name
+  value = cloudflare_workers_script.api_worker.name
 }
 
 output "domain" {
-  value = cloudflare_pages_project.api_worker.subdomain
+  value = "${cloudflare_workers_script.api_worker.name}.workers.dev"
 }
 

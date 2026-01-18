@@ -1,6 +1,6 @@
 name = "meepen-poe-accountant-api"
 main = "src/index.ts"
-compatibility_date = "2024-11-11"
+compatibility_date = "2026-01-18"
 
 compatibility_flags = ["nodejs_compat"]
 

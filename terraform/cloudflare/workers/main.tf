@@ -7,51 +7,60 @@ terraform {
   }
 }
 
-resource "cloudflare_pages_project" "api_worker" {
-  account_id        = var.account_id
-  name              = var.project_name
-  production_branch = var.production_branch
-  
-  source {
-    type = "github"
-    config {
-      owner                         = var.github_owner
-      repo_name                     = var.github_repo
-      production_branch             = var.production_branch
-      pr_comments_enabled           = true
-      deployments_enabled           = true
-      production_deployment_enabled = true
-      preview_deployment_setting    = "all"
-      preview_branch_includes       = ["*"]
-      preview_branch_excludes       = [var.production_branch]
-    }
-  }
+resource "cloudflare_hyperdrive_config" "api_worker" {
+  for_each   = var.hyperdrive_configs
 
-  build_config {
-    build_command   = "pnpm -r build"
-    destination_dir = "projects/api/project/dist"
-    root_dir        = ""
-  }
-
-  deployment_configs {
-    production {
-      environment_variables = var.environment_variables
-      secrets               = var.secrets
-      compatibility_date    = "2024-01-01"
-      compatibility_flags   = ["nodejs_compat"]
-    }
-    preview {
-      environment_variables = var.environment_variables
-      secrets               = var.secrets
-      compatibility_date    = "2024-01-01"
-      compatibility_flags   = ["nodejs_compat"]
-    }
+  account_id = var.account_id
+  name       = "${var.project_name}-hyperdrive-config-${lower(each.key)}"
+  origin     = {
+    scheme     = each.value.scheme
+    database   = each.value.database
+    host       = each.value.host
+    port       = each.value.port
+    user       = each.value.user
+    password   = each.value.password
   }
 }
 
-resource "cloudflare_pages_domain" "api_worker" {
-  for_each     = toset(var.custom_domains)
-  account_id   = var.account_id
-  project_name = cloudflare_pages_project.api_worker.name
-  domain       = each.value
+resource "cloudflare_workers_script" "api_worker" {
+  account_id = var.account_id
+  name       = var.project_name
+  content    = file("../projects/api/project/dist/index.js")
+  module     = true
+  
+  dynamic "hyperdrive_config_binding" {
+    for_each = var.hyperdrive_configs
+    content {
+      binding = hyperdrive_config_binding.key
+      id = cloudflare_hyperdrive_config.api_worker[hyperdrive_config_binding.key].id
+    }
+  }
+
+  dynamic "plain_text_binding" {
+    for_each = var.environment_variables
+    content {
+      name = plain_text_binding.key
+      text = plain_text_binding.value
+    }
+  }
+
+  dynamic "secret_text_binding" {
+    for_each = var.secrets
+    content {
+      name = secret_text_binding.key
+      text = secret_text_binding.value
+    }
+  }
+
+  compatibility_date  = "2026-01-18"
+  compatibility_flags = ["nodejs_compat"]
+}
+
+resource "cloudflare_workers_domain" "api_worker" {
+  for_each   = toset(var.custom_domains)
+  account_id = var.account_id
+  zone_id    = var.zone_id
+
+  service    = cloudflare_workers_script.api_worker.name
+  hostname   = each.value
 }

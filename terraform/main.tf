@@ -124,10 +124,9 @@ module "api" {
   source = "./cloudflare/workers"
 
   account_id   = var.cloudflare_account_id
+  zone_id      = var.cloudflare_zone_id
   project_name = "${var.project_name}-api"
   
-  github_owner = var.github_owner
-  github_repo  = var.github_repo
   
   custom_domains = [local.full_api_domain_name]
   
@@ -139,6 +138,17 @@ module "api" {
   secrets = {
     DATABASE_URL = module.postgres.postgres_uri
     VALKEY_TOKEN = module.valkey.valkey_password
+  }
+
+  hyperdrive_configs = {
+    "HYPERDRIVE" = {
+      scheme   = "postgres"
+      database = local.database_name
+      host     = module.postgres.postgres_host
+      port     = module.postgres.postgres_port
+      user     = module.postgres.postgres_username
+      password = module.postgres.postgres_password
+    }
   }
 }
 
@@ -168,14 +178,6 @@ module "cloudflare_dns" {
       name    = var.frontend_subdomain_name
       type    = "CNAME"
       value   = module.frontend.domain
-      proxied = true
-      ttl     = 1
-    }
-
-    api = {
-      name    = var.api_subdomain
-      type    = "CNAME"
-      value   = module.api.domain
       proxied = true
       ttl     = 1
     }

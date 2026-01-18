@@ -8,20 +8,9 @@ variable "project_name" {
   type        = string
 }
 
-variable "github_owner" {
-  description = "GitHub owner/organization"
+variable "zone_id" {
+  description = "Cloudflare Zone ID"
   type        = string
-}
-
-variable "github_repo" {
-  description = "GitHub repository name"
-  type        = string
-}
-
-variable "production_branch" {
-  description = "Production branch name"
-  type        = string
-  default     = "main"
 }
 
 variable "environment_variables" {
@@ -40,4 +29,17 @@ variable "custom_domains" {
   description = "Custom domains for the worker"
   type        = list(string)
   default     = []
+}
+
+variable "hyperdrive_configs" {
+  description = "Hyperdrive configuration for the worker"
+  type        = map(object({
+    scheme   = string
+    database = string
+    host     = string
+    port     = number
+    user     = string
+    password = string
+  }))
+  default     = {}
 }
