@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App.jsx";
+import App from "./App";
+import { SessionProvider } from "./SessionContext";
 
 function getRoot() {
   const rootElement = document.getElementById("root");
@@ -12,6 +13,8 @@ function getRoot() {
 
 ReactDOM.createRoot(getRoot()).render(
   <React.StrictMode>
-    <App />
+    <SessionProvider>
+      <App />
+    </SessionProvider>
   </React.StrictMode>,
 );

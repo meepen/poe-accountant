@@ -70,14 +70,8 @@ module "apps" {
       image_tag        = "latest"
       registry_type    = "DOCR"
       env = {
-          "REDIS_HOST"        = module.valkey.valkey_host
-          "REDIS_PORT"        = module.valkey.valkey_port
-          "REDIS_PASSWORD"    = module.valkey.valkey_password
-          "DATABASE_HOST"     = "$${db.HOSTNAME}"
-          "DATABASE_PORT"     = "$${db.PORT}"
-          "DATABASE_NAME"     = "$${db.DATABASE}"
-          "DATABASE_USERNAME" = "$${db.USERNAME}"
-          "DATABASE_PASSWORD" = "$${db.PASSWORD}"
+        "VALKEY_URL"       = module.valkey.valkey_uri
+        "DATABASE_URL"     = module.postgres.postgres_uri
       }
     }
   }
@@ -138,8 +132,11 @@ module "api" {
   custom_domains = [local.full_api_domain_name]
   
   environment_variables = {
-    DATABASE_URL = module.postgres.postgres_uri
     VALKEY_URL   = module.apps.live_url
+  }
+
+  secrets = {
+    DATABASE_URL = module.postgres.postgres_uri
     VALKEY_TOKEN = module.valkey.valkey_password
   }
 }

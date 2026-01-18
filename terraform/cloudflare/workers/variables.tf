@@ -30,6 +30,12 @@ variable "environment_variables" {
   default     = {}
 }
 
+variable "secrets" {
+  description = "Secrets for the worker"
+  type        = map(string)
+  default     = {}
+}
+
 variable "custom_domains" {
   description = "Custom domains for the worker"
   type        = list(string)

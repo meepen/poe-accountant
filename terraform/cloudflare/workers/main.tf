@@ -36,11 +36,13 @@ resource "cloudflare_pages_project" "api_worker" {
   deployment_configs {
     production {
       environment_variables = var.environment_variables
+      secrets               = var.secrets
       compatibility_date    = "2024-01-01"
       compatibility_flags   = ["nodejs_compat"]
     }
     preview {
       environment_variables = var.environment_variables
+      secrets               = var.secrets
       compatibility_date    = "2024-01-01"
       compatibility_flags   = ["nodejs_compat"]
     }
