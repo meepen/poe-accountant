@@ -133,6 +133,7 @@ module "api" {
   
   environment_variables = {
     VALKEY_URL   = module.apps.live_url
+    CORS_ORIGIN  = "https://${var.frontend_subdomain_name}.${var.cloudflare_zone_name}"
   }
 
   secrets = {
