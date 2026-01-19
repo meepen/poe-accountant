@@ -27,17 +27,11 @@ interface SessionContextType {
 
 async function getCachedToken(): Promise<User | null> {
   const token = await cookieStore.get(sessionCookieName);
-  console.log(token);
   if (!token || !token.value) {
     return null;
   }
   try {
-    const userDto = UserDto.parse(JSON.parse(decodeURIComponent(token.value)));
-    if (new Date(userDto.expiresAt) < new Date()) {
-      await cookieStore.delete(sessionCookieName);
-      return null;
-    }
-    return userDto;
+    return UserDto.parse(JSON.parse(decodeURIComponent(token.value)));
   } catch (error) {
     console.error("Failed to parse cached token:", error);
     return null;
@@ -82,7 +76,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = useCallback(() => {
-    localStorage.removeItem("authToken");
+    console.log(new Error("logout called"));
+    cookieStore.delete(sessionCookieName).catch((error: unknown) => {
+      console.error("Error deleting session cookie:", error);
+    });
     setUser(null);
   }, []);
 
@@ -94,10 +91,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const expiresAt = new Date(user.expiresAt);
     const now = new Date();
     const timeUntilExpiration = expiresAt.getTime() - now.getTime();
+    console.log(`Session expires in ${timeUntilExpiration} ms`);
 
     if (timeUntilExpiration <= 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       logout();
+      return;
+    }
+
+    // To avoid 32 bit integer overflow in setTimeout, cap the timeout at 2^31-1 ms (~24.8 days)
+    if (timeUntilExpiration > 0x7fffffff) {
+      console.warn(
+        "Session expiration time exceeds maximum timeout duration, assuming that you will refresh before then and are not crazy.",
+      );
       return;
     }
 
