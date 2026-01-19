@@ -160,3 +160,19 @@ variable "production_branch" {
   type        = string
   default     = "main"
 }
+
+variable "pathofexile_client_id" {
+  description = "Path of Exile OAuth Client ID"
+  type        = string
+}
+
+variable "pathofexile_client_secret" {
+  description = "Path of Exile OAuth Client Secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "pathofexile_redirect_url" {
+  description = "Path of Exile OAuth Redirect URL"
+  type        = string
+}

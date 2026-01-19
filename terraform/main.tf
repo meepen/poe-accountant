@@ -116,7 +116,7 @@ module "frontend" {
   production_branch = var.production_branch
   
   environment_variables = {
-    VITE_API_URL = "https://${var.api_subdomain}.${var.cloudflare_zone_name}"
+    VITE_API_BASE_URL = "https://${var.api_subdomain}.${var.cloudflare_zone_name}"
   }
 }
 
@@ -133,11 +133,17 @@ module "api" {
   environment_variables = {
     VALKEY_URL   = module.apps.live_url
     CORS_ORIGIN  = "https://${var.frontend_subdomain_name}.${var.cloudflare_zone_name}"
+    FRONTEND_URL = "https://${var.frontend_subdomain_name}.${var.cloudflare_zone_name}"
+
+    PATHOFEXILE_CLIENT_ID     = var.pathofexile_client_id
+    PATHOFEXILE_REDIRECT_URL  = var.pathofexile_redirect_url
   }
 
   secrets = {
     DATABASE_URL = module.postgres.postgres_uri
     VALKEY_TOKEN = module.valkey.valkey_password
+
+    PATHOFEXILE_CLIENT_SECRET = var.pathofexile_client_secret
   }
 
   hyperdrive_configs = {
