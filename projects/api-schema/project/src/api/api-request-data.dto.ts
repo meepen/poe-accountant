@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 import { ApiEndpoint } from "./api-endpoints.enum.js";
 import { PriceItemRequest } from "./price-item-request.dto.js";
 import { PriceItemResponse } from "./price-item-response.dto.js";
@@ -8,8 +8,12 @@ import { PriceTabRequest } from "./price-tab-request.dto.js";
 import { PriceTabResponse } from "./price-tab-response.dto.js";
 import { PriceTabResultRequest } from "./price-tab-result-request.dto.js";
 import { PriceTabResultResponse } from "./price-tab-result-response.dto.js";
+import { UserDto } from "./user.dto.js";
 
 export const ApiResultResponseTypes = {
+  [ApiEndpoint.UserLogin]: [z.never(), z.never()],
+  [ApiEndpoint.GetUser]: [z.void(), UserDto],
+
   [ApiEndpoint.PriceItemRequest]: [PriceItemRequest, PriceItemResponse],
   [ApiEndpoint.PriceTabRequest]: [PriceTabRequest, PriceTabResponse],
   [ApiEndpoint.PriceItemResult]: [

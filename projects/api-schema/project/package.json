@@ -29,6 +29,11 @@
             "types": "./dist/src/queues/*.d.ts",
             "import": "./dist/src/queues/*.js",
             "require": "./dist/src/queues/*.js"
+        },
+        "./api/*": {
+            "types": "./dist/src/api/*.d.ts",
+            "import": "./dist/src/api/*.js",
+            "require": "./dist/src/api/*.js"
         }
     },
     "author": {
@@ -41,7 +46,8 @@
         "url": "https://github.com/poe-accountant/poe-accountant.git"
     },
     "peerDependencies": {
-        "zod": "^4.3.5"
+        "zod": "^4.3.5",
+        "@meepen/poe-common": "workspace:*"
     },
     "devDependencies": {
         "@types/jsdom": "^21.1.7",
@@ -57,8 +63,5 @@
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.4",
         "globals": "^17.0.0"
-    },
-    "dependencies": {
-        "@meepen/poe-common": "workspace:*"
     }
 }

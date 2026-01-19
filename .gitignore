@@ -15,7 +15,7 @@ projects/common/project/docs
 
 .yarn
 
-terraform.tfstate
-terraform.tfstate.backup
+*.tfstate.*
+*.tfstate
 
 .wrangler

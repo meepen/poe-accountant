@@ -5,12 +5,10 @@
         "moduleResolution": "nodenext",
         "lib": ["esnext"],
         "strict": true,
-        "esModuleInterop": true,
         "sourceMap": true,
         "inlineSourceMap": false,
         "declaration": true,
         "outDir": "dist",
-        "experimentalDecorators": true
     },
     "references": [
         { "path": "./tsconfig.lib.json" },

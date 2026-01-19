@@ -64,3 +64,25 @@ tasks:
       - cp .env.example .env
       - task: install
       - task: build
+
+  migrations:generate:
+    desc: Generate a new migration file based on local schema changes
+    cmds:
+      - pnpm --filter=@meepen/poe-accountant-db-schema exec drizzle-kit generate
+
+  migrations:apply:
+    desc: Apply all pending migrations to the database
+    env:
+      DB_CONN: "{{.URL}}"
+    cmds:
+      - DATABASE_URL=${DB_CONN:-$DATABASE_URL} pnpm --filter=@meepen/poe-accountant-db-schema exec drizzle-kit migrate
+
+  migrations:apply:remote:
+    desc: Apply all pending migrations to the remote database
+    vars:
+      DATABASE_URL:
+        sh: cd terraform && tofu output -raw postgres_url
+    cmds:
+      - task: migrations:apply
+        vars:
+          URL: "{{.DATABASE_URL}}"

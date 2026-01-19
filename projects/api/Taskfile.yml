@@ -5,3 +5,9 @@ includes:
     taskfile: ../../base/node/Taskfile.yml
     dir: ./project
 
+tasks:
+  start:
+    desc: Start the API server in development mode
+    dir: .
+    cmds:
+      - task: base:start

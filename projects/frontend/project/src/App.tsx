@@ -11,6 +11,9 @@ import {
 } from "@mui/material";
 import GGGNotice from "./GGGNotice";
 import { useSession } from "./SessionContext";
+import fontinRegular from "./assets/fonts/Fontin-Regular.ttf";
+import fontinBold from "./assets/fonts/Fontin-Bold.ttf";
+import fontinItalic from "./assets/fonts/Fontin-Italic.ttf";
 
 const darkTheme = createTheme({
   palette: {
@@ -52,19 +55,19 @@ const darkTheme = createTheme({
       styleOverrides: `
         @font-face {
           font-family: 'Fontin';
-          src: url('https://web.poecdn.com/public/font/fontin-regular.woff2') format('woff2');
+          src: url('${fontinRegular}') format('truetype');
           font-weight: normal;
           font-style: normal;
         }
         @font-face {
           font-family: 'Fontin';
-          src: url('https://web.poecdn.com/public/font/fontin-bold.woff2') format('woff2');
+          src: url('${fontinBold}') format('truetype');
           font-weight: bold;
           font-style: normal;
         }
         @font-face {
           font-family: 'Fontin';
-          src: url('https://web.poecdn.com/public/font/fontin-italic.woff2') format('woff2');
+          src: url('${fontinItalic}') format('truetype');
           font-weight: normal;
           font-style: italic;
         }
@@ -74,7 +77,7 @@ const darkTheme = createTheme({
 });
 
 export default function App() {
-  const { user, logout } = useSession();
+  const { user, logout, login } = useSession();
 
   return (
     <ThemeProvider theme={darkTheme}>
@@ -93,15 +96,15 @@ export default function App() {
             </Typography>
             {user ? (
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Typography variant="subtitle1">
-                  {user.name || user.sub || "User"}
-                </Typography>
+                <Typography variant="subtitle1">{user.username}</Typography>
                 <Button color="inherit" onClick={logout}>
                   Log Out
                 </Button>
               </Box>
             ) : (
-              <Button color="inherit">Log In</Button>
+              <Button color="inherit" onClick={login}>
+                Log In
+              </Button>
             )}
           </Toolbar>
         </AppBar>

@@ -6,7 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 CORS_ORIGIN = "*"
-VALKEY_URL = "http://valkey-proxy:80"
+VALKEY_URL = "http://localhost:8079"
 VALKEY_TOKEN = "valkey"
 
 # Create this with: wrangler hyperdrive create <NAME> --connection-string="postgres://..."

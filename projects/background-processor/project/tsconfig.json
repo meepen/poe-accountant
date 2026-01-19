@@ -10,8 +10,6 @@
         "inlineSourceMap": false,
         "declaration": true,
         "outDir": "dist",
-        "experimentalDecorators": true,
-        "emitDecoratorMetadata": true
     },
     "references": [
         { "path": "./tsconfig.lib.json" },

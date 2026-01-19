@@ -20,6 +20,11 @@
         "package.json"
     ],
     "exports": {
+        "./*": {
+            "types": "./dist/src/schema/*.d.ts",
+            "import": "./dist/src/schema/*.js",
+            "require": "./dist/src/schema/*.js"
+        },
         ".": {
             "types": "./dist/src/index.d.ts",
             "import": "./dist/src/index.js",
@@ -36,17 +41,20 @@
         "url": "https://github.com/poe-accountant/poe-accountant.git"
     },
     "peerDependencies": {
-        "drizzle-orm": "^0.45.1"
+        "drizzle-orm": "^0.45.1",
+        "drizzle-zod": "^0.8.3"
     },
     "devDependencies": {
         "@types/node": "^24",
-        "rimraf": "^6.0.1",
-        "typescript": "^5.8.3",
-        "typescript-eslint": "^8.53.0",
+        "drizzle-kit": "^0.31.8",
         "eslint": "^9.39.2",
-        "jiti": "^2.6.1",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.4",
-        "globals": "^17.0.0"
+        "globals": "^17.0.0",
+        "jiti": "^2.6.1",
+        "postgres": "^3.4.8",
+        "rimraf": "^6.0.1",
+        "typescript": "^5.8.3",
+        "typescript-eslint": "^8.53.0"
     }
 }

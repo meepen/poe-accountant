@@ -1,14 +1,15 @@
-import { Context, Hono } from "hono";
+import { Hono } from "hono";
 import { cors } from "hono/cors";
-import type { AppBindings } from "./bindings";
+import type { AppContext, AppEnv } from "./bindings";
 import { status } from "./routes/status";
+import { redirect } from "./routes/redirect";
 
-const app = new Hono<{ Bindings: AppBindings }>();
+const app = new Hono<AppEnv>();
 
 app.use(
   "/*",
   cors({
-    origin: (origin, ctx: Context<{ Bindings: AppBindings }>) => {
+    origin: (origin, ctx: AppContext) => {
       const allowedOrigins = ctx.env.CORS_ORIGIN.split(",");
       if (
         allowedOrigins.includes(origin || "") ||
@@ -31,6 +32,7 @@ app.use(
 );
 
 app.route("/status", status);
+app.route("/redirect", redirect);
 
 app.get("/health", (c) => c.json({ status: "ok" }));
 

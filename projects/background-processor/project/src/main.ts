@@ -31,6 +31,6 @@ process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
 
 main().catch((error: unknown) => {
-  console.error("Unhandled error in main:", error);
+  console.error("Error during migrations:", error);
   process.exit(1);
 });

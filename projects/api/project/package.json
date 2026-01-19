@@ -9,12 +9,13 @@
   "scripts": {
     "build": "wrangler deploy src/index.ts --dry-run --outdir=dist",
     "start": "wrangler dev --ip 0.0.0.0 --port 4000 --local --config wrangler.toml",
-    "start:dev": "wrangler dev --ip 0.0.0.0 --port 4000 --local --config wrangler.toml",
+    "start:dev": "wrangler dev --ip 0.0.0.0 --port 4000 --local --config wrangler.toml --var PATHOFEXILE_CLIENT_ID:$PATHOFEXILE_CLIENT_ID --var PATHOFEXILE_CLIENT_SECRET:$PATHOFEXILE_CLIENT_SECRET --var PATHOFEXILE_REDIRECT_URL:$PATHOFEXILE_REDIRECT_URL --var FRONTEND_URL:$FRONTEND_URL --var CORS_ORIGIN:$FRONTEND_URL",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint ."
   },
   "dependencies": {
+    "@hono/zod-validator": "^0.7.6",
     "@meepen/poe-accountant-api-schema": "workspace:^",
     "@meepen/poe-accountant-db-schema": "workspace:^",
     "@meepen/poe-common": "workspace:^",
@@ -29,7 +30,7 @@
     "@cloudflare/workers-types": "^4.20260117.0",
     "@swc/cli": "^0.6.0",
     "@swc/core": "^1.12.9",
-    "@types/node": "^24",
+    "@types/node": "^24.10.9",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",

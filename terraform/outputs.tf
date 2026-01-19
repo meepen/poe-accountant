@@ -55,6 +55,12 @@ output "postgres_password" {
   sensitive   = true
 }
 
+output "postgres_url" {
+  description = "PostgreSQL connection URL"
+  value       = module.postgres.postgres_uri
+  sensitive   = true
+}
+
 output "database_name" {
   description = "Application database name"
   value       = module.postgres.database_name

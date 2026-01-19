@@ -4,4 +4,3 @@ includes:
   base:
     taskfile: ../../base/node/Taskfile.yml
     dir: ./project
-

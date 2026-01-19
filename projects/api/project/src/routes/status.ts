@@ -7,6 +7,7 @@ import { sql } from "drizzle-orm";
 export const status = new Hono<{ Bindings: AppBindings }>();
 
 status.get("/", (c) => {
+  console.log(c.env);
   return c.json({ status: "ok" });
 });
 
@@ -17,6 +18,7 @@ status.get("/valkey", async (c) => {
 });
 
 status.get("/db", async (c) => {
+  console.log(c.env);
   const db = getDb(c.env);
   await db.execute(sql`SELECT 1`);
   return c.json({ status: true });

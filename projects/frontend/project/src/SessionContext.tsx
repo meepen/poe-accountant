@@ -4,73 +4,114 @@ import {
   useState,
   useEffect,
   ReactNode,
+  useMemo,
+  useCallback,
 } from "react";
-import { jwtDecode } from "jwt-decode";
+import { ApiEndpoint } from "@meepen/poe-accountant-api-schema/api/api-endpoints.enum";
+import {
+  sessionCookieName,
+  UserDto,
+} from "@meepen/poe-accountant-api-schema/api/user.dto";
+import { z } from "zod";
+import { ApiService } from "@meepen/poe-accountant-api-schema/api/api-service";
 
-interface User {
-  sub?: string;
-  name?: string;
-  email?: string;
-  exp?: number;
-  [key: string]: unknown;
-}
+type User = z.infer<typeof UserDto>;
 
 interface SessionContextType {
   user: User | null;
-  token: string | null;
-  login: (token: string) => void;
+  login: () => void;
   logout: () => void;
   isLoading: boolean;
+  api: ApiService;
+}
+
+async function getCachedToken(): Promise<User | null> {
+  const token = await cookieStore.get(sessionCookieName);
+  console.log(token);
+  if (!token || !token.value) {
+    return null;
+  }
+  try {
+    const userDto = UserDto.parse(JSON.parse(decodeURIComponent(token.value)));
+    if (new Date(userDto.expiresAt) < new Date()) {
+      await cookieStore.delete(sessionCookieName);
+      return null;
+    }
+    return userDto;
+  } catch (error) {
+    console.error("Failed to parse cached token:", error);
+    return null;
+  }
 }
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const api = useMemo(
+    () => new ApiService(new URL(import.meta.env.VITE_API_BASE_URL)),
+    [],
+  );
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("authToken");
-    if (storedToken) {
-      try {
-        const decoded = jwtDecode<User>(storedToken);
-        // Check for expiration if exp exists
-        if (decoded.exp && decoded.exp * 1000 < Date.now()) {
-          console.warn("Token expired");
-          localStorage.removeItem("authToken");
-        } else {
-          // eslint-disable-next-line react-hooks/set-state-in-effect
-          setToken(storedToken);
-          setUser(decoded);
+    getCachedToken()
+      .then((cachedUser) => {
+        if (cachedUser) {
+          setUser(cachedUser);
         }
-      } catch (error) {
-        console.error("Invalid token:", error);
-        localStorage.removeItem("authToken");
-      }
-    }
-    setIsLoading(false);
+        setIsLoading(false);
+      })
+      .catch((error: unknown) => {
+        console.error("Error retrieving cached token:", error);
+        setIsLoading(false);
+      });
   }, []);
 
-  const login = (newToken: string) => {
-    try {
-      const decoded = jwtDecode<User>(newToken);
-      localStorage.setItem("authToken", newToken);
-      setToken(newToken);
-      setUser(decoded);
-    } catch (error) {
-      console.error("Failed to decode token during login:", error);
+  useEffect(() => {
+    if (!user) {
+      return;
     }
+    api.setAuthToken(user.authorizationToken);
+  }, [api, user]);
+
+  const login = () => {
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/${ApiEndpoint.UserLogin}?redirect_to=${encodeURIComponent(
+      window.location.href,
+    )}`;
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("authToken");
-    setToken(null);
     setUser(null);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const expiresAt = new Date(user.expiresAt);
+    const now = new Date();
+    const timeUntilExpiration = expiresAt.getTime() - now.getTime();
+
+    if (timeUntilExpiration <= 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      logout();
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      logout();
+    }, timeUntilExpiration);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [user, logout]);
 
   return (
-    <SessionContext.Provider value={{ user, token, login, logout, isLoading }}>
+    <SessionContext.Provider value={{ user, login, logout, isLoading, api }}>
       {children}
     </SessionContext.Provider>
   );

@@ -1,21 +1,28 @@
-import { pgTable, serial, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 export const User = pgTable("user", {
-  id: uuid("id").primaryKey(), // 'sub' from Path of Exile oauth
+  // 'sub' from oauth
+  id: uuid("id").primaryKey(),
 
   createdAt: timestamp("created_at", {
     withTimezone: true,
     mode: "date",
-  }).defaultNow(),
+  })
+    .notNull()
+    .defaultNow(),
   updatedAt: timestamp("updated_at", {
     withTimezone: true,
     mode: "date",
-  }).defaultNow(),
-  username: serial("username").notNull(), // From Path of Exile oauth
+  })
+    .notNull()
+    .defaultNow(),
+  // From Path of Exile oauth:
+  username: text("username").notNull(),
 
+  scope: text("scope").notNull(),
   accessToken: text("access_token").notNull(),
-  refreshToken: text("refresh_token").notNull(),
-  expiresAt: timestamp("expires_at", {
+  refreshToken: text("refresh_token"),
+  tokenExpiresAt: timestamp("token_expires_at", {
     withTimezone: true,
     mode: "date",
   }).notNull(),

@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 import { Item } from "@meepen/poe-common";
 import { Price } from "./price.dto.js";
 
