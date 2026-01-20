@@ -117,11 +117,6 @@ variable "api_subdomain" {
   type        = string
 }
 
-variable "frontend_subdomain_name" {
-  description = "Subdomain for the Application Frontend"
-  type        = string
-}
-
 variable "do_token" {
   description = "DigitalOcean token"
   type        = string

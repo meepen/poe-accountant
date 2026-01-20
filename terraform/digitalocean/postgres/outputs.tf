@@ -30,13 +30,13 @@ output "postgres_port" {
 
 output "postgres_uri" {
   description = "PostgreSQL connection URI"
-  value       = digitalocean_database_cluster.postgres.uri
+  value       = replace(digitalocean_database_cluster.postgres.uri, "/defaultdb", "/${digitalocean_database_db.app_database.name}")
   sensitive   = true
 }
 
 output "postgres_private_uri" {
   description = "PostgreSQL private connection URI"
-  value       = digitalocean_database_cluster.postgres.private_uri
+  value       = replace(digitalocean_database_cluster.postgres.private_uri, "/defaultdb", "/${digitalocean_database_db.app_database.name}")
   sensitive   = true
 }
 

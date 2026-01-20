@@ -18,7 +18,6 @@ status.get("/valkey", async (c) => {
 });
 
 status.get("/db", async (c) => {
-  console.log(c.env);
   const db = getDb(c.env);
   await db.execute(sql`SELECT 1`);
   return c.json({ status: true });

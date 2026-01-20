@@ -109,7 +109,6 @@ module "frontend" {
   github_repo  = var.github_repo
 
   domain_names = [
-    "${var.frontend_subdomain_name}.${var.cloudflare_zone_name}",
     var.cloudflare_zone_name,
     "www.${var.cloudflare_zone_name}"
   ]
@@ -132,8 +131,8 @@ module "api" {
   
   environment_variables = {
     VALKEY_URL   = module.apps.live_url
-    CORS_ORIGIN  = "https://${var.frontend_subdomain_name}.${var.cloudflare_zone_name}"
-    FRONTEND_URL = "https://${var.frontend_subdomain_name}.${var.cloudflare_zone_name}"
+    CORS_ORIGIN  = "https://${var.cloudflare_zone_name}"
+    FRONTEND_URL = "https://${var.cloudflare_zone_name}"
 
     PATHOFEXILE_CLIENT_ID     = var.pathofexile_client_id
     PATHOFEXILE_REDIRECT_URL  = var.pathofexile_redirect_url
@@ -175,13 +174,6 @@ module "cloudflare_dns" {
     }
     www = {
       name    = "www"
-      type    = "CNAME"
-      value   = module.frontend.domain
-      proxied = true
-      ttl     = 1
-    }
-    frontend = {
-      name    = var.frontend_subdomain_name
       type    = "CNAME"
       value   = module.frontend.domain
       proxied = true
