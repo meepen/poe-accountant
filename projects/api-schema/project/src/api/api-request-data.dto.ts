@@ -9,10 +9,10 @@ import { PriceTabResponse } from "./price-tab-response.dto.js";
 import { PriceTabResultRequest } from "./price-tab-result-request.dto.js";
 import { PriceTabResultResponse } from "./price-tab-result-response.dto.js";
 import { UserDto } from "./user.dto.js";
+import { UserJobDto } from "./user.job.dto.js";
 
 export const ApiResultResponseTypes = {
   [ApiEndpoint.UserLogin]: [z.never(), z.never()],
-  [ApiEndpoint.GetUser]: [z.void(), UserDto],
 
   [ApiEndpoint.PriceItemRequest]: [PriceItemRequest, PriceItemResponse],
   [ApiEndpoint.PriceTabRequest]: [PriceTabRequest, PriceTabResponse],
@@ -21,6 +21,9 @@ export const ApiResultResponseTypes = {
     PriceItemResultResponse,
   ],
   [ApiEndpoint.PriceTabResult]: [PriceTabResultRequest, PriceTabResultResponse],
+
+  [ApiEndpoint.GetUser]: [z.void(), UserDto],
+  [ApiEndpoint.GetUserJobs]: [z.void(), z.array(UserJobDto)],
 } as const;
 
 export type ApiResultResponseData<T extends ApiEndpoint> = [

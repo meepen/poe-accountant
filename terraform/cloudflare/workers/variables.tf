@@ -19,6 +19,12 @@ variable "environment_variables" {
   default     = {}
 }
 
+variable "r2_bucket_bindings" {
+  description = "R2 bucket bindings for the worker"
+  type        = map(string)
+  default     = {}
+}
+
 variable "secrets" {
   description = "Secrets for the worker"
   type        = map(string)

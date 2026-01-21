@@ -94,6 +94,11 @@ variable "registry_name" {
   default     = null  # Will use project_name-registry if not set
 }
 
+variable "r2_bucket_name" {
+  description = "Name of the R2 bucket"
+  type        = string
+}
+
 variable "registry_subscription_tier" {
   description = "Subscription tier for the container registry"
   type        = string
@@ -128,10 +133,15 @@ variable "email_address" {
   type        = string
 }
 
-variable "cloudflare_api_token" {
-  description = "Cloudflare API token with DNS edit permissions"
+variable "cloudflare_api_key" {
+  description = "Cloudflare Global API Key"
   type        = string
   sensitive   = true
+}
+
+variable "cloudflare_api_email" {
+  description = "Email associated with the Cloudflare account"
+  type        = string
 }
 
 variable "cloudflare_account_id" {

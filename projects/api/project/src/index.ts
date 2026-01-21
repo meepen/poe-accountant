@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import type { AppContext, AppEnv } from "./bindings";
 import { status } from "./routes/status";
 import { redirect } from "./routes/redirect";
+import { user } from "./routes/user";
 
 const app = new Hono<AppEnv>();
 
@@ -33,6 +34,7 @@ app.use(
 
 app.route("/status", status);
 app.route("/redirect", redirect);
+app.route("/user", user);
 
 app.get("/health", (c) => c.json({ status: "ok" }));
 

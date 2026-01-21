@@ -44,14 +44,32 @@ output "postgres_port" {
   value       = module.postgres.postgres_port
 }
 
-output "postgres_username" {
-  description = "PostgreSQL database username"
-  value       = module.postgres.postgres_username
+output "api_hyperdrive_id" {
+  value = module.api.hyperdrive_ids["HYPERDRIVE"]
+}
+
+output "r2_bucket_name" {
+  value = module.r2.bucket_name
+}
+
+output "r2_access_key_id" {
+  value = module.r2.access_key_id
+}
+
+output "r2_secret_access_key" {
+  value     = module.r2.secret_access_key
+  sensitive = true
 }
 
 output "postgres_password" {
   description = "PostgreSQL database password"
   value       = module.postgres.postgres_password
+  sensitive   = true
+}
+
+output "valkey_uri" {
+  description = "Valkey connection URI"
+  value       = module.valkey.valkey_uri
   sensitive   = true
 }
 
@@ -80,8 +98,15 @@ output "registry_endpoint" {
   description = "Endpoint URL of the container registry"
   value       = module.registry.registry_endpoint
 }
+output "api_domain_name" { value = local.full_api_domain_name }
 
-output "api_domain" {
-  description = "URL of the API on Cloudflare Workers"
-  value       = module.api.domain
+output "valkey_proxy_url" {
+  description = "URL of the Valkey Proxy on DigitalOcean App Platform"
+  value       = module.apps.live_url
+}
+
+output "wrangler_deploy_token" {
+  description = "Cloudflare API Token for Wrangler Deploy"
+  value       = cloudflare_api_token.wrangler_deploy.value
+  sensitive   = true
 }

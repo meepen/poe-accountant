@@ -104,9 +104,9 @@ redirect.get("/", zValidator("query", redirectQuerySchema), async (c) => {
   });
 
   // Set session cookie for current domain and redirect
-  setCookie(c, sessionCookieName, JSON.stringify(session), {
+  setCookie(c, sessionCookieName, session.authorizationToken, {
     maxAge: tokenData.expires_in,
-    httpOnly: false,
+    httpOnly: true,
     secure: true,
     sameSite: "Lax",
     domain: new URL(c.env.FRONTEND_URL).hostname,

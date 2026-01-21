@@ -67,6 +67,8 @@ tasks:
 
   migrations:generate:
     desc: Generate a new migration file based on local schema changes
+    env:
+      NODE_OPTIONS: "--import tsx"
     cmds:
       - pnpm --filter=@meepen/poe-accountant-db-schema exec drizzle-kit generate
 
@@ -74,6 +76,7 @@ tasks:
     desc: Apply all pending migrations to the database
     env:
       DB_CONN: "{{.URL}}"
+      NODE_OPTIONS: "--import tsx"
     cmds:
       - DATABASE_URL=${DB_CONN:-$DATABASE_URL} pnpm --filter=@meepen/poe-accountant-db-schema exec drizzle-kit migrate
 
@@ -82,7 +85,16 @@ tasks:
     vars:
       DATABASE_URL:
         sh: cd terraform && tofu output -raw postgres_url
+    env:
+      NODE_OPTIONS: "--import tsx"
     cmds:
       - task: migrations:apply
         vars:
           URL: "{{.DATABASE_URL}}"
+
+  deploy:
+    desc: Deploy infrastructure and applications
+    silent: true
+    cmds:
+      - task: tf:apply:auto
+      - cmd: CLOUDFLARE_API_TOKEN=$(cd terraform && tofu output -raw wrangler_deploy_token) task api:deploy

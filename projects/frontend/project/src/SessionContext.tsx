@@ -8,10 +8,7 @@ import {
   useCallback,
 } from "react";
 import { ApiEndpoint } from "@meepen/poe-accountant-api-schema/api/api-endpoints.enum";
-import {
-  sessionCookieName,
-  UserDto,
-} from "@meepen/poe-accountant-api-schema/api/user.dto";
+import { UserDto } from "@meepen/poe-accountant-api-schema/api/user.dto";
 import { z } from "zod";
 import { ApiService } from "@meepen/poe-accountant-api-schema/api/api-service";
 
@@ -25,19 +22,6 @@ interface SessionContextType {
   api: ApiService;
 }
 
-async function getCachedToken(): Promise<User | null> {
-  const token = await cookieStore.get(sessionCookieName);
-  if (!token || !token.value) {
-    return null;
-  }
-  try {
-    return UserDto.parse(JSON.parse(decodeURIComponent(token.value)));
-  } catch (error) {
-    console.error("Failed to parse cached token:", error);
-    return null;
-  }
-}
-
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
@@ -49,25 +33,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    getCachedToken()
+    api
+      .request(ApiEndpoint.GetUser)
       .then((cachedUser) => {
-        if (cachedUser) {
-          setUser(cachedUser);
-        }
+        console.debug(cachedUser);
         setIsLoading(false);
+        setUser(cachedUser);
       })
       .catch((error: unknown) => {
-        console.error("Error retrieving cached token:", error);
+        console.error("Error retrieving user:", error);
         setIsLoading(false);
       });
   }, []);
-
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
-    api.setAuthToken(user.authorizationToken);
-  }, [api, user]);
 
   const login = () => {
     window.location.href = `${import.meta.env.VITE_API_BASE_URL}/${ApiEndpoint.UserLogin}?redirect_to=${encodeURIComponent(
@@ -76,10 +53,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = useCallback(() => {
-    console.log(new Error("logout called"));
-    cookieStore.delete(sessionCookieName).catch((error: unknown) => {
-      console.error("Error deleting session cookie:", error);
-    });
     setUser(null);
   }, []);
 

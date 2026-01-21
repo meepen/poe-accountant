@@ -70,8 +70,12 @@ module "apps" {
       image_tag        = "latest"
       registry_type    = "DOCR"
       env = {
-        "VALKEY_URL"       = module.valkey.valkey_uri
-        "DATABASE_URL"     = module.postgres.postgres_uri
+        "VALKEY_URL"           = module.valkey.valkey_uri
+        "DATABASE_URL"         = module.postgres.postgres_uri
+        "S3_BUCKET_NAME"       = module.r2.bucket_name
+        "S3_ENDPOINT"          = "https://${var.cloudflare_account_id}.r2.cloudflarestorage.com"
+        "S3_ACCESS_KEY_ID"     = module.r2.access_key_id
+        "S3_SECRET_ACCESS_KEY" = module.r2.secret_access_key
       }
     }
   }
@@ -136,6 +140,10 @@ module "api" {
 
     PATHOFEXILE_CLIENT_ID     = var.pathofexile_client_id
     PATHOFEXILE_REDIRECT_URL  = var.pathofexile_redirect_url
+
+    S3_ENDPOINT         = "https://${var.cloudflare_account_id}.r2.cloudflarestorage.com"
+    S3_BUCKET_NAME      = module.r2.bucket_name
+    S3_FORCE_PATH_STYLE = "true"
   }
 
   secrets = {
@@ -143,6 +151,9 @@ module "api" {
     VALKEY_TOKEN = module.valkey.valkey_password
 
     PATHOFEXILE_CLIENT_SECRET = var.pathofexile_client_secret
+    
+    S3_ACCESS_KEY_ID     = module.r2.access_key_id
+    S3_SECRET_ACCESS_KEY = module.r2.secret_access_key
   }
 
   hyperdrive_configs = {
@@ -155,6 +166,17 @@ module "api" {
       password = module.postgres.postgres_password
     }
   }
+
+  r2_bucket_bindings = {
+    BUCKET = module.r2.bucket_name
+  }
+}
+
+module "r2" {
+  source = "./cloudflare/r2"
+
+  account_id  = var.cloudflare_account_id
+  bucket_name = var.r2_bucket_name
 }
 
 # Cloudflare DNS
@@ -178,6 +200,32 @@ module "cloudflare_dns" {
       value   = module.frontend.domain
       proxied = true
       ttl     = 1
+    }
+  }
+}
+
+# Cloudflare API Token for Wrangler Deploy
+data "cloudflare_api_token_permission_groups" "all" {}
+data "cloudflare_user" "me" {}
+
+resource "cloudflare_api_token" "wrangler_deploy" {
+  name = "wrangler-deploy-token"
+
+  policy {
+    permission_groups = [
+      data.cloudflare_api_token_permission_groups.all.account["Workers Scripts Write"],
+      data.cloudflare_api_token_permission_groups.all.account["Workers R2 Storage Write"],
+      data.cloudflare_api_token_permission_groups.all.account["Account Settings Read"],
+      data.cloudflare_api_token_permission_groups.all.user["User Details Read"],
+      data.cloudflare_api_token_permission_groups.all.user["Memberships Read"],
+      data.cloudflare_api_token_permission_groups.all.zone["Workers Routes Write"],
+      data.cloudflare_api_token_permission_groups.all.zone["Zone Read"],
+      data.cloudflare_api_token_permission_groups.all.zone["DNS Write"]
+    ]
+    resources = {
+      "com.cloudflare.api.account.${var.cloudflare_account_id}" = "*"
+      "com.cloudflare.api.account.zone.${var.cloudflare_zone_id}" = "*"
+      "com.cloudflare.api.user.${data.cloudflare_user.me.id}" = "*"
     }
   }
 }

@@ -15,6 +15,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.971.0",
     "@hono/zod-validator": "^0.7.6",
     "@meepen/poe-accountant-api-schema": "workspace:^",
     "@meepen/poe-accountant-db-schema": "workspace:^",

@@ -56,6 +56,11 @@ services:
       DATABASE_URL: postgres://${LOCAL_POSTGRES_USER}:${LOCAL_POSTGRES_PASSWORD}@postgres:${LOCAL_POSTGRES_PORT}/${LOCAL_POSTGRES_DB}
       VALKEY_URL: redis://:${LOCAL_VALKEY_PASSWORD}@valkey:${LOCAL_VALKEY_PORT}
       VALKEY_TOKEN: ${LOCAL_VALKEY_PASSWORD}
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-minioadmin}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-minioadmin}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-poe-accountant-assets}
+      S3_FORCE_PATH_STYLE: "true"
     restart: unless-stopped
 
   background-processor:
@@ -64,6 +69,11 @@ services:
     environment:
       DATABASE_URL: postgres://${LOCAL_POSTGRES_USER}:${LOCAL_POSTGRES_PASSWORD}@postgres:${LOCAL_POSTGRES_PORT}/${LOCAL_POSTGRES_DB}
       VALKEY_URL: redis://:${LOCAL_VALKEY_PASSWORD}@valkey:${LOCAL_VALKEY_PORT}
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-minioadmin}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-minioadmin}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-poe-accountant-assets}
+      S3_FORCE_PATH_STYLE: "true"
     depends_on:
       postgres:
         condition: service_healthy
@@ -81,6 +91,33 @@ services:
       PORT: 3000
     restart: unless-stopped
 
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-minioadmin}
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    volumes:
+      - poe-accountant-minio-data:/data
+
+  create-buckets:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc config host add myminio http://minio:9000 ${S3_ACCESS_KEY_ID:-minioadmin} ${S3_SECRET_ACCESS_KEY:-minioadmin};
+      /usr/bin/mc mb myminio/${S3_BUCKET_NAME:-poe-accountant-assets} || true;
+      /usr/bin/mc anonymous set public myminio/${S3_BUCKET_NAME:-poe-accountant-assets};
+      exit 0;
+      "
+
 
 networks:
   default:
@@ -88,3 +125,4 @@ networks:
 
 volumes:
   poe-accountant-postgres-data:
+  poe-accountant-minio-data:

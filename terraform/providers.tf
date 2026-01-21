@@ -32,5 +32,6 @@ provider "digitalocean" {
 }
 
 provider "cloudflare" {
-  api_token = var.cloudflare_api_token
+  api_key = var.cloudflare_api_key
+  email   = var.cloudflare_api_email
 }

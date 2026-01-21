@@ -20,31 +20,21 @@ export class ApiError extends Error {
 export class ApiService {
   constructor(public readonly baseUrl: URL) {}
 
-  protected authToken?: string;
-
-  public setAuthToken(token: string) {
-    this.authToken = token;
-  }
-
   async request<T extends ApiEndpoint>(
     endpoint: T,
     ...data: ApiResultResponseData<T>[0] extends object
       ? [data: ApiResultResponseData<T>[0]]
       : []
   ): Promise<ApiResultResponseData<T>[1]> {
-    const authHeader = this.authToken
-      ? { Authorization: `Bearer ${this.authToken}` }
-      : // I PROMISE THIS IS NECESSARY... not sure why typescript is complaining
-        ({} as { [key: string]: never });
-
     const response = await fetch(new URL(endpoint, this.baseUrl), {
       method: ApiEndpointMethods[endpoint],
+      credentials: "include",
       ...(data.length > 0
         ? {
             body: JSON.stringify(data[0]),
-            headers: { "Content-Type": "application/json", ...authHeader },
+            headers: { "Content-Type": "application/json" },
           }
-        : { headers: authHeader }),
+        : {}),
     });
 
     if (!response.ok) {

@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { SessionProvider } from "./SessionContext";
 
@@ -14,7 +15,9 @@ function getRoot() {
 ReactDOM.createRoot(getRoot()).render(
   <React.StrictMode>
     <SessionProvider>
-      <App />
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
     </SessionProvider>
   </React.StrictMode>,
 );

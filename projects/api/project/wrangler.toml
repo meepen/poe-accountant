@@ -1,16 +1,20 @@
 name = "meepen-poe-accountant-api"
 main = "src/index.ts"
 compatibility_date = "2026-01-18"
+workers_dev = false
+preview_urls = false
 
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
-CORS_ORIGIN = "*"
-VALKEY_URL = "http://localhost:8079"
-VALKEY_TOKEN = "valkey"
 
 # Create this with: wrangler hyperdrive create <NAME> --connection-string="postgres://..."
 [[hyperdrive]]
 binding = "HYPERDRIVE"
 id = "local"
 localConnectionString = "postgresql://postgres:postgres@postgres:5432/poe_accountant"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "poe-accountant-assets"
+preview_bucket_name = "poe-accountant-assets"

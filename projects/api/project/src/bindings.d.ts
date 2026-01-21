@@ -1,4 +1,4 @@
-import type { Hyperdrive } from "@cloudflare/workers-types";
+import type { Hyperdrive, R2Bucket } from "@cloudflare/workers-types";
 import type { Context } from "hono";
 
 type AppBindings = {
@@ -12,6 +12,13 @@ type AppBindings = {
   VALKEY_URL: string;
   VALKEY_TOKEN: string;
   HYPERDRIVE: Hyperdrive;
+  BUCKET: R2Bucket;
+
+  S3_ENDPOINT: string;
+  S3_BUCKET_NAME: string;
+  S3_FORCE_PATH_STYLE: string;
+  S3_ACCESS_KEY_ID: string;
+  S3_SECRET_ACCESS_KEY: string;
 };
 
 type AppEnv = { Bindings: AppBindings };
