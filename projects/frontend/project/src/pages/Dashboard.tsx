@@ -3,9 +3,6 @@ import {
   Typography,
   Box,
   Paper,
-  Tabs,
-  Tab,
-  IconButton,
   Table,
   TableBody,
   TableCell,
@@ -17,9 +14,9 @@ import {
   FormControlLabel,
   Checkbox,
 } from "@mui/material";
-import SettingsIcon from "@mui/icons-material/Settings";
-import { useSession } from "./SessionContext";
+import { useSession } from "../components/SessionContext";
 import { useTranslation } from "react-i18next";
+import ViewHistoryTabs from "./Dashboard/ViewHistoryTabs";
 
 // Placeholder data
 const ITEMS = [
@@ -77,19 +74,14 @@ function ItemTable() {
   );
 }
 
-export default function MainApp() {
+export default function Dashboard() {
   const { user } = useSession();
   const { t } = useTranslation();
-  const [tabIndex, setTabIndex] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   if (!user) {
     return null;
   }
-
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabIndex(newValue);
-  };
 
   const handleOpenSettings = () => {
     setSettingsOpen(true);
@@ -123,45 +115,7 @@ export default function MainApp() {
         <MoneyChart />
 
         {/* Bottom Section */}
-        <Paper
-          sx={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-          }}
-        >
-          <Box
-            sx={{
-              borderBottom: 1,
-              borderColor: "divider",
-              display: "flex",
-              alignItems: "center",
-              pr: 1,
-            }}
-          >
-            <Tabs value={tabIndex} onChange={handleTabChange}>
-              <Tab label={t("tab_view")} />
-              <Tab label={t("tab_history")} />
-            </Tabs>
-            <Box sx={{ flexGrow: 1 }} />
-            <IconButton
-              aria-label={t("settings_aria_label")}
-              onClick={handleOpenSettings}
-            >
-              <SettingsIcon />
-            </IconButton>
-          </Box>
-
-          <Box sx={{ p: 2, flex: 1, overflow: "auto" }}>
-            {tabIndex === 0 && (
-              <Typography>{t("view_content_area")}</Typography>
-            )}
-            {tabIndex === 1 && (
-              <Typography>{t("history_content_area")}</Typography>
-            )}
-          </Box>
-        </Paper>
+        <ViewHistoryTabs onOpenSettings={handleOpenSettings} />
       </Box>
 
       {/* Right Side */}

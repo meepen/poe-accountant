@@ -17,13 +17,13 @@ import {
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
 import { Routes, Route, Navigate, Link as RouterLink } from "react-router-dom";
-import GGGNotice from "./GGGNotice";
-import Copyright from "./Copyright";
-import PreLogin from "./PreLogin";
-import MainApp from "./MainApp";
-import JobsPage from "./JobsPage";
-import { useSession } from "./SessionContext";
-import GithubLink from "./GithubLink";
+import GGGNotice from "./components/GGGNotice";
+import Copyright from "./components/Copyright";
+import PreLogin from "./pages/PreLogin";
+import Dashboard from "./pages/Dashboard";
+import JobsPage from "./pages/JobsPage";
+import { useSession } from "./components/SessionContext";
+import GithubLink from "./components/GithubLink";
 import { useTranslation } from "react-i18next";
 import { createAppTheme } from "./theme";
 
@@ -205,7 +205,7 @@ export default function App() {
           <Routes>
             {user ? (
               <>
-                <Route path="/" element={<MainApp />} />
+                <Route path="/" element={<Dashboard />} />
                 <Route path="/jobs" element={<JobsPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </>
