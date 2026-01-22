@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
-  createTheme,
   ThemeProvider,
   CssBaseline,
   AppBar,
@@ -13,6 +12,7 @@ import {
   Menu,
   MenuItem,
   Divider,
+  useMediaQuery,
 } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
@@ -23,74 +23,19 @@ import PreLogin from "./PreLogin";
 import MainApp from "./MainApp";
 import JobsPage from "./JobsPage";
 import { useSession } from "./SessionContext";
-import fontinRegular from "./assets/fonts/Fontin-Regular.ttf";
-import fontinBold from "./assets/fonts/Fontin-Bold.ttf";
-import fontinItalic from "./assets/fonts/Fontin-Italic.ttf";
 import GithubLink from "./GithubLink";
-
-const darkTheme = createTheme({
-  palette: {
-    mode: "dark",
-    background: {
-      default: "#080606", // Very dark brownish black
-      paper: "#1a1310", // Dark brown
-    },
-    primary: {
-      main: "#dcb678", // Gold/Brass
-    },
-    secondary: {
-      main: "#a80000", // Dark Red
-    },
-    text: {
-      primary: "#efe5d3", // Off-white/beige
-      secondary: "#a38d6d", // Muted Gold
-    },
-  },
-  typography: {
-    fontFamily: '"Fontin", "Roboto", "Helvetica", "Arial", sans-serif',
-    h1: { color: "#dcb678" },
-    h2: { color: "#dcb678" },
-    h3: { color: "#dcb678" },
-    h4: { color: "#dcb678" },
-    h5: { color: "#dcb678" },
-    h6: { color: "#dcb678" },
-  },
-  components: {
-    MuiAppBar: {
-      styleOverrides: {
-        root: {
-          backgroundColor: "#1a1310",
-          borderBottom: "1px solid #5a4b35",
-        },
-      },
-    },
-    MuiCssBaseline: {
-      styleOverrides: `
-        @font-face {
-          font-family: 'Fontin';
-          src: url('${fontinRegular}') format('truetype');
-          font-weight: normal;
-          font-style: normal;
-        }
-        @font-face {
-          font-family: 'Fontin';
-          src: url('${fontinBold}') format('truetype');
-          font-weight: bold;
-          font-style: normal;
-        }
-        @font-face {
-          font-family: 'Fontin';
-          src: url('${fontinItalic}') format('truetype');
-          font-weight: normal;
-          font-style: italic;
-        }
-      `,
-    },
-  },
-});
+import { useTranslation } from "react-i18next";
+import { createAppTheme } from "./theme";
 
 export default function App() {
   const { user, logout, login, isLoading } = useSession();
+  const { t } = useTranslation();
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  const theme = useMemo(
+    () => createAppTheme(prefersDarkMode ? "dark" : "light"),
+    [prefersDarkMode],
+  );
+
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [developerAnchorEl, setDeveloperAnchorEl] =
     useState<null | HTMLElement>(null);
@@ -117,7 +62,7 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <ThemeProvider theme={darkTheme}>
+      <ThemeProvider theme={theme}>
         <CssBaseline />
         <Box
           sx={{
@@ -134,7 +79,7 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider theme={darkTheme}>
+    <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box
         sx={{
@@ -160,8 +105,12 @@ export default function App() {
                 },
               }}
             >
-              <Typography variant="h6" component="div" sx={{ mx: 2 }}>
-                Path of Exile Accountant
+              <Typography
+                variant="h6"
+                component="div"
+                sx={{ mx: 2, color: "inherit" }}
+              >
+                {t("app_title")}
               </Typography>
             </Button>
             {user ? (
@@ -199,7 +148,7 @@ export default function App() {
                           fontSize="small"
                           sx={{ mr: 1 }}
                         />
-                        Developer
+                        {t("menu_developer")}
                       </Box>
                     </MenuItem>
                     <Menu
@@ -220,7 +169,7 @@ export default function App() {
                         to="/jobs"
                         onClick={handleDeveloperClose}
                       >
-                        Jobs
+                        {t("menu_jobs")}
                       </MenuItem>
                     </Menu>
                     <Divider />
@@ -230,7 +179,7 @@ export default function App() {
                         logout();
                       }}
                     >
-                      Log Out
+                      {t("menu_logout")}
                     </MenuItem>
                   </Menu>
                 </Box>
@@ -243,7 +192,7 @@ export default function App() {
                   onClick={login}
                   sx={{ borderRadius: 0, px: 3, alignSelf: "stretch" }}
                 >
-                  Log In
+                  {t("menu_login")}
                 </Button>
               </>
             )}

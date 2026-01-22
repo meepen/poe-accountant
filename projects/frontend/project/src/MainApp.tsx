@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { useSession } from "./SessionContext";
+import { useTranslation } from "react-i18next";
 
 // Placeholder data
 const ITEMS = [
@@ -31,6 +32,7 @@ const ITEMS = [
 
 function MoneyChart() {
   const theme = useTheme();
+  const { t } = useTranslation();
   return (
     <Paper
       sx={{
@@ -43,20 +45,21 @@ function MoneyChart() {
       }}
     >
       <Typography variant="h6" color="text.secondary">
-        [Chart Placeholder: Money over Time]
+        {t("chart_placeholder_money")}
       </Typography>
     </Paper>
   );
 }
 
 function ItemTable() {
+  const { t } = useTranslation();
   return (
     <TableContainer sx={{ height: "100%" }}>
       <Table stickyHeader aria-label="items table">
         <TableHead>
           <TableRow>
-            <TableCell>Item</TableCell>
-            <TableCell align="right">Est. Price</TableCell>
+            <TableCell>{t("table_header_item")}</TableCell>
+            <TableCell align="right">{t("table_header_est_price")}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -76,6 +79,7 @@ function ItemTable() {
 
 export default function MainApp() {
   const { user } = useSession();
+  const { t } = useTranslation();
   const [tabIndex, setTabIndex] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -137,18 +141,25 @@ export default function MainApp() {
             }}
           >
             <Tabs value={tabIndex} onChange={handleTabChange}>
-              <Tab label="View" />
-              <Tab label="History" />
+              <Tab label={t("tab_view")} />
+              <Tab label={t("tab_history")} />
             </Tabs>
             <Box sx={{ flexGrow: 1 }} />
-            <IconButton aria-label="settings" onClick={handleOpenSettings}>
+            <IconButton
+              aria-label={t("settings_aria_label")}
+              onClick={handleOpenSettings}
+            >
               <SettingsIcon />
             </IconButton>
           </Box>
 
           <Box sx={{ p: 2, flex: 1, overflow: "auto" }}>
-            {tabIndex === 0 && <Typography>View Content Area</Typography>}
-            {tabIndex === 1 && <Typography>History Content Area</Typography>}
+            {tabIndex === 0 && (
+              <Typography>{t("view_content_area")}</Typography>
+            )}
+            {tabIndex === 1 && (
+              <Typography>{t("history_content_area")}</Typography>
+            )}
           </Box>
         </Paper>
       </Box>
@@ -171,7 +182,7 @@ export default function MainApp() {
           }}
         >
           <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
-            <Typography variant="h6">Items</Typography>
+            <Typography variant="h6">{t("section_items")}</Typography>
           </Box>
           <Box sx={{ flex: 1, overflow: "hidden" }}>
             <ItemTable />
@@ -200,12 +211,12 @@ export default function MainApp() {
           }}
         >
           <Typography id="settings-modal-title" variant="h6" component="h2">
-            Settings
+            {t("modal_title_settings")}
           </Typography>
           <Box sx={{ mt: 2 }}>
             <FormControlLabel
               control={<Checkbox defaultChecked />}
-              label="Test Checkbox"
+              label={t("settings_test_checkbox")}
             />
           </Box>
         </Box>

@@ -17,11 +17,13 @@ import { z } from "zod";
 import { ApiEndpoint } from "@meepen/poe-accountant-api-schema/api/api-endpoints.enum";
 import { UserJobDto } from "@meepen/poe-accountant-api-schema/api/user.job.dto";
 import { useSession } from "./SessionContext";
+import { useTranslation } from "react-i18next";
 
 type UserJob = z.infer<typeof UserJobDto>;
 
 export default function JobsPage() {
   const { api } = useSession();
+  const { t } = useTranslation();
   const [jobs, setJobs] = useState<UserJob[] | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -53,7 +55,7 @@ export default function JobsPage() {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>
-        Background Jobs
+        {t("jobs_title")}
       </Typography>
 
       {loading ? (
@@ -61,17 +63,17 @@ export default function JobsPage() {
           <CircularProgress />
         </Box>
       ) : !jobs || jobs.length === 0 ? (
-        <Typography variant="body1">No jobs found.</Typography>
+        <Typography variant="body1">{t("jobs_empty")}</Typography>
       ) : (
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Completed</TableCell>
-                <TableCell>Created At</TableCell>
-                <TableCell>Updated At</TableCell>
+                <TableCell>{t("jobs_table_id")}</TableCell>
+                <TableCell>{t("jobs_table_status")}</TableCell>
+                <TableCell>{t("jobs_table_completed")}</TableCell>
+                <TableCell>{t("jobs_table_created_at")}</TableCell>
+                <TableCell>{t("jobs_table_updated_at")}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -88,7 +90,7 @@ export default function JobsPage() {
                   <TableCell>{job.statusText}</TableCell>
                   <TableCell>
                     <Chip
-                      label={job.isComplete ? "Yes" : "No"}
+                      label={job.isComplete ? t("yes") : t("no")}
                       color={job.isComplete ? "success" : "warning"}
                       size="small"
                     />

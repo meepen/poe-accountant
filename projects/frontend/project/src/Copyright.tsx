@@ -1,10 +1,12 @@
 import { Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 export default function Copyright() {
+  const { t } = useTranslation();
   return (
     <Typography variant="body2" color="text.secondary">
-      {"Copyright © "}
-      {"Devin Korb"} {new Date().getFullYear()}
+      {t("copyright", { year: new Date().getFullYear() })}
+      {"Devin Korb"}
       {"."}
     </Typography>
   );
