@@ -145,23 +145,28 @@ export default function App() {
       >
         <AppBar position="static">
           <Toolbar disableGutters>
-            <Typography variant="h6" component="div" sx={{ mr: 4, ml: 2 }}>
-              Path of Exile Accountant
-            </Typography>
+            <Button
+              component={RouterLink}
+              to="/"
+              color="inherit"
+              sx={{
+                alignSelf: "stretch",
+                borderRadius: 0,
+                p: 0,
+                mr: 4,
+                textTransform: "none",
+                "&:hover": {
+                  backgroundColor: "transparent",
+                },
+              }}
+            >
+              <Typography variant="h6" component="div" sx={{ mx: 2 }}>
+                Path of Exile Accountant
+              </Typography>
+            </Button>
             {user ? (
               <>
-                <Box
-                  sx={{ flexGrow: 1, display: "flex", alignSelf: "stretch" }}
-                >
-                  <Button
-                    component={RouterLink}
-                    to="/"
-                    color="inherit"
-                    sx={{ borderRadius: 0, px: 3 }}
-                  >
-                    Dashboard
-                  </Button>
-                </Box>
+                <Box sx={{ flexGrow: 1 }} />
                 <Box sx={{ display: "flex", alignSelf: "stretch" }}>
                   <Button
                     color="inherit"
@@ -175,8 +180,10 @@ export default function App() {
                     anchorEl={anchorEl}
                     open={open}
                     onClose={handleMenuClose}
-                    MenuListProps={{
-                      "aria-labelledby": "basic-button",
+                    slotProps={{
+                      list: {
+                        "aria-labelledby": "basic-button",
+                      },
                     }}
                   >
                     <MenuItem onClick={handleDeveloperClick}>

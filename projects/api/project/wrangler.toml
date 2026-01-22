@@ -1,6 +1,6 @@
 name = "meepen-poe-accountant-api"
 main = "src/index.ts"
-compatibility_date = "2026-01-18"
+compatibility_date = "2026-01-14"
 workers_dev = false
 preview_urls = false
 
@@ -12,7 +12,6 @@ compatibility_flags = ["nodejs_compat"]
 [[hyperdrive]]
 binding = "HYPERDRIVE"
 id = "local"
-localConnectionString = "postgresql://postgres:postgres@postgres:5432/poe_accountant"
 
 [[r2_buckets]]
 binding = "BUCKET"
