@@ -143,7 +143,6 @@ module "api" {
 
     S3_ENDPOINT         = "https://${var.cloudflare_account_id}.r2.cloudflarestorage.com"
     S3_BUCKET_NAME      = module.r2.bucket_name
-    S3_FORCE_PATH_STYLE = "true"
   }
 
   secrets = {
@@ -153,7 +152,7 @@ module "api" {
     PATHOFEXILE_CLIENT_SECRET = var.pathofexile_client_secret
     
     S3_ACCESS_KEY_ID     = module.r2.access_key_id
-    S3_SECRET_ACCESS_KEY = module.r2.secret_access_key
+    S3_SECRET_ACCESS_KEY = sha256(module.r2.secret_access_key)
   }
 
   hyperdrive_configs = {
@@ -170,6 +169,9 @@ module "api" {
   r2_bucket_bindings = {
     BUCKET = module.r2.bucket_name
   }
+
+  worker_script_path = abspath("${path.module}/../projects/api/project")
+  api_token          = cloudflare_api_token.wrangler_deploy.value
 }
 
 module "r2" {

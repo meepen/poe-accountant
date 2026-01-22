@@ -49,3 +49,14 @@ variable "hyperdrive_configs" {
   }))
   default     = {}
 }
+
+variable "worker_script_path" {
+  description = "Path to the worker script directory"
+  type        = string
+}
+
+variable "api_token" {
+  description = "Cloudflare API Token for Wrangler"
+  type        = string
+  sensitive   = true
+}

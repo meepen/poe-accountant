@@ -16,7 +16,6 @@ type AppBindings = {
 
   S3_ENDPOINT: string;
   S3_BUCKET_NAME: string;
-  S3_FORCE_PATH_STYLE: string;
   S3_ACCESS_KEY_ID: string;
   S3_SECRET_ACCESS_KEY: string;
 };

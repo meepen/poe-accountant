@@ -19,4 +19,4 @@ projects/common/project/docs
 *.tfstate
 
 .wrangler
-wrangler.prod.toml
+wrangler.tf.toml

@@ -188,7 +188,10 @@ export default function App() {
                           width: "100%",
                         }}
                       >
-                        <KeyboardArrowLeftIcon fontSize="small" sx={{ mr: 1 }} />
+                        <KeyboardArrowLeftIcon
+                          fontSize="small"
+                          sx={{ mr: 1 }}
+                        />
                         Developer
                       </Box>
                     </MenuItem>

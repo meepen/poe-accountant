@@ -15,12 +15,12 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.971.0",
     "@hono/zod-validator": "^0.7.6",
     "@meepen/poe-accountant-api-schema": "workspace:^",
     "@meepen/poe-accountant-db-schema": "workspace:^",
     "@meepen/poe-common": "workspace:^",
     "@upstash/redis": "^1.36.1",
+    "aws4fetch": "^1.0.20",
     "drizzle-orm": "^0.45.1",
     "hono": "^4.11.4",
     "ioredis": "^5.9.2",

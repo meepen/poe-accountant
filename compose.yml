@@ -51,7 +51,7 @@ services:
     image: poe-accountant/api:latest
     container_name: api
     ports:
-      - "4000:4000"
+    - "4000:4000"
     environment:
       DATABASE_URL: postgres://${LOCAL_POSTGRES_USER}:${LOCAL_POSTGRES_PASSWORD}@postgres:${LOCAL_POSTGRES_PORT}/${LOCAL_POSTGRES_DB}
       VALKEY_URL: redis://:${LOCAL_VALKEY_PASSWORD}@valkey:${LOCAL_VALKEY_PORT}
@@ -60,7 +60,7 @@ services:
       S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-minioadmin}
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-minioadmin}
       S3_BUCKET_NAME: ${S3_BUCKET_NAME:-poe-accountant-assets}
-      S3_FORCE_PATH_STYLE: "true"
+      FRONTEND_URL: http://localhost:3000
     restart: unless-stopped
 
   background-processor:

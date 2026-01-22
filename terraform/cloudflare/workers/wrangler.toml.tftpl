@@ -1,0 +1,36 @@
+name = "${project_name}"
+main = "src/index.ts"
+compatibility_date = "2026-01-21"
+compatibility_flags = ["nodejs_compat"]
+account_id = "${account_id}"
+workers_dev = false
+preview_urls = false
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+%{ if length(custom_domains) > 0 ~}
+routes = [
+%{ for domain in custom_domains ~}
+  { pattern = "${domain}", custom_domain = true },
+%{ endfor ~}
+]
+%{ endif ~}
+
+[vars]
+%{ for key, value in environment_variables ~}
+${key} = "${value}"
+%{ endfor ~}
+
+%{ for key, value in hyperdrive_configs ~}
+[[hyperdrive]]
+binding = "${key}"
+id = "${hyperdrive_ids[key]}"
+%{ endfor ~}
+
+%{ for key, value in r2_bucket_bindings ~}
+[[r2_buckets]]
+binding = "${key}"
+bucket_name = "${value}"
+%{ endfor ~}

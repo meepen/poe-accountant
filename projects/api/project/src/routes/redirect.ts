@@ -112,7 +112,6 @@ redirect.get("/", zValidator("query", redirectQuerySchema), async (c) => {
     domain: new URL(c.env.FRONTEND_URL).hostname,
   });
 
-  console.log(c.env.FRONTEND_URL, redirect_to);
   // Ensure redirect is relative to frontend URL
   return c.redirect(new URL(new URL(redirect_to).pathname, c.env.FRONTEND_URL));
 });

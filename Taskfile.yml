@@ -97,4 +97,3 @@ tasks:
     silent: true
     cmds:
       - task: tf:apply:auto
-      - cmd: CLOUDFLARE_API_TOKEN=$(cd terraform && tofu output -raw wrangler_deploy_token) task api:deploy
