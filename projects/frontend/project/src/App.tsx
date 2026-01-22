@@ -249,7 +249,10 @@ export default function App() {
             )}
           </Toolbar>
         </AppBar>
-        <Container component="main" sx={{ mt: 8, mb: 2, flex: 1 }}>
+        <Box
+          component="main"
+          sx={{ flex: 1, display: "flex", flexDirection: "column" }}
+        >
           <Routes>
             {user ? (
               <>
@@ -264,7 +267,7 @@ export default function App() {
               </>
             )}
           </Routes>
-        </Container>
+        </Box>
         <Box
           component="footer"
           sx={{
