@@ -36,7 +36,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     api
       .request(ApiEndpoint.GetUser)
       .then((cachedUser) => {
-        console.debug(cachedUser);
         setIsLoading(false);
         setUser(cachedUser);
       })
@@ -64,7 +63,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const expiresAt = new Date(user.expiresAt);
     const now = new Date();
     const timeUntilExpiration = expiresAt.getTime() - now.getTime();
-    console.log(`Session expires in ${timeUntilExpiration} ms`);
 
     if (timeUntilExpiration <= 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect

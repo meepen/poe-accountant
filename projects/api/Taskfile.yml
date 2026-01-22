@@ -7,6 +7,9 @@ includes:
 
 tasks:
   start:
+    env:
+      vars:
+        - CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${DATABASE_URL}
     desc: Start the API server in development mode
     dir: .
     cmds:

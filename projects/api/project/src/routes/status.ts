@@ -8,7 +8,6 @@ import { getS3 } from "../s3";
 export const status = new Hono<{ Bindings: AppBindings }>();
 
 status.get("/", (c) => {
-  console.log(c.env);
   return c.json({ status: true });
 });
 

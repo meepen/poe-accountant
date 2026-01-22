@@ -5,3 +5,9 @@ includes:
     taskfile: ../../base/node/Taskfile.yml
     dir: ./project
 
+tasks:
+  start:
+    desc: Start the frontend development server
+    dir: ./project
+    cmds:
+      - task: base:start

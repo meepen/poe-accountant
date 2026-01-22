@@ -5,15 +5,15 @@ services:
     image: postgres:${POSTGRES_VERSION}
     container_name: postgres
     environment:
-      POSTGRES_USER: ${LOCAL_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${LOCAL_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${LOCAL_POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "${LOCAL_POSTGRES_PORT}:5432"
+      - "${POSTGRES_PORT}:5432"
     volumes:
       - poe-accountant-postgres-data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${LOCAL_POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,8 +23,8 @@ services:
     image: valkey/valkey:${VALKEY_VERSION}
     container_name: valkey
     ports:
-      - "${LOCAL_VALKEY_PORT}:6379"
-    command: valkey-server --requirepass "${LOCAL_VALKEY_PASSWORD}"
+      - "${VALKEY_PORT}:6379"
+    command: valkey-server --requirepass "${VALKEY_PASSWORD}"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -37,11 +37,11 @@ services:
     container_name: valkey-proxy
     environment:
       SRH_MODE: env
-      SRH_TOKEN: ${LOCAL_VALKEY_PASSWORD}
-      SRH_CONNECTION_STRING: redis://:${LOCAL_VALKEY_PASSWORD}@valkey:${LOCAL_VALKEY_PORT}
+      SRH_TOKEN: ${VALKEY_PASSWORD}
+      SRH_CONNECTION_STRING: redis://:${VALKEY_PASSWORD}@valkey:${VALKEY_PORT}
       SRH_PORT: 80
     ports:
-      - "8079:80"
+      - "${VALKEY_PROXY_PORT}:80"
     depends_on:
       valkey:
         condition: service_healthy
@@ -51,24 +51,24 @@ services:
     image: poe-accountant/api:latest
     container_name: api
     ports:
-    - "4000:4000"
+    - "${API_PORT}:4000"
     environment:
-      DATABASE_URL: postgres://${LOCAL_POSTGRES_USER}:${LOCAL_POSTGRES_PASSWORD}@postgres:${LOCAL_POSTGRES_PORT}/${LOCAL_POSTGRES_DB}
-      VALKEY_URL: redis://:${LOCAL_VALKEY_PASSWORD}@valkey:${LOCAL_VALKEY_PORT}
-      VALKEY_TOKEN: ${LOCAL_VALKEY_PASSWORD}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}
+      VALKEY_URL: http://:${VALKEY_PASSWORD}@valkey-proxy:80
+      VALKEY_TOKEN: ${VALKEY_PASSWORD}
       S3_ENDPOINT: http://minio:9000
       S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-minioadmin}
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-minioadmin}
       S3_BUCKET_NAME: ${S3_BUCKET_NAME:-poe-accountant-assets}
-      FRONTEND_URL: http://localhost:3000
+      FRONTEND_URL: http://localhost:${FRONTEND_PORT}
     restart: unless-stopped
 
   background-processor:
     image: poe-accountant/background-processor:latest
     container_name: background-processor
     environment:
-      DATABASE_URL: postgres://${LOCAL_POSTGRES_USER}:${LOCAL_POSTGRES_PASSWORD}@postgres:${LOCAL_POSTGRES_PORT}/${LOCAL_POSTGRES_DB}
-      VALKEY_URL: redis://:${LOCAL_VALKEY_PASSWORD}@valkey:${LOCAL_VALKEY_PORT}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}
+      VALKEY_URL: redis://:${VALKEY_PASSWORD}@valkey:${VALKEY_PORT}
       S3_ENDPOINT: http://minio:9000
       S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-minioadmin}
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-minioadmin}
@@ -84,10 +84,11 @@ services:
     image: poe-accountant/frontend:latest
     container_name: frontend
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
     environment:
-      NODE_ENV: production
-      PORT: 3000
+      NODE_ENV: development
+      PORT: ${FRONTEND_PORT}
+      VITE_API_BASE_URL: http://localhost:${API_PORT}
     restart: unless-stopped
 
   minio:
@@ -120,7 +121,7 @@ services:
 
 networks:
   default:
-    name: ${LOCAL_DOCKER_NETWORK}
+    name: ${DOCKER_NETWORK}
 
 volumes:
   poe-accountant-postgres-data:
