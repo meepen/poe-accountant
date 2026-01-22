@@ -43,7 +43,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         console.error("Error retrieving user:", error);
         setIsLoading(false);
       });
-  }, []);
+  }, [api]);
 
   const login = () => {
     window.location.href = `${import.meta.env.VITE_API_BASE_URL}/${ApiEndpoint.UserLogin}?redirect_to=${encodeURIComponent(
