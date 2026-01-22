@@ -16,8 +16,8 @@ import {
 import { z } from "zod";
 import { ApiEndpoint } from "@meepen/poe-accountant-api-schema/api/api-endpoints.enum";
 import { UserJobDto } from "@meepen/poe-accountant-api-schema/api/user.job.dto";
-import { useSession } from "./SessionContext";
 import { useTranslation } from "react-i18next";
+import { useSession } from "../components/SessionContext";
 
 type UserJob = z.infer<typeof UserJobDto>;
 
