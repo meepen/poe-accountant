@@ -29,6 +29,11 @@ tasks:
     cmds:
       - docker compose up -d
 
+  restart:
+    cmds:
+      - task: docker:build
+      - task: start
+
   test:
     cmds:
       - pnpm -r test
