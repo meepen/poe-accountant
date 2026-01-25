@@ -51,3 +51,5 @@ To start the project:
 ```sh
 task start
 ```
+
+You can disable certain projects via `podman compose down frontend` and start those locally.

@@ -12,7 +12,6 @@ type AppBindings = {
   VALKEY_URL: string;
   VALKEY_TOKEN: string;
   HYPERDRIVE: Hyperdrive;
-  BUCKET: R2Bucket;
 
   S3_ENDPOINT: string;
   S3_BUCKET_NAME: string;

@@ -4,5 +4,8 @@
   "description": "Poe Accountant is a project designed to manage and analyze data related to the game Path of Exile",
   "license": "MPL-2.0",
   "private": true,
-  "packageManager": "pnpm@10.26.1"
+  "packageManager": "pnpm@10.26.1",
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  }
 }

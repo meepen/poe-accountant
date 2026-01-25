@@ -1,6 +1,9 @@
 # syntax=docker/dockerfile:1
 
 FROM node:24-slim
+
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
 ENV CI=true
 ENV BUILDKIT_PROGRESS=plain
 RUN corepack enable
