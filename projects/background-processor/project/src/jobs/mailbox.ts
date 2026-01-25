@@ -8,15 +8,14 @@ import { createValkeyConnection } from "../valkey.js";
 
 export class MailboxProcess implements JobProcess {
   private isRunning: boolean = true;
-  private readonly redis = createValkeyConnection();
+  private connection = createValkeyConnection();
 
   private readonly queueMap = new Map<string, Queue>();
 
   private getJobQueue(name: string): Queue {
     if (!this.queueMap.has(name)) {
       const queue = new Queue(name, {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-        connection: this.redis as any,
+        connection: this.connection.valkeyForBullMQ,
       });
       this.queueMap.set(name, queue);
     }
@@ -35,12 +34,13 @@ export class MailboxProcess implements JobProcess {
     });
     console.log(`Resubmitted job '${targetQueue}' to BullMQ queue'`);
   }
-  public async start(): Promise<void> {
+
+  protected async worker() {
     while (this.isRunning) {
       try {
         // blpop returns [key, element] or null if timeout
         // 0 means block indefinitely
-        const result = await this.redis.blpop(MailboxQueueName, 1); // Using 1s timeout to allow check for shutdown signals
+        const result = await this.connection.valkey.blpop(MailboxQueueName, 1); // Using 1s timeout to allow check for shutdown signals
 
         if (result) {
           const [, message] = result;
@@ -62,11 +62,18 @@ export class MailboxProcess implements JobProcess {
       }
     }
   }
+
+  protected job!: Promise<void>;
+
+  public start() {
+    this.job = new Promise((resolve, reject) => {
+      this.worker().then(resolve).catch(reject);
+    });
+  }
   public async stop(): Promise<void> {
     this.isRunning = false;
     await Promise.all(
       Array.from(this.queueMap.values()).map((queue) => queue.close()),
     );
-    await this.redis.quit();
   }
 }

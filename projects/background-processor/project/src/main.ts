@@ -1,22 +1,22 @@
 import { MailboxProcess } from "./jobs/mailbox.js";
+import { MinuteJob } from "./jobs/minute-job.js";
 
-const processors = [new MailboxProcess()];
+const processors = [new MailboxProcess(), new MinuteJob()];
 
 async function main() {
   console.log("Starting background processor...");
 
-  try {
-    await Promise.all(processors.map((processor) => processor.start()));
-  } catch (error) {
-    console.error("Fatal error in main loop:", error);
-    process.exit(1);
-  }
+  await Promise.all(
+    processors.map((processor) => Promise.resolve(processor.start())),
+  );
 }
 
 function shutdown() {
   console.log("Shutting down...");
 
-  Promise.allSettled(processors.map((processor) => processor.stop()))
+  Promise.allSettled(
+    processors.map((processor) => Promise.resolve(processor.stop())),
+  )
     .then(() => {
       console.log("Shutdown complete.");
       process.exit(0);
@@ -27,10 +27,9 @@ function shutdown() {
     });
 }
 
-process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
 
 main().catch((error: unknown) => {
-  console.error("Error during migrations:", error);
+  console.error("Unhandled error in main:", error);
   process.exit(1);
 });

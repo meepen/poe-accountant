@@ -134,7 +134,7 @@ module "api" {
   custom_domains = [local.full_api_domain_name]
   
   environment_variables = {
-    VALKEY_URL   = module.apps.live_url
+    VALKEY_PROXY_URL   = module.apps.live_url
     CORS_ORIGIN  = "https://${var.cloudflare_zone_name}"
     FRONTEND_URL = "https://${var.cloudflare_zone_name}"
 
