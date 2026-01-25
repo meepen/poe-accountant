@@ -1,0 +1,121 @@
+version: "3"
+
+vars:
+  LOCAL_REGISTRY: pathofexile.accountant.localhost
+  BUILDER: podman
+
+tasks:
+  default:
+    desc: "Build all services"
+    deps:
+      - task: _base-node
+        vars: { BUILDER: "{{.BUILDER}}" }
+    cmds:
+      - task: _build_services_parallel
+        vars:
+          REGISTRY: "{{.REGISTRY}}"
+          BUILDER: "{{.BUILDER}}"
+
+  _build_services_parallel:
+    internal: true
+    deps: 
+      - task: frontend
+        vars: 
+          REGISTRY: "{{.REGISTRY}}"
+          BUILDER: "{{.BUILDER}}"
+      - task: api
+        vars:
+          REGISTRY: "{{.REGISTRY}}"
+          BUILDER: "{{.BUILDER}}"
+      - task: background-processor
+        vars:
+          REGISTRY: "{{.REGISTRY}}"
+          BUILDER: "{{.BUILDER}}"
+
+  _build:
+    internal: true
+    vars:
+      DOCKERFILE: '{{default "Dockerfile" .DOCKERFILE}}'
+      CONTEXT: '{{default .ROOT_DIR .CONTEXT}}'
+    cmds:
+      - >-
+        {{.BUILDER}} build 
+        -f {{.DOCKERFILE}}
+        -t {{.LOCAL_REGISTRY}}/{{.NAME}}:latest
+        {{.EXTRA_FLAGS}}
+        {{.CONTEXT}}
+
+  _build-to:
+    internal: true
+    cmds:
+      - task: _build
+        vars:
+          NAME: "{{.NAME}}"
+          DOCKERFILE: "{{.DOCKERFILE}}"
+          CONTEXT: "{{.CONTEXT}}"
+          EXTRA_FLAGS: "{{.EXTRA_FLAGS}}"
+          BUILDER: "{{.BUILDER}}"
+      - |
+        {{if ne .REGISTRY ""}}{{.BUILDER}} tag {{.LOCAL_REGISTRY}}/{{.NAME}}:latest {{.REGISTRY}}/{{.NAME}}:latest &&
+        {{.BUILDER}} push {{.REGISTRY}}/{{.NAME}}:latest{{end}}
+
+  root-config:
+    desc: "Builds the root config context"
+    cmds:
+      - |
+        cat <<EOF | {{.BUILDER}} build -t {{.LOCAL_REGISTRY}}/root-config:latest -f - .
+        FROM alpine
+        COPY pnpm-lock.yaml pnpm-workspace.yaml package.json /out/
+        EOF
+
+  _base-node:
+    internal: true
+    deps:
+      - task: root-config
+        vars: { BUILDER: "{{.BUILDER}}" }
+    cmds:
+      - task: _build
+        vars:
+          NAME: base
+          DOCKERFILE: base/node/Dockerfile
+          EXTRA_FLAGS: "--secret id=env,src=.env"
+          BUILDER: "{{.BUILDER}}"
+
+  frontend:
+    desc: "Build Frontend"
+    deps: 
+      - task: _base-node
+        vars: { BUILDER: "{{.BUILDER}}" }
+    cmds:
+      - task: _build-to
+        vars: 
+          NAME: frontend
+          DOCKERFILE: projects/frontend/Dockerfile
+          REGISTRY: "{{.REGISTRY}}"
+          BUILDER: "{{.BUILDER}}"
+
+  api:
+    desc: "Build API"
+    deps: 
+      - task: _base-node
+        vars: { BUILDER: "{{.BUILDER}}" }
+    cmds:
+      - task: _build-to
+        vars: 
+          NAME: api
+          DOCKERFILE: projects/api/Dockerfile
+          REGISTRY: "{{.REGISTRY}}"
+          BUILDER: "{{.BUILDER}}"
+
+  background-processor:
+    desc: "Build Background Processor"
+    deps:
+      - task: _base-node
+        vars: { BUILDER: "{{.BUILDER}}" }
+    cmds:
+      - task: _build-to
+        vars: 
+          NAME: background-processor
+          DOCKERFILE: projects/background-processor/Dockerfile
+          REGISTRY: "{{.REGISTRY}}"
+          BUILDER: "{{.BUILDER}}"

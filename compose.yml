@@ -2,7 +2,7 @@ name: poe-accountant
 
 services:
   postgres:
-    image: postgres:${POSTGRES_VERSION}
+    image: docker.io/postgres:${POSTGRES_VERSION}
     container_name: postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
 
   valkey:
-    image: valkey/valkey:${VALKEY_VERSION}
+    image: ghcr.io/valkey-io/valkey:${VALKEY_VERSION}
     container_name: valkey
     ports:
       - "${VALKEY_PORT}:6379"
@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
     
   valkey-proxy:
-    image: hiett/serverless-redis-http:latest
+    image: docker.io/hiett/serverless-redis-http:latest
     container_name: valkey-proxy
     environment:
       SRH_MODE: env
@@ -48,12 +48,12 @@ services:
     restart: unless-stopped
 
   api:
-    image: poe-accountant/api:latest
+    image: pathofexile.accountant.localhost/api:latest
     container_name: api
     ports:
     - "${API_PORT}:4000"
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}
+      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}
       VALKEY_URL: http://:${VALKEY_PASSWORD}@valkey-proxy:80
       VALKEY_TOKEN: ${VALKEY_PASSWORD}
       S3_ENDPOINT: http://minio:9000
@@ -64,7 +64,7 @@ services:
     restart: unless-stopped
 
   background-processor:
-    image: poe-accountant/background-processor:latest
+    image: pathofexile.accountant.localhost/background-processor:latest
     container_name: background-processor
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}
@@ -81,7 +81,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: poe-accountant/frontend:latest
+    image: pathofexile.accountant.localhost/frontend:latest
     container_name: frontend
     ports:
       - "${FRONTEND_PORT}:${FRONTEND_PORT}"
@@ -92,7 +92,7 @@ services:
     restart: unless-stopped
 
   minio:
-    image: minio/minio
+    image: quay.io/minio/minio
     container_name: minio
     ports:
       - "9000:9000"
@@ -106,14 +106,14 @@ services:
       - poe-accountant-minio-data:/data
 
   create-buckets:
-    image: minio/mc
+    image: quay.io/minio/mc
     depends_on:
       minio:
         condition: service_started
     entrypoint: >
       /bin/sh -c "
       /usr/bin/mc alias set myminio http://minio:9000 ${S3_ACCESS_KEY_ID:-minioadmin} ${S3_SECRET_ACCESS_KEY:-minioadmin};
-      /usr/bin/mc mb myminio/${S3_BUCKET_NAME:-poe-accountant-assets} || true;
+      /usr/bin/mc mb --ignore-existing myminio/${S3_BUCKET_NAME:-poe-accountant-assets};
       /usr/bin/mc anonymous set public myminio/${S3_BUCKET_NAME:-poe-accountant-assets};
       exit 0;
       "

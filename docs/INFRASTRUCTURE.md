@@ -1,31 +1,32 @@
 # Infrastructure for POE-Accountant
 
-At a high level, POE accountant can be boiled down to the following services:
-1. Redis / Valkey (caching and queues)
+At a high level, poe-accountant can be boiled down to the following services:
+1. Valkey (caching and queues)
 2. Postgres (storage)
-3. API Service
-4. Ninja Service
-5. Frontend Website
+3. Cloudflare R2 (S3-compatible storage bucket)
+4. API (Cloudflare Workers)
+5. Frontend (Cloudflare Pages)
+6. Background Processor (DO App Platform)
 
 ## Redis / Valkey
 Redis (Valkey implementation) is used for:
-1. Queue Management System
-2. Caching
+1. Queue Management System (via BullMQ / mailbox system from API)
+2. NoSQL Caching (API Sessions)
 
 ### Queues
-The queue management system is used via microservice endpoints that listen to certain events published. This ensures the ability to scale.
+The queue management system is used from the API Service submitted via a regular redis message to the Background Processor to utilize via BullMQ over Redis
 
 ### Caching
-The caching system allows us to cache on a timer and share that with all other services to ensure our API access is unrestricted as much as possible. Hitting rate limits is something we don't want to do as best we can.
+The caching system allows us to cache data with expiration timer support, as well as general speed and availability.
 
 ## Postgres
-Postgres is used for long-term storage such as user account details and previous results for users.
+Postgres is used for long-term storage such as user account information and other system-wide data.
 
 ## API Service
-The API Service is a gateway into the backend system, essentially acting as an entrypoint for many actions. It connects to other microservices in the backend.
+The API Service is a gateway into the backend system, essentially acting as an entrypoint for many actions. It connects to the rest of the system.
 
-## Ninja Service
-The pathofexile.com/trade gateway. It handles all incoming requests and translates them into data we need retrieved from pathofexile.com/trade and other sources.
+## Frontend
+The frontend project that connects to the API Service. Built with vite / react.
 
-## Frontend Website
-A static React / vite website
+## Background Processor
+The Background Processor contains jobs that need to be run (generally by queues / scheduled queues with BullMQ).

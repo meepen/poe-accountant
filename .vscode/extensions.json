@@ -2,8 +2,6 @@
     "recommendations": [
         "dbaeumer.vscode-eslint",
         "bbenoist.nix",
-        "4ops.terraform",
-        "ms-kubernetes-tools.vscode-kubernetes-tools",
-        "ms-azuretools.vscode-containers"
+        "4ops.terraform"
     ]
 }

@@ -9,8 +9,8 @@ RUN corepack prepare pnpm@^10.26.1 --activate
 WORKDIR /app
 USER root
 
-COPY --from=root-config /out/pnpm-lock.yaml .
-COPY --from=root-config /out/pnpm-workspace.yaml .
+COPY --from=pathofexile.accountant.localhost/root-config /out/pnpm-lock.yaml .
+COPY --from=pathofexile.accountant.localhost/root-config /out/pnpm-workspace.yaml .
 COPY projects /app/projects
 RUN pnpm install --frozen-lockfile
 

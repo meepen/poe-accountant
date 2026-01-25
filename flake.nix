@@ -15,17 +15,21 @@
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
             nodejs_24
-            curl
-            go-task
             opentofu
-            kubectl
-            kubernetes-helm
+
+            # Utilities
+            go-task
             bash
             jq
+            curl
+
+            # Connections
             redis
             postgresql
             doctl
             s3cmd
+
+            # Package managers
             pnpm
           ];
         };

@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
 
-FROM base AS production
+FROM pathofexile.accountant.localhost/base AS production
 
 ENTRYPOINT ["pnpm", "run", "--filter=@meepen/poe-accountant-api", "start"]

@@ -4,7 +4,7 @@ Poe Accountant is a project designed to manage and analyze your Path of Exile cu
 
 ## Development Environment Setup
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for instructions on setting up your development environment.
+See [DEVELOPMENT.md](docs/DEVELOPMENT.md) for instructions on setting up your development environment.
 
 ## Contributing
 

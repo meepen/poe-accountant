@@ -1,6 +1,15 @@
-version: '3'
+version: "3"
 
-dotenv: ['.env.local', '.env']
+dotenv: [".env.local", ".env"]
+
+vars:
+  BUILDER:
+    sh: |
+      if podman info > /dev/null 2>&1; then
+        echo "podman"
+      else
+        echo "docker"
+      fi
 
 includes:
   tf:
@@ -20,6 +29,10 @@ includes:
     taskfile: ./projects/background-processor/Taskfile.yml
     dir: ./projects/background-processor
 
+  containers:
+    taskfile: ./Taskfile.containers.yml
+    dir: ./
+
 tasks:
   install:
     cmds:
@@ -27,7 +40,7 @@ tasks:
 
   start:
     cmds:
-      - docker compose up -d
+      - "{{.BUILDER}} compose -f compose.yml up -d"
 
   restart:
     cmds:
@@ -47,11 +60,16 @@ tasks:
     cmds:
       - pnpm -r build
 
-  docker:build:
+  docker:build: 
+    desc: "Build all container images"
     cmds:
-      - docker buildx bake --load --progress=plain
+      - task: containers:default
+        vars:
+          REGISTRY: "{{.REGISTRY}}"
+          BUILDER: "{{.BUILDER}}"
 
   docker:push:
+    desc: "Auth, Build, and Push all artifacts to DigitalOcean"
     vars:
       CI: true
       REGISTRY:
@@ -59,10 +77,13 @@ tasks:
     cmds:
       - doctl auth init -t {{.TF_VAR_do_token}}
       - doctl registry login
-      - REGISTRY="{{.REGISTRY}}" docker buildx bake --push --progress=plain
-      - docker buildx imagetools create
-        --tag {{.REGISTRY}}/valkey-proxy:latest
-        hiett/serverless-redis-http:latest
+      - task: docker:build
+        vars:
+          REGISTRY: "{{.REGISTRY}}"
+      - echo "Pushing external images"
+      - "{{.BUILDER}} pull docker.io/hiett/serverless-redis-http:latest"
+      - "{{.BUILDER}} tag docker.io/hiett/serverless-redis-http:latest {{.REGISTRY}}/valkey-proxy:latest"
+      - "{{.BUILDER}} push {{.REGISTRY}}/valkey-proxy:latest"
 
   setup:
     cmds:
