@@ -41,6 +41,10 @@ tasks:
   start:
     cmds:
       - "{{.BUILDER}} compose -f compose.yml up -d"
+  
+  stop:
+    cmds:
+      - "{{.BUILDER}} compose -f compose.yml down"
 
   restart:
     cmds:

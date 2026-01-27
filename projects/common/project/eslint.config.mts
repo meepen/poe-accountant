@@ -10,7 +10,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 const allTsFiles = ["**/*.ts", "**/*.mts", "**/*.cts", "**/*.tsx"];
 
 export default defineConfig([
-  globalIgnores(["dist"]),
+  globalIgnores(["dist", "docs"]),
   globalIgnores(["**/*.gen.ts"]),
   {
     files: allTsFiles,

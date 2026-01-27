@@ -111,11 +111,76 @@ const poeApiStream = createWriteStream("./src/poe-api.gen.ts");
 
 poeApiStream.write(`// This file is auto-generated from ${BASE_URL}\n\n`);
 
-poeApiStream.write('import { serverApiPaths } from "./poe.gen.js";\n');
+poeApiStream.write(
+  'import { serverApiPaths, serverEndpoint } from "./poe.gen.js";\n',
+);
+
+poeApiStream.write('import { z } from "zod";\n\n');
 
 poeApiStream.write(`
+export type ServerApi = typeof serverApiPaths[keyof typeof serverApiPaths];
+
 export abstract class PoeApi {
-  protected abstract request<T>(endpointData: typeof serverApiPaths[keyof typeof serverApiPaths], path: string, postData?: FormData): Promise<T>;`);
+  protected fetch(endpointData: ServerApi, endpoint: URL, options: RequestInit & { body: string | undefined }): Promise<Response> {
+    return fetch(endpoint, options);  
+  }
+  protected abstract authenticate(endpointData: ServerApi): Promise<string> | string | Promise<void> | void;
+  protected abstract voidAuthentication(endpointData: ServerApi): Promise<void> | void;
+  protected abstract get userAgent(): string;
+
+  protected async request<T>(
+    endpointData: ServerApi,
+    path: string,
+    postData?: FormData,
+    attempts = 0,
+  ): Promise<T> {
+    const authorizationToken = await this.authenticate(endpointData);
+
+    const response = await this.fetch(
+      endpointData,
+      new URL(path, serverEndpoint),
+      {
+        method: endpointData.method,
+        headers: {
+          "Accept": "application/json",
+          "User-Agent": this.userAgent,
+          ...(authorizationToken
+            ? { "Authorization": \`Bearer \${authorizationToken}\` }
+            : {}),
+        },
+        body: postData?.toString() ?? undefined,
+      },
+    );
+
+    if (!response.ok) {
+      // Check status, if it's 401 then we need to reauthenticate and try again.
+      switch (response.status) {
+        case 401:
+          if (attempts < 1) {
+            await this.voidAuthentication(endpointData);
+            return this.request<T>(
+              endpointData,
+              path,
+              postData,
+              attempts + 1,
+            );
+          }
+          break;
+        case 403:
+          // If it's 403, the resource requires a different scope than provided.
+          throw new Error("API request forbidden: missing required scope");
+        // 429 is handled inside of \`fetch\` or otherwise passed onto the caller.
+        default:
+          break;
+      }
+
+      throw new Error(
+        \`API request failed with status \${response.status}: \${response.statusText}\`,
+      );
+    }
+
+    return (endpointData.responseType.parse(await response.json()) as T);
+  }`);
 
 function generateApiMethodName(name: string): string {
   return name
@@ -237,10 +302,10 @@ for (const [categoryName, categoryEndpoints] of Object.entries(
     poeApiStream.write(`
   public async ${generateApiMethodName(
     endpoint.name,
-  )}(${generateArgumentsFromPath(endpoint.path)}): Promise<(typeof serverApiPaths)[${JSON.stringify(
+  )}(${generateArgumentsFromPath(endpoint.path)}): Promise<z.infer<(typeof serverApiPaths)[${JSON.stringify(
     endpoint.name,
-  )}]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)[${JSON.stringify(endpoint.name)}]['responseType']>(
+  )}]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)[${JSON.stringify(endpoint.name)}]['responseType']>>(
       serverApiPaths[${JSON.stringify(endpoint.name)}],
       ${fillArgumentsToTemplate(endpoint.path)}
     );

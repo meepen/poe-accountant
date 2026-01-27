@@ -290,7 +290,7 @@ export class ScrapeTypesManager {
             currentType = `{\n${details.children
               .map((x) => {
                 const isChildOptional = x.valueType.startsWith("?");
-                return `${tab(indentationLevel + 2)}${key(x.key)}${isChildOptional ? "?" : ""}: ${this.translateValueTypeToTypeScript(x, indentationLevel + 1)};`;
+                return `${tab(indentationLevel + 2)}${key(x.key)}${isChildOptional ? "?" : ""}: ${this.translateValueTypeToTypeScript(x, indentationLevel + 1)}${isChildOptional ? " | null" : ""};`;
               })
               .join("\n")}\n${tab(indentationLevel + 1)}}`;
           } else {
@@ -381,7 +381,7 @@ export class ScrapeTypesManager {
     }
 
     if (isOptional) {
-      fullType = `${fullType} | undefined`;
+      fullType = `${fullType} | undefined | null`;
     }
 
     return fullType;
@@ -525,7 +525,7 @@ export class ScrapeTypesManager {
     }
 
     if (isOptional) {
-      fullType = `${fullType}.optional()`;
+      fullType = `${fullType}.nullable().optional()`;
     }
 
     return fullType;

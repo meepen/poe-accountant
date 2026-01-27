@@ -1,29 +1,46 @@
-import { Worker, Job } from "bullmq";
+import { Worker, Job, WorkerOptions } from "bullmq";
 import { JobProcess } from "../job-process.interface.js";
 import { createValkeyConnection } from "../valkey.js";
 import { z } from "zod";
 
-export abstract class QueueWorker<T extends z.ZodType> implements JobProcess {
+type MaybePromise<T> = T | Promise<T>;
+
+export abstract class QueueWorker<
+  T extends z.ZodType,
+  ReturnType extends z.ZodType = z.ZodVoid,
+> implements JobProcess {
   protected abstract readonly schema: T;
+  protected abstract readonly returnSchema: ReturnType;
   protected abstract readonly queueName: string;
   protected readonly concurrency = 5;
 
   protected readonly connection = createValkeyConnection();
 
-  protected worker?: Worker;
+  protected worker?: Worker<z.infer<T>, z.infer<ReturnType>>;
 
-  public abstract processJob(data: z.infer<T>): Promise<void> | void;
+  protected get workerOptions(): WorkerOptions {
+    return {
+      connection: this.connection.valkeyForBullMQ,
+      concurrency: this.concurrency,
+    };
+  }
+
+  protected setReturnValue(job: Job, data: z.infer<ReturnType>): void {
+    job.returnvalue = this.returnSchema.parse(data);
+  }
+
+  protected abstract processJob(
+    data: z.infer<T>,
+    job: Job,
+  ): MaybePromise<z.infer<ReturnType>>;
 
   public start(): void | Promise<void> {
-    this.worker = new Worker(
+    this.worker = new Worker<z.infer<T>, z.infer<ReturnType>>(
       this.queueName,
       async (job: Job) => {
-        await this.processJob(this.schema.parse(job.data));
+        return await this.processJob(this.schema.parse(job.data), job);
       },
-      {
-        connection: this.connection.valkeyForBullMQ,
-        concurrency: this.concurrency,
-      },
+      this.workerOptions,
     );
 
     this.worker.on("failed", (job, err) => {

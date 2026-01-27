@@ -39,7 +39,7 @@ export const ApiError = z.object({
 export interface LeagueRule {
   id: string;
   name: string;
-  description?: string | undefined;
+  description?: string | undefined | null;
 }
 
 /**
@@ -48,25 +48,25 @@ export interface LeagueRule {
  */
 export interface League {
   id: string;
-  realm?: string | undefined;
-  name?: string | undefined;
-  description?: string | undefined;
+  realm?: string | undefined | null;
+  name?: string | undefined | null;
+  description?: string | undefined | null;
   category?: {
     id: string;
-    current?: boolean | undefined;
-  } | undefined;
-  rules?: LeagueRule[] | undefined;
-  registerAt?: string | undefined;
-  event?: boolean | undefined;
-  goal?: string | undefined;
-  url?: string | undefined;
-  startAt?: string | undefined;
-  endAt?: string | undefined;
-  timedEvent?: boolean | undefined;
-  scoreEvent?: boolean | undefined;
-  delveEvent?: boolean | undefined;
-  ancestorEvent?: boolean | undefined;
-  leagueEvent?: boolean | undefined;
+    current?: boolean | undefined | null | null;
+  } | undefined | null;
+  rules?: LeagueRule[] | undefined | null;
+  registerAt?: string | undefined | null;
+  event?: boolean | undefined | null;
+  goal?: string | undefined | null;
+  url?: string | undefined | null;
+  startAt?: string | undefined | null;
+  endAt?: string | undefined | null;
+  timedEvent?: boolean | undefined | null;
+  scoreEvent?: boolean | undefined | null;
+  delveEvent?: boolean | undefined | null;
+  ancestorEvent?: boolean | undefined | null;
+  leagueEvent?: boolean | undefined | null;
 }
 
 /**
@@ -85,21 +85,21 @@ export interface Guild {
  */
 export interface Account {
   name: string;
-  realm?: string | undefined;
-  guild?: Guild | undefined;
+  realm?: string | undefined | null;
+  guild?: Guild | undefined | null;
   challenges?: {
     set: string;
     completed: number;
     max: number;
-  } | undefined;
+  } | undefined | null;
   twitch?: {
     name: string;
     stream?: {
       name: string;
       image: string;
       status: string;
-    } | undefined;
-  } | undefined;
+    } | undefined | null | null;
+  } | undefined | null;
 }
 
 /**
@@ -108,25 +108,25 @@ export interface Account {
  */
 export interface LadderEntry {
   rank: number;
-  dead?: boolean | undefined;
-  retired?: boolean | undefined;
-  ineligible?: boolean | undefined;
-  public?: boolean | undefined;
+  dead?: boolean | undefined | null;
+  retired?: boolean | undefined | null;
+  ineligible?: boolean | undefined | null;
+  public?: boolean | undefined | null;
   character: {
     id: string;
     name: string;
     level: number;
     class: string;
-    time?: number | undefined;
-    score?: number | undefined;
-    progress?: Record<string, any> | undefined;
-    experience?: number | undefined;
+    time?: number | undefined | null | null;
+    score?: number | undefined | null | null;
+    progress?: Record<string, any> | undefined | null | null;
+    experience?: number | undefined | null | null;
     depth?: {
-      default?: number | undefined;
-      solo?: number | undefined;
-    } | undefined;
+      default?: number | undefined | null | null;
+      solo?: number | undefined | null | null;
+    } | undefined | null | null;
   };
-  account?: Account | undefined;
+  account?: Account | undefined | null;
 }
 
 /**
@@ -135,8 +135,8 @@ export interface LadderEntry {
  */
 export interface EventLadderEntry {
   rank: number;
-  ineligible?: boolean | undefined;
-  time?: number | undefined;
+  ineligible?: boolean | undefined | null;
+  time?: number | undefined | null;
   private_league: {
     name: string;
     url: string;
@@ -149,18 +149,18 @@ export interface EventLadderEntry {
  */
 export interface PvPMatch {
   id: string;
-  realm?: string | undefined;
-  startAt?: string | undefined;
-  endAt?: string | undefined;
-  url?: string | undefined;
+  realm?: string | undefined | null;
+  startAt?: string | undefined | null;
+  endAt?: string | undefined | null;
+  url?: string | undefined | null;
   description: string;
   glickoRatings: boolean;
   pvp: boolean;
   style: string;
-  registerAt?: string | undefined;
-  complete?: boolean | undefined;
-  upcoming?: boolean | undefined;
-  inProgress?: boolean | undefined;
+  registerAt?: string | undefined | null;
+  complete?: boolean | undefined | null;
+  upcoming?: boolean | undefined | null;
+  inProgress?: boolean | undefined | null;
 }
 
 /**
@@ -174,10 +174,10 @@ export interface PvPLadderTeamMember {
     name: string;
     level: number;
     class: string;
-    league?: string | undefined;
-    score?: number | undefined;
+    league?: string | undefined | null | null;
+    score?: number | undefined | null | null;
   };
-  public?: boolean | undefined;
+  public?: boolean | undefined | null;
 }
 
 /**
@@ -186,11 +186,11 @@ export interface PvPLadderTeamMember {
  */
 export interface PvPLadderTeamEntry {
   rank: number;
-  rating?: number | undefined;
-  points?: number | undefined;
-  games_played?: number | undefined;
-  cumulative_opponent_points?: number | undefined;
-  last_game_time?: string | undefined;
+  rating?: number | undefined | null;
+  points?: number | undefined | null;
+  games_played?: number | undefined | null;
+  cumulative_opponent_points?: number | undefined | null;
+  last_game_time?: string | undefined | null;
   members: PvPLadderTeamMember[];
 }
 
@@ -200,10 +200,10 @@ export interface PvPLadderTeamEntry {
  */
 export interface ItemSocket {
   group: number;
-  attr?: string | undefined;
-  sColour?: string | undefined;
-  type?: string | undefined;
-  item?: string | undefined;
+  attr?: string | undefined | null;
+  sColour?: string | undefined | null;
+  type?: string | undefined | null;
+  item?: string | undefined | null;
 }
 
 /**
@@ -226,11 +226,11 @@ export enum DisplayModeEnum {
 export interface ItemProperty {
   name: string;
   values: [string, number][];
-  displayMode?: DisplayModeEnum | undefined;
-  progress?: number | undefined;
-  type?: number | undefined;
-  suffix?: string | undefined;
-  icon?: string | undefined;
+  displayMode?: DisplayModeEnum | undefined | null;
+  progress?: number | undefined | null;
+  type?: number | undefined | null;
+  suffix?: string | undefined | null;
+  icon?: string | undefined | null;
 }
 
 /**
@@ -242,19 +242,19 @@ export interface GemPage {
   /**
    * 
    */
-  skillName?: string | undefined;
+  skillName?: string | undefined | null;
   /**
    * 
    */
-  description?: string | undefined;
+  description?: string | undefined | null;
   /**
    * 
    */
-  properties?: ItemProperty[] | undefined;
+  properties?: ItemProperty[] | undefined | null;
   /**
    * 
    */
-  stats?: string[] | undefined;
+  stats?: string[] | undefined | null;
 }
 
 /**
@@ -266,7 +266,7 @@ export interface GemTab {
   /**
    * 
    */
-  name?: string | undefined;
+  name?: string | undefined | null;
   /**
    * 
    */
@@ -282,43 +282,43 @@ export interface CrucibleNode {
   /**
    * mod hash
    */
-  skill?: number | undefined;
+  skill?: number | undefined | null;
   /**
    * mod tier
    */
-  tier?: number | undefined;
+  tier?: number | undefined | null;
   /**
    * 
    */
-  icon?: string | undefined;
+  icon?: string | undefined | null;
   /**
    * always true if present
    */
-  allocated?: boolean | undefined;
+  allocated?: boolean | undefined | null;
   /**
    * always true if present
    */
-  isNotable?: boolean | undefined;
+  isNotable?: boolean | undefined | null;
   /**
    * always true if present
    */
-  isReward?: boolean | undefined;
+  isReward?: boolean | undefined | null;
   /**
    * stat descriptions
    */
-  stats?: string[] | undefined;
+  stats?: string[] | undefined | null;
   /**
    * 
    */
-  reminderText?: string[] | undefined;
+  reminderText?: string[] | undefined | null;
   /**
    * the column this node occupies
    */
-  orbit?: number | undefined;
+  orbit?: number | undefined | null;
   /**
    * the node's position within the column
    */
-  orbitIndex?: number | undefined;
+  orbitIndex?: number | undefined | null;
   /**
    * node identifiers of nodes this one connects to
    */
@@ -356,69 +356,69 @@ export enum FrameTypeEnum {
  * Generated from https://www.pathofexile.com/developer/docs/reference#type-Item
  */
 export interface Item {
-  realm?: string | undefined;
+  realm?: string | undefined | null;
   verified: boolean;
   w: number;
   h: number;
   icon: string;
-  support?: boolean | undefined;
-  stackSize?: number | undefined;
-  maxStackSize?: number | undefined;
-  stackSizeText?: string | undefined;
-  iconTierText?: string | undefined;
-  league?: string | undefined;
-  id?: string | undefined;
-  gemSockets?: string[] | undefined;
-  influences?: Record<string, any> | undefined;
-  elder?: boolean | undefined;
-  shaper?: boolean | undefined;
-  searing?: boolean | undefined;
-  tangled?: boolean | undefined;
-  memoryItem?: boolean | undefined;
-  mutated?: boolean | undefined;
-  abyssJewel?: boolean | undefined;
-  delve?: boolean | undefined;
-  fractured?: boolean | undefined;
-  synthesised?: boolean | undefined;
-  sockets?: ItemSocket[] | undefined;
-  socketedItems?: Item[] | undefined;
+  support?: boolean | undefined | null;
+  stackSize?: number | undefined | null;
+  maxStackSize?: number | undefined | null;
+  stackSizeText?: string | undefined | null;
+  iconTierText?: string | undefined | null;
+  league?: string | undefined | null;
+  id?: string | undefined | null;
+  gemSockets?: string[] | undefined | null;
+  influences?: Record<string, any> | undefined | null;
+  elder?: boolean | undefined | null;
+  shaper?: boolean | undefined | null;
+  searing?: boolean | undefined | null;
+  tangled?: boolean | undefined | null;
+  memoryItem?: boolean | undefined | null;
+  mutated?: boolean | undefined | null;
+  abyssJewel?: boolean | undefined | null;
+  delve?: boolean | undefined | null;
+  fractured?: boolean | undefined | null;
+  synthesised?: boolean | undefined | null;
+  sockets?: ItemSocket[] | undefined | null;
+  socketedItems?: Item[] | undefined | null;
   name: string;
   typeLine: string;
   baseType: string;
-  rarity?: string | undefined;
+  rarity?: string | undefined | null;
   identified: boolean;
-  itemLevel?: number | undefined;
-  unidentifiedTier?: number | undefined;
+  itemLevel?: number | undefined | null;
+  unidentifiedTier?: number | undefined | null;
   ilvl: number;
-  note?: string | undefined;
-  forum_note?: string | undefined;
-  lockedToCharacter?: boolean | undefined;
-  lockedToAccount?: boolean | undefined;
-  duplicated?: boolean | undefined;
-  split?: boolean | undefined;
-  corrupted?: boolean | undefined;
-  doubleCorrupted?: boolean | undefined;
-  sanctified?: boolean | undefined;
-  unmodifiable?: boolean | undefined;
-  unmodifiableExceptChaos?: boolean | undefined;
-  cisRaceReward?: boolean | undefined;
-  seaRaceReward?: boolean | undefined;
-  thRaceReward?: boolean | undefined;
-  properties?: ItemProperty[] | undefined;
-  notableProperties?: ItemProperty[] | undefined;
-  requirements?: ItemProperty[] | undefined;
-  weaponRequirements?: ItemProperty[] | undefined;
-  supportGemRequirements?: ItemProperty[] | undefined;
-  additionalProperties?: ItemProperty[] | undefined;
-  nextLevelRequirements?: ItemProperty[] | undefined;
-  grantedSkills?: ItemProperty[] | undefined;
-  talismanTier?: number | undefined;
+  note?: string | undefined | null;
+  forum_note?: string | undefined | null;
+  lockedToCharacter?: boolean | undefined | null;
+  lockedToAccount?: boolean | undefined | null;
+  duplicated?: boolean | undefined | null;
+  split?: boolean | undefined | null;
+  corrupted?: boolean | undefined | null;
+  doubleCorrupted?: boolean | undefined | null;
+  sanctified?: boolean | undefined | null;
+  unmodifiable?: boolean | undefined | null;
+  unmodifiableExceptChaos?: boolean | undefined | null;
+  cisRaceReward?: boolean | undefined | null;
+  seaRaceReward?: boolean | undefined | null;
+  thRaceReward?: boolean | undefined | null;
+  properties?: ItemProperty[] | undefined | null;
+  notableProperties?: ItemProperty[] | undefined | null;
+  requirements?: ItemProperty[] | undefined | null;
+  weaponRequirements?: ItemProperty[] | undefined | null;
+  supportGemRequirements?: ItemProperty[] | undefined | null;
+  additionalProperties?: ItemProperty[] | undefined | null;
+  nextLevelRequirements?: ItemProperty[] | undefined | null;
+  grantedSkills?: ItemProperty[] | undefined | null;
+  talismanTier?: number | undefined | null;
   rewards?: {
     label: string;
     rewards: Record<string, number>;
-  }[] | undefined;
-  secDescrText?: string | undefined;
-  utilityMods?: string[] | undefined;
+  }[] | undefined | null;
+  secDescrText?: string | undefined | null;
+  utilityMods?: string[] | undefined | null;
   logbookMods?: {
     name: string;
     faction: {
@@ -426,72 +426,72 @@ export interface Item {
       name: string;
     };
     mods: string[];
-  }[] | undefined;
-  enchantMods?: string[] | undefined;
-  runeMods?: string[] | undefined;
-  scourgeMods?: string[] | undefined;
-  implicitMods?: string[] | undefined;
+  }[] | undefined | null;
+  enchantMods?: string[] | undefined | null;
+  runeMods?: string[] | undefined | null;
+  scourgeMods?: string[] | undefined | null;
+  implicitMods?: string[] | undefined | null;
   ultimatumMods?: {
     type: string;
     tier: number;
-  }[] | undefined;
-  explicitMods?: string[] | undefined;
-  bondedMods?: string[] | undefined;
-  craftedMods?: string[] | undefined;
-  fracturedMods?: string[] | undefined;
-  mutatedMods?: string[] | undefined;
-  crucibleMods?: string[] | undefined;
-  cosmeticMods?: string[] | undefined;
-  veiledMods?: string[] | undefined;
-  veiled?: boolean | undefined;
-  desecratedMods?: string[] | undefined;
-  desecrated?: boolean | undefined;
-  gemTabs?: GemTab[] | undefined;
-  gemBackground?: string | undefined;
-  gemSkill?: string | undefined;
-  descrText?: string | undefined;
-  flavourText?: string[] | undefined;
-  flavourTextNote?: string | undefined;
-  prophecyText?: string | undefined;
-  isRelic?: boolean | undefined;
-  foilVariation?: number | undefined;
-  replica?: boolean | undefined;
-  foreseeing?: boolean | undefined;
+  }[] | undefined | null;
+  explicitMods?: string[] | undefined | null;
+  bondedMods?: string[] | undefined | null;
+  craftedMods?: string[] | undefined | null;
+  fracturedMods?: string[] | undefined | null;
+  mutatedMods?: string[] | undefined | null;
+  crucibleMods?: string[] | undefined | null;
+  cosmeticMods?: string[] | undefined | null;
+  veiledMods?: string[] | undefined | null;
+  veiled?: boolean | undefined | null;
+  desecratedMods?: string[] | undefined | null;
+  desecrated?: boolean | undefined | null;
+  gemTabs?: GemTab[] | undefined | null;
+  gemBackground?: string | undefined | null;
+  gemSkill?: string | undefined | null;
+  descrText?: string | undefined | null;
+  flavourText?: string[] | undefined | null;
+  flavourTextNote?: string | undefined | null;
+  prophecyText?: string | undefined | null;
+  isRelic?: boolean | undefined | null;
+  foilVariation?: number | undefined | null;
+  replica?: boolean | undefined | null;
+  foreseeing?: boolean | undefined | null;
   incubatedItem?: {
     name: string;
     level: number;
     progress: number;
     total: number;
-  } | undefined;
+  } | undefined | null;
   scourged?: {
     tier: number;
-    level?: number | undefined;
-    progress?: number | undefined;
-    total?: number | undefined;
-  } | undefined;
+    level?: number | undefined | null | null;
+    progress?: number | undefined | null | null;
+    total?: number | undefined | null | null;
+  } | undefined | null;
   crucible?: {
     layout: string;
     nodes: Record<string, CrucibleNode>;
-  } | undefined;
-  ruthless?: boolean | undefined;
-  frameType?: FrameTypeEnum | undefined;
-  artFilename?: string | undefined;
+  } | undefined | null;
+  ruthless?: boolean | undefined | null;
+  frameType?: FrameTypeEnum | undefined | null;
+  artFilename?: string | undefined | null;
   hybrid?: {
-    isVaalGem?: boolean | undefined;
+    isVaalGem?: boolean | undefined | null | null;
     baseTypeName: string;
-    properties?: ItemProperty[] | undefined;
-    explicitMods?: string[] | undefined;
-    secDescrText?: string | undefined;
-  } | undefined;
+    properties?: ItemProperty[] | undefined | null | null;
+    explicitMods?: string[] | undefined | null | null;
+    secDescrText?: string | undefined | null | null;
+  } | undefined | null;
   extended?: {
-    prefixes?: number | undefined;
-    suffixes?: number | undefined;
-  } | undefined;
-  x?: number | undefined;
-  y?: number | undefined;
-  inventoryId?: string | undefined;
-  socket?: number | undefined;
-  colour?: string | undefined;
+    prefixes?: number | undefined | null | null;
+    suffixes?: number | undefined | null | null;
+  } | undefined | null;
+  x?: number | undefined | null;
+  y?: number | undefined | null;
+  inventoryId?: string | undefined | null;
+  socket?: number | undefined | null;
+  colour?: string | undefined | null;
 }
 
 /**
@@ -501,10 +501,10 @@ export interface Item {
 export interface PublicStashChange {
   id: string;
   public: boolean;
-  accountName?: string | undefined;
-  stash?: string | undefined;
+  accountName?: string | undefined | null;
+  stash?: string | undefined | null;
   stashType: string;
-  league?: string | undefined;
+  league?: string | undefined | null;
   items: Item[];
 }
 
@@ -513,46 +513,46 @@ export interface PublicStashChange {
  * Generated from https://www.pathofexile.com/developer/docs/reference#type-PassiveNode
  */
 export interface PassiveNode {
-  skill?: number | undefined;
-  name?: string | undefined;
-  icon?: string | undefined;
-  isKeystone?: boolean | undefined;
-  isNotable?: boolean | undefined;
-  isMastery?: boolean | undefined;
-  inactiveIcon?: string | undefined;
-  activeIcon?: string | undefined;
-  activeEffectImage?: string | undefined;
+  skill?: number | undefined | null;
+  name?: string | undefined | null;
+  icon?: string | undefined | null;
+  isKeystone?: boolean | undefined | null;
+  isNotable?: boolean | undefined | null;
+  isMastery?: boolean | undefined | null;
+  inactiveIcon?: string | undefined | null;
+  activeIcon?: string | undefined | null;
+  activeEffectImage?: string | undefined | null;
   masteryEffects?: {
     effect: number;
     stats: string[];
-    reminderText?: string[] | undefined;
-  }[] | undefined;
-  isBlighted?: boolean | undefined;
-  isTattoo?: boolean | undefined;
-  isProxy?: boolean | undefined;
-  isJewelSocket?: boolean | undefined;
+    reminderText?: string[] | undefined | null | null;
+  }[] | undefined | null;
+  isBlighted?: boolean | undefined | null;
+  isTattoo?: boolean | undefined | null;
+  isProxy?: boolean | undefined | null;
+  isJewelSocket?: boolean | undefined | null;
   expansionJewel?: {
-    size?: number | undefined;
-    index?: number | undefined;
-    proxy?: number | undefined;
-    parent?: number | undefined;
-  } | undefined;
-  recipe?: string[] | undefined;
-  grantedStrength?: number | undefined;
-  grantedDexterity?: number | undefined;
-  grantedIntelligence?: number | undefined;
-  ascendancyName?: string | undefined;
-  isAscendancyStart?: boolean | undefined;
-  isMultipleChoice?: boolean | undefined;
-  isMultipleChoiceOption?: boolean | undefined;
-  grantedPassivePoints?: number | undefined;
-  stats?: string[] | undefined;
-  reminderText?: string[] | undefined;
-  flavourText?: string[] | undefined;
-  classStartIndex?: number | undefined;
-  group?: string | undefined;
-  orbit?: number | undefined;
-  orbitIndex?: number | undefined;
+    size?: number | undefined | null | null;
+    index?: number | undefined | null | null;
+    proxy?: number | undefined | null | null;
+    parent?: number | undefined | null | null;
+  } | undefined | null;
+  recipe?: string[] | undefined | null;
+  grantedStrength?: number | undefined | null;
+  grantedDexterity?: number | undefined | null;
+  grantedIntelligence?: number | undefined | null;
+  ascendancyName?: string | undefined | null;
+  isAscendancyStart?: boolean | undefined | null;
+  isMultipleChoice?: boolean | undefined | null;
+  isMultipleChoiceOption?: boolean | undefined | null;
+  grantedPassivePoints?: number | undefined | null;
+  stats?: string[] | undefined | null;
+  reminderText?: string[] | undefined | null;
+  flavourText?: string[] | undefined | null;
+  classStartIndex?: number | undefined | null;
+  group?: string | undefined | null;
+  orbit?: number | undefined | null;
+  orbitIndex?: number | undefined | null;
   out: string[];
   in: string[];
 }
@@ -565,8 +565,8 @@ export interface PassiveGroup {
   x: number;
   y: number;
   orbits: number[];
-  isProxy?: boolean | undefined;
-  proxy?: string | undefined;
+  isProxy?: boolean | undefined | null;
+  proxy?: string | undefined | null;
   nodes: string[];
 }
 
@@ -576,13 +576,13 @@ export interface PassiveGroup {
  */
 export interface ItemJewelData {
   type: string;
-  radius?: number | undefined;
-  radiusMin?: number | undefined;
-  radiusVisual?: string | undefined;
+  radius?: number | undefined | null;
+  radiusMin?: number | undefined | null;
+  radiusVisual?: string | undefined | null;
   subgraph?: {
     groups: Record<string, PassiveGroup>;
     nodes: Record<string, PassiveNode>;
-  } | undefined;
+  } | undefined | null;
 }
 
 /**
@@ -594,34 +594,34 @@ export interface Character {
   name: string;
   realm: string;
   class: string;
-  league?: string | undefined;
+  league?: string | undefined | null;
   level: number;
   experience: number;
-  ruthless?: boolean | undefined;
-  expired?: boolean | undefined;
-  deleted?: boolean | undefined;
-  current?: boolean | undefined;
-  equipment?: Item[] | undefined;
-  skills?: Item[] | undefined;
-  inventory?: Item[] | undefined;
-  rucksack?: Item[] | undefined;
-  jewels?: Item[] | undefined;
+  ruthless?: boolean | undefined | null;
+  expired?: boolean | undefined | null;
+  deleted?: boolean | undefined | null;
+  current?: boolean | undefined | null;
+  equipment?: Item[] | undefined | null;
+  skills?: Item[] | undefined | null;
+  inventory?: Item[] | undefined | null;
+  rucksack?: Item[] | undefined | null;
+  jewels?: Item[] | undefined | null;
   passives?: {
     hashes: number[];
     hashes_ex: number[];
     mastery_effects: Record<string, number>;
     specialisations: Record<string, number[]>;
     skill_overrides: Record<string, PassiveNode>;
-    bandit_choice?: string | undefined;
-    pantheon_major?: string | undefined;
-    pantheon_minor?: string | undefined;
+    bandit_choice?: string | undefined | null | null;
+    pantheon_major?: string | undefined | null | null;
+    pantheon_minor?: string | undefined | null | null;
     jewel_data: Record<string, ItemJewelData>;
-    quest_stats?: string[] | undefined;
-    alternate_ascendancy?: string | undefined;
-  } | undefined;
+    quest_stats?: string[] | undefined | null | null;
+    alternate_ascendancy?: string | undefined | null | null;
+  } | undefined | null;
   metadata?: {
-    version?: string | undefined;
-  } | undefined;
+    version?: string | undefined | null | null;
+  } | undefined | null;
 }
 
 /**
@@ -630,19 +630,19 @@ export interface Character {
  */
 export interface StashTab {
   id: string;
-  parent?: string | undefined;
-  folder?: string | undefined;
+  parent?: string | undefined | null;
+  folder?: string | undefined | null;
   name: string;
   type: string;
-  index?: number | undefined;
+  index?: number | undefined | null;
   metadata: {
-    public?: boolean | undefined;
-    folder?: boolean | undefined;
-    colour?: string | undefined;
-    map?: Record<string, any> | undefined;
+    public?: boolean | undefined | null | null;
+    folder?: boolean | undefined | null | null;
+    colour?: string | undefined | null | null;
+    map?: Record<string, any> | undefined | null | null;
   };
-  children?: StashTab[] | undefined;
-  items?: Item[] | undefined;
+  children?: StashTab[] | undefined | null;
+  items?: Item[] | undefined | null;
 }
 
 /**
@@ -652,7 +652,7 @@ export interface StashTab {
 export interface LeagueAccount {
   atlas_passives?: {
     hashes: number[];
-  } | undefined;
+  } | undefined | null;
   atlas_passive_trees: {
     name: string;
     hashes: number[];
@@ -670,13 +670,13 @@ export interface ItemFilter {
   description: string;
   version: string;
   type: string;
-  public?: boolean | undefined;
-  filter?: string | undefined;
+  public?: boolean | undefined | null;
+  filter?: string | undefined | null;
   validation?: {
     valid: boolean;
-    version?: string | undefined;
-    validated?: string | undefined;
-  } | undefined;
+    version?: string | undefined | null | null;
+    validated?: string | undefined | null | null;
+  } | undefined | null;
 }
 
 /**
@@ -686,10 +686,10 @@ export interface ItemFilter {
 export interface AccountProfileGetProfileResponse {
   uuid: string;
   name: string;
-  locale?: string | undefined;
+  locale?: string | undefined | null;
   twitch?: {
     name: string;
-  } | undefined;
+  } | undefined | null;
 }
 
 /**
@@ -722,7 +722,7 @@ export interface AccountItemFiltersCreateItemFilterResponse {
  */
 export interface AccountItemFiltersUpdateItemFilterResponse {
   filter: ItemFilter;
-  error?: ApiError | undefined;
+  error?: ApiError | undefined | null;
 }
 
 /**
@@ -738,7 +738,7 @@ export interface LeaguesListLeaguesResponse {
  * Generated from https://www.pathofexile.com/developer/docs/reference#type-LeaguesGetLeagueResponse
  */
 export interface LeaguesGetLeagueResponse {
-  league?: League | undefined;
+  league?: League | undefined | null;
 }
 
 /**
@@ -749,7 +749,7 @@ export interface LeaguesGetLeagueLadderPoE1OnlyResponse {
   league: League;
   ladder: {
     total: number;
-    cached_since?: string | undefined;
+    cached_since?: string | undefined | null | null;
     entries: LadderEntry[];
   };
 }
@@ -779,7 +779,7 @@ export interface PvPMatchesPoE1OnlyListPvPMatchesResponse {
  * Generated from https://www.pathofexile.com/developer/docs/reference#type-PvPMatchesPoE1OnlyGetPvPMatchResponse
  */
 export interface PvPMatchesPoE1OnlyGetPvPMatchResponse {
-  match?: PvPMatch | undefined;
+  match?: PvPMatch | undefined | null;
 }
 
 /**
@@ -815,7 +815,7 @@ export interface AccountCharactersListCharactersResponse {
  * Generated from https://www.pathofexile.com/developer/docs/reference#type-AccountCharactersGetCharacterResponse
  */
 export interface AccountCharactersGetCharacterResponse {
-  character?: Character | undefined;
+  character?: Character | undefined | null;
 }
 
 /**
@@ -831,7 +831,7 @@ export interface AccountStashesPoE1OnlyListStashesResponse {
  * Generated from https://www.pathofexile.com/developer/docs/reference#type-AccountStashesPoE1OnlyGetStashResponse
  */
 export interface AccountStashesPoE1OnlyGetStashResponse {
-  stash?: StashTab | undefined;
+  stash?: StashTab | undefined | null;
 }
 
 /**
@@ -855,7 +855,7 @@ export interface GuildStashesPoE1OnlyListGuildStashesResponse {
  * Generated from https://www.pathofexile.com/developer/docs/reference#type-GuildStashesPoE1OnlyGetGuildStashResponse
  */
 export interface GuildStashesPoE1OnlyGetGuildStashResponse {
-  stash?: StashTab | undefined;
+  stash?: StashTab | undefined | null;
 }
 
 /**
@@ -887,29 +887,29 @@ export interface CurrencyExchangeGetExchangeMarketsResponse {
 export const LeagueRule: z.ZodType<LeagueRule> = z.object({
   id: z.string(),
   name: z.string(),
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
 })
 export const League: z.ZodType<League> = z.object({
   id: z.string(),
-  realm: z.string().optional(),
-  name: z.string().optional(),
-  description: z.string().optional(),
+  realm: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
   category: z.object({
     id: z.string(),
-    current: z.boolean().optional(),
-  }).optional(),
-  rules: z.array(LeagueRule).optional(),
-  registerAt: z.string().optional(),
-  event: z.boolean().optional(),
-  goal: z.string().optional(),
-  url: z.string().optional(),
-  startAt: z.string().optional(),
-  endAt: z.string().optional(),
-  timedEvent: z.boolean().optional(),
-  scoreEvent: z.boolean().optional(),
-  delveEvent: z.boolean().optional(),
-  ancestorEvent: z.boolean().optional(),
-  leagueEvent: z.boolean().optional(),
+    current: z.boolean().nullable().optional(),
+  }).nullable().optional(),
+  rules: z.array(LeagueRule).nullable().optional(),
+  registerAt: z.string().nullable().optional(),
+  event: z.boolean().nullable().optional(),
+  goal: z.string().nullable().optional(),
+  url: z.string().nullable().optional(),
+  startAt: z.string().nullable().optional(),
+  endAt: z.string().nullable().optional(),
+  timedEvent: z.boolean().nullable().optional(),
+  scoreEvent: z.boolean().nullable().optional(),
+  delveEvent: z.boolean().nullable().optional(),
+  ancestorEvent: z.boolean().nullable().optional(),
+  leagueEvent: z.boolean().nullable().optional(),
 })
 export const Guild: z.ZodType<Guild> = z.object({
   id: z.uint32(),
@@ -918,48 +918,48 @@ export const Guild: z.ZodType<Guild> = z.object({
 })
 export const Account: z.ZodType<Account> = z.object({
   name: z.string(),
-  realm: z.string().optional(),
-  guild: Guild.optional(),
+  realm: z.string().nullable().optional(),
+  guild: Guild.nullable().optional(),
   challenges: z.object({
     set: z.string(),
     completed: z.uint32(),
     max: z.uint32(),
-  }).optional(),
+  }).nullable().optional(),
   twitch: z.object({
     name: z.string(),
     stream: z.object({
       name: z.string(),
       image: z.string(),
       status: z.string(),
-    }).optional(),
-  }).optional(),
+    }).nullable().optional(),
+  }).nullable().optional(),
 })
 export const LadderEntry: z.ZodType<LadderEntry> = z.object({
   rank: z.uint32(),
-  dead: z.boolean().optional(),
-  retired: z.boolean().optional(),
-  ineligible: z.boolean().optional(),
-  public: z.boolean().optional(),
+  dead: z.boolean().nullable().optional(),
+  retired: z.boolean().nullable().optional(),
+  ineligible: z.boolean().nullable().optional(),
+  public: z.boolean().nullable().optional(),
   character: z.object({
     id: z.string(),
     name: z.string(),
     level: z.uint32(),
     class: z.string(),
-    time: z.uint32().optional(),
-    score: z.uint32().optional(),
-    progress: z.record(z.string(), z.any()).optional(),
-    experience: z.uint32().optional(),
+    time: z.uint32().nullable().optional(),
+    score: z.uint32().nullable().optional(),
+    progress: z.record(z.string(), z.any()).nullable().optional(),
+    experience: z.uint32().nullable().optional(),
     depth: z.object({
-      default: z.uint32().optional(),
-      solo: z.uint32().optional(),
-    }).optional(),
+      default: z.uint32().nullable().optional(),
+      solo: z.uint32().nullable().optional(),
+    }).nullable().optional(),
   }),
-  account: Account.optional(),
+  account: Account.nullable().optional(),
 })
 export const EventLadderEntry: z.ZodType<EventLadderEntry> = z.object({
   rank: z.uint32(),
-  ineligible: z.boolean().optional(),
-  time: z.uint32().optional(),
+  ineligible: z.boolean().nullable().optional(),
+  time: z.uint32().nullable().optional(),
   private_league: z.object({
     name: z.string(),
     url: z.string(),
@@ -967,18 +967,18 @@ export const EventLadderEntry: z.ZodType<EventLadderEntry> = z.object({
 })
 export const PvPMatch: z.ZodType<PvPMatch> = z.object({
   id: z.string(),
-  realm: z.string().optional(),
-  startAt: z.string().optional(),
-  endAt: z.string().optional(),
-  url: z.string().optional(),
+  realm: z.string().nullable().optional(),
+  startAt: z.string().nullable().optional(),
+  endAt: z.string().nullable().optional(),
+  url: z.string().nullable().optional(),
   description: z.string(),
   glickoRatings: z.boolean(),
   pvp: z.boolean(),
   style: z.string(),
-  registerAt: z.string().optional(),
-  complete: z.boolean().optional(),
-  upcoming: z.boolean().optional(),
-  inProgress: z.boolean().optional(),
+  registerAt: z.string().nullable().optional(),
+  complete: z.boolean().nullable().optional(),
+  upcoming: z.boolean().nullable().optional(),
+  inProgress: z.boolean().nullable().optional(),
 })
 export const PvPLadderTeamMember: z.ZodType<PvPLadderTeamMember> = z.object({
   account: Account,
@@ -987,26 +987,26 @@ export const PvPLadderTeamMember: z.ZodType<PvPLadderTeamMember> = z.object({
     name: z.string(),
     level: z.uint32(),
     class: z.string(),
-    league: z.string().optional(),
-    score: z.uint32().optional(),
+    league: z.string().nullable().optional(),
+    score: z.uint32().nullable().optional(),
   }),
-  public: z.boolean().optional(),
+  public: z.boolean().nullable().optional(),
 })
 export const PvPLadderTeamEntry: z.ZodType<PvPLadderTeamEntry> = z.object({
   rank: z.uint32(),
-  rating: z.uint32().optional(),
-  points: z.uint32().optional(),
-  games_played: z.uint32().optional(),
-  cumulative_opponent_points: z.uint32().optional(),
-  last_game_time: z.string().optional(),
+  rating: z.uint32().nullable().optional(),
+  points: z.uint32().nullable().optional(),
+  games_played: z.uint32().nullable().optional(),
+  cumulative_opponent_points: z.uint32().nullable().optional(),
+  last_game_time: z.string().nullable().optional(),
   members: z.array(PvPLadderTeamMember),
 })
 export const ItemSocket: z.ZodType<ItemSocket> = z.object({
   group: z.uint32(),
-  attr: z.string().optional(),
-  sColour: z.string().optional(),
-  type: z.string().optional(),
-  item: z.string().optional(),
+  attr: z.string().nullable().optional(),
+  sColour: z.string().nullable().optional(),
+  type: z.string().nullable().optional(),
+  item: z.string().nullable().optional(),
 })
 export const DisplayMode = z.enum(DisplayModeEnum);
 export const ItemProperty: z.ZodType<ItemProperty> = z.object({
@@ -1015,35 +1015,35 @@ export const ItemProperty: z.ZodType<ItemProperty> = z.object({
     z.string(),
     z.uint32()
   ])),
-  displayMode: DisplayMode.optional(),
-  progress: z.float64().optional(),
-  type: z.uint32().optional(),
-  suffix: z.string().optional(),
-  icon: z.string().optional(),
+  displayMode: DisplayMode.nullable().optional(),
+  progress: z.float64().nullable().optional(),
+  type: z.uint32().nullable().optional(),
+  suffix: z.string().nullable().optional(),
+  icon: z.string().nullable().optional(),
 })
 export const GemPage: z.ZodType<GemPage> = z.object({
   /**
    * 
    */
-  skillName: z.string().optional(),
+  skillName: z.string().nullable().optional(),
   /**
    * 
    */
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
   /**
    * 
    */
-  properties: z.array(ItemProperty).optional(),
+  properties: z.array(ItemProperty).nullable().optional(),
   /**
    * 
    */
-  stats: z.array(z.string()).optional(),
+  stats: z.array(z.string()).nullable().optional(),
 })
 export const GemTab: z.ZodType<GemTab> = z.object({
   /**
    * 
    */
-  name: z.string().optional(),
+  name: z.string().nullable().optional(),
   /**
    * 
    */
@@ -1053,43 +1053,43 @@ export const CrucibleNode: z.ZodType<CrucibleNode> = z.object({
   /**
    * mod hash
    */
-  skill: z.uint32().optional(),
+  skill: z.uint32().nullable().optional(),
   /**
    * mod tier
    */
-  tier: z.uint32().optional(),
+  tier: z.uint32().nullable().optional(),
   /**
    * 
    */
-  icon: z.string().optional(),
+  icon: z.string().nullable().optional(),
   /**
    * always true if present
    */
-  allocated: z.boolean().optional(),
+  allocated: z.boolean().nullable().optional(),
   /**
    * always true if present
    */
-  isNotable: z.boolean().optional(),
+  isNotable: z.boolean().nullable().optional(),
   /**
    * always true if present
    */
-  isReward: z.boolean().optional(),
+  isReward: z.boolean().nullable().optional(),
   /**
    * stat descriptions
    */
-  stats: z.array(z.string()).optional(),
+  stats: z.array(z.string()).nullable().optional(),
   /**
    * 
    */
-  reminderText: z.array(z.string()).optional(),
+  reminderText: z.array(z.string()).nullable().optional(),
   /**
    * the column this node occupies
    */
-  orbit: z.uint32().optional(),
+  orbit: z.uint32().nullable().optional(),
   /**
    * the node's position within the column
    */
-  orbitIndex: z.uint32().optional(),
+  orbitIndex: z.uint32().nullable().optional(),
   /**
    * node identifiers of nodes this one connects to
    */
@@ -1101,69 +1101,69 @@ export const CrucibleNode: z.ZodType<CrucibleNode> = z.object({
 })
 export const FrameType = z.enum(FrameTypeEnum);
 export const Item: z.ZodType<Item> = z.object({
-  realm: z.string().optional(),
+  realm: z.string().nullable().optional(),
   verified: z.boolean(),
   w: z.uint32(),
   h: z.uint32(),
   icon: z.string(),
-  support: z.boolean().optional(),
-  stackSize: z.int32().optional(),
-  maxStackSize: z.int32().optional(),
-  stackSizeText: z.string().optional(),
-  iconTierText: z.string().optional(),
-  league: z.string().optional(),
-  id: z.string().optional(),
-  gemSockets: z.array(z.string()).optional(),
-  influences: z.record(z.string(), z.any()).optional(),
-  elder: z.boolean().optional(),
-  shaper: z.boolean().optional(),
-  searing: z.boolean().optional(),
-  tangled: z.boolean().optional(),
-  memoryItem: z.boolean().optional(),
-  mutated: z.boolean().optional(),
-  abyssJewel: z.boolean().optional(),
-  delve: z.boolean().optional(),
-  fractured: z.boolean().optional(),
-  synthesised: z.boolean().optional(),
-  sockets: z.array(ItemSocket).optional(),
-  socketedItems: z.array(z.lazy(() => Item)).optional(),
+  support: z.boolean().nullable().optional(),
+  stackSize: z.int32().nullable().optional(),
+  maxStackSize: z.int32().nullable().optional(),
+  stackSizeText: z.string().nullable().optional(),
+  iconTierText: z.string().nullable().optional(),
+  league: z.string().nullable().optional(),
+  id: z.string().nullable().optional(),
+  gemSockets: z.array(z.string()).nullable().optional(),
+  influences: z.record(z.string(), z.any()).nullable().optional(),
+  elder: z.boolean().nullable().optional(),
+  shaper: z.boolean().nullable().optional(),
+  searing: z.boolean().nullable().optional(),
+  tangled: z.boolean().nullable().optional(),
+  memoryItem: z.boolean().nullable().optional(),
+  mutated: z.boolean().nullable().optional(),
+  abyssJewel: z.boolean().nullable().optional(),
+  delve: z.boolean().nullable().optional(),
+  fractured: z.boolean().nullable().optional(),
+  synthesised: z.boolean().nullable().optional(),
+  sockets: z.array(ItemSocket).nullable().optional(),
+  socketedItems: z.array(z.lazy(() => Item)).nullable().optional(),
   name: z.string(),
   typeLine: z.string(),
   baseType: z.string(),
-  rarity: z.string().optional(),
+  rarity: z.string().nullable().optional(),
   identified: z.boolean(),
-  itemLevel: z.int32().optional(),
-  unidentifiedTier: z.int32().optional(),
+  itemLevel: z.int32().nullable().optional(),
+  unidentifiedTier: z.int32().nullable().optional(),
   ilvl: z.int32(),
-  note: z.string().optional(),
-  forum_note: z.string().optional(),
-  lockedToCharacter: z.boolean().optional(),
-  lockedToAccount: z.boolean().optional(),
-  duplicated: z.boolean().optional(),
-  split: z.boolean().optional(),
-  corrupted: z.boolean().optional(),
-  doubleCorrupted: z.boolean().optional(),
-  sanctified: z.boolean().optional(),
-  unmodifiable: z.boolean().optional(),
-  unmodifiableExceptChaos: z.boolean().optional(),
-  cisRaceReward: z.boolean().optional(),
-  seaRaceReward: z.boolean().optional(),
-  thRaceReward: z.boolean().optional(),
-  properties: z.array(ItemProperty).optional(),
-  notableProperties: z.array(ItemProperty).optional(),
-  requirements: z.array(ItemProperty).optional(),
-  weaponRequirements: z.array(ItemProperty).optional(),
-  supportGemRequirements: z.array(ItemProperty).optional(),
-  additionalProperties: z.array(ItemProperty).optional(),
-  nextLevelRequirements: z.array(ItemProperty).optional(),
-  grantedSkills: z.array(ItemProperty).optional(),
-  talismanTier: z.int32().optional(),
+  note: z.string().nullable().optional(),
+  forum_note: z.string().nullable().optional(),
+  lockedToCharacter: z.boolean().nullable().optional(),
+  lockedToAccount: z.boolean().nullable().optional(),
+  duplicated: z.boolean().nullable().optional(),
+  split: z.boolean().nullable().optional(),
+  corrupted: z.boolean().nullable().optional(),
+  doubleCorrupted: z.boolean().nullable().optional(),
+  sanctified: z.boolean().nullable().optional(),
+  unmodifiable: z.boolean().nullable().optional(),
+  unmodifiableExceptChaos: z.boolean().nullable().optional(),
+  cisRaceReward: z.boolean().nullable().optional(),
+  seaRaceReward: z.boolean().nullable().optional(),
+  thRaceReward: z.boolean().nullable().optional(),
+  properties: z.array(ItemProperty).nullable().optional(),
+  notableProperties: z.array(ItemProperty).nullable().optional(),
+  requirements: z.array(ItemProperty).nullable().optional(),
+  weaponRequirements: z.array(ItemProperty).nullable().optional(),
+  supportGemRequirements: z.array(ItemProperty).nullable().optional(),
+  additionalProperties: z.array(ItemProperty).nullable().optional(),
+  nextLevelRequirements: z.array(ItemProperty).nullable().optional(),
+  grantedSkills: z.array(ItemProperty).nullable().optional(),
+  talismanTier: z.int32().nullable().optional(),
   rewards: z.array(z.object({
     label: z.string(),
     rewards: z.record(z.string(), z.int32()),
-  })).optional(),
-  secDescrText: z.string().optional(),
-  utilityMods: z.array(z.string()).optional(),
+  })).nullable().optional(),
+  secDescrText: z.string().nullable().optional(),
+  utilityMods: z.array(z.string()).nullable().optional(),
   logbookMods: z.array(z.object({
     name: z.string(),
     faction: z.object({
@@ -1171,123 +1171,123 @@ export const Item: z.ZodType<Item> = z.object({
       name: z.string(),
     }),
     mods: z.array(z.string()),
-  })).optional(),
-  enchantMods: z.array(z.string()).optional(),
-  runeMods: z.array(z.string()).optional(),
-  scourgeMods: z.array(z.string()).optional(),
-  implicitMods: z.array(z.string()).optional(),
+  })).nullable().optional(),
+  enchantMods: z.array(z.string()).nullable().optional(),
+  runeMods: z.array(z.string()).nullable().optional(),
+  scourgeMods: z.array(z.string()).nullable().optional(),
+  implicitMods: z.array(z.string()).nullable().optional(),
   ultimatumMods: z.array(z.object({
     type: z.string(),
     tier: z.uint32(),
-  })).optional(),
-  explicitMods: z.array(z.string()).optional(),
-  bondedMods: z.array(z.string()).optional(),
-  craftedMods: z.array(z.string()).optional(),
-  fracturedMods: z.array(z.string()).optional(),
-  mutatedMods: z.array(z.string()).optional(),
-  crucibleMods: z.array(z.string()).optional(),
-  cosmeticMods: z.array(z.string()).optional(),
-  veiledMods: z.array(z.string()).optional(),
-  veiled: z.boolean().optional(),
-  desecratedMods: z.array(z.string()).optional(),
-  desecrated: z.boolean().optional(),
-  gemTabs: z.array(GemTab).optional(),
-  gemBackground: z.string().optional(),
-  gemSkill: z.string().optional(),
-  descrText: z.string().optional(),
-  flavourText: z.array(z.string()).optional(),
-  flavourTextNote: z.string().optional(),
-  prophecyText: z.string().optional(),
-  isRelic: z.boolean().optional(),
-  foilVariation: z.int32().optional(),
-  replica: z.boolean().optional(),
-  foreseeing: z.boolean().optional(),
+  })).nullable().optional(),
+  explicitMods: z.array(z.string()).nullable().optional(),
+  bondedMods: z.array(z.string()).nullable().optional(),
+  craftedMods: z.array(z.string()).nullable().optional(),
+  fracturedMods: z.array(z.string()).nullable().optional(),
+  mutatedMods: z.array(z.string()).nullable().optional(),
+  crucibleMods: z.array(z.string()).nullable().optional(),
+  cosmeticMods: z.array(z.string()).nullable().optional(),
+  veiledMods: z.array(z.string()).nullable().optional(),
+  veiled: z.boolean().nullable().optional(),
+  desecratedMods: z.array(z.string()).nullable().optional(),
+  desecrated: z.boolean().nullable().optional(),
+  gemTabs: z.array(GemTab).nullable().optional(),
+  gemBackground: z.string().nullable().optional(),
+  gemSkill: z.string().nullable().optional(),
+  descrText: z.string().nullable().optional(),
+  flavourText: z.array(z.string()).nullable().optional(),
+  flavourTextNote: z.string().nullable().optional(),
+  prophecyText: z.string().nullable().optional(),
+  isRelic: z.boolean().nullable().optional(),
+  foilVariation: z.int32().nullable().optional(),
+  replica: z.boolean().nullable().optional(),
+  foreseeing: z.boolean().nullable().optional(),
   incubatedItem: z.object({
     name: z.string(),
     level: z.uint32(),
     progress: z.uint32(),
     total: z.uint32(),
-  }).optional(),
+  }).nullable().optional(),
   scourged: z.object({
     tier: z.uint32(),
-    level: z.uint32().optional(),
-    progress: z.uint32().optional(),
-    total: z.uint32().optional(),
-  }).optional(),
+    level: z.uint32().nullable().optional(),
+    progress: z.uint32().nullable().optional(),
+    total: z.uint32().nullable().optional(),
+  }).nullable().optional(),
   crucible: z.object({
     layout: z.string(),
     nodes: z.record(z.string(), CrucibleNode),
-  }).optional(),
-  ruthless: z.boolean().optional(),
-  frameType: FrameType.optional(),
-  artFilename: z.string().optional(),
+  }).nullable().optional(),
+  ruthless: z.boolean().nullable().optional(),
+  frameType: FrameType.nullable().optional(),
+  artFilename: z.string().nullable().optional(),
   hybrid: z.object({
-    isVaalGem: z.boolean().optional(),
+    isVaalGem: z.boolean().nullable().optional(),
     baseTypeName: z.string(),
-    properties: z.array(ItemProperty).optional(),
-    explicitMods: z.array(z.string()).optional(),
-    secDescrText: z.string().optional(),
-  }).optional(),
+    properties: z.array(ItemProperty).nullable().optional(),
+    explicitMods: z.array(z.string()).nullable().optional(),
+    secDescrText: z.string().nullable().optional(),
+  }).nullable().optional(),
   extended: z.object({
-    prefixes: z.uint32().optional(),
-    suffixes: z.uint32().optional(),
-  }).optional(),
-  x: z.uint32().optional(),
-  y: z.uint32().optional(),
-  inventoryId: z.string().optional(),
-  socket: z.uint32().optional(),
-  colour: z.string().optional(),
+    prefixes: z.uint32().nullable().optional(),
+    suffixes: z.uint32().nullable().optional(),
+  }).nullable().optional(),
+  x: z.uint32().nullable().optional(),
+  y: z.uint32().nullable().optional(),
+  inventoryId: z.string().nullable().optional(),
+  socket: z.uint32().nullable().optional(),
+  colour: z.string().nullable().optional(),
 })
 export const PublicStashChange: z.ZodType<PublicStashChange> = z.object({
   id: z.string(),
   public: z.boolean(),
-  accountName: z.string().optional(),
-  stash: z.string().optional(),
+  accountName: z.string().nullable().optional(),
+  stash: z.string().nullable().optional(),
   stashType: z.string(),
-  league: z.string().optional(),
+  league: z.string().nullable().optional(),
   items: z.array(Item),
 })
 export const PassiveNode: z.ZodType<PassiveNode> = z.object({
-  skill: z.uint32().optional(),
-  name: z.string().optional(),
-  icon: z.string().optional(),
-  isKeystone: z.boolean().optional(),
-  isNotable: z.boolean().optional(),
-  isMastery: z.boolean().optional(),
-  inactiveIcon: z.string().optional(),
-  activeIcon: z.string().optional(),
-  activeEffectImage: z.string().optional(),
+  skill: z.uint32().nullable().optional(),
+  name: z.string().nullable().optional(),
+  icon: z.string().nullable().optional(),
+  isKeystone: z.boolean().nullable().optional(),
+  isNotable: z.boolean().nullable().optional(),
+  isMastery: z.boolean().nullable().optional(),
+  inactiveIcon: z.string().nullable().optional(),
+  activeIcon: z.string().nullable().optional(),
+  activeEffectImage: z.string().nullable().optional(),
   masteryEffects: z.array(z.object({
     effect: z.uint32(),
     stats: z.array(z.string()),
-    reminderText: z.array(z.string()).optional(),
-  })).optional(),
-  isBlighted: z.boolean().optional(),
-  isTattoo: z.boolean().optional(),
-  isProxy: z.boolean().optional(),
-  isJewelSocket: z.boolean().optional(),
+    reminderText: z.array(z.string()).nullable().optional(),
+  })).nullable().optional(),
+  isBlighted: z.boolean().nullable().optional(),
+  isTattoo: z.boolean().nullable().optional(),
+  isProxy: z.boolean().nullable().optional(),
+  isJewelSocket: z.boolean().nullable().optional(),
   expansionJewel: z.object({
-    size: z.uint32().optional(),
-    index: z.uint32().optional(),
-    proxy: z.uint32().optional(),
-    parent: z.uint32().optional(),
-  }).optional(),
-  recipe: z.array(z.string()).optional(),
-  grantedStrength: z.uint32().optional(),
-  grantedDexterity: z.uint32().optional(),
-  grantedIntelligence: z.uint32().optional(),
-  ascendancyName: z.string().optional(),
-  isAscendancyStart: z.boolean().optional(),
-  isMultipleChoice: z.boolean().optional(),
-  isMultipleChoiceOption: z.boolean().optional(),
-  grantedPassivePoints: z.uint32().optional(),
-  stats: z.array(z.string()).optional(),
-  reminderText: z.array(z.string()).optional(),
-  flavourText: z.array(z.string()).optional(),
-  classStartIndex: z.uint32().optional(),
-  group: z.string().optional(),
-  orbit: z.uint32().optional(),
-  orbitIndex: z.uint32().optional(),
+    size: z.uint32().nullable().optional(),
+    index: z.uint32().nullable().optional(),
+    proxy: z.uint32().nullable().optional(),
+    parent: z.uint32().nullable().optional(),
+  }).nullable().optional(),
+  recipe: z.array(z.string()).nullable().optional(),
+  grantedStrength: z.uint32().nullable().optional(),
+  grantedDexterity: z.uint32().nullable().optional(),
+  grantedIntelligence: z.uint32().nullable().optional(),
+  ascendancyName: z.string().nullable().optional(),
+  isAscendancyStart: z.boolean().nullable().optional(),
+  isMultipleChoice: z.boolean().nullable().optional(),
+  isMultipleChoiceOption: z.boolean().nullable().optional(),
+  grantedPassivePoints: z.uint32().nullable().optional(),
+  stats: z.array(z.string()).nullable().optional(),
+  reminderText: z.array(z.string()).nullable().optional(),
+  flavourText: z.array(z.string()).nullable().optional(),
+  classStartIndex: z.uint32().nullable().optional(),
+  group: z.string().nullable().optional(),
+  orbit: z.uint32().nullable().optional(),
+  orbitIndex: z.uint32().nullable().optional(),
   out: z.array(z.string()),
   in: z.array(z.string()),
 })
@@ -1295,74 +1295,74 @@ export const PassiveGroup: z.ZodType<PassiveGroup> = z.object({
   x: z.float32(),
   y: z.float32(),
   orbits: z.array(z.uint32()),
-  isProxy: z.boolean().optional(),
-  proxy: z.string().optional(),
+  isProxy: z.boolean().nullable().optional(),
+  proxy: z.string().nullable().optional(),
   nodes: z.array(z.string()),
 })
 export const ItemJewelData: z.ZodType<ItemJewelData> = z.object({
   type: z.string(),
-  radius: z.uint32().optional(),
-  radiusMin: z.uint32().optional(),
-  radiusVisual: z.string().optional(),
+  radius: z.uint32().nullable().optional(),
+  radiusMin: z.uint32().nullable().optional(),
+  radiusVisual: z.string().nullable().optional(),
   subgraph: z.object({
     groups: z.record(z.string(), PassiveGroup),
     nodes: z.record(z.string(), PassiveNode),
-  }).optional(),
+  }).nullable().optional(),
 })
 export const Character: z.ZodType<Character> = z.object({
   id: z.string(),
   name: z.string(),
   realm: z.string(),
   class: z.string(),
-  league: z.string().optional(),
+  league: z.string().nullable().optional(),
   level: z.uint32(),
   experience: z.uint32(),
-  ruthless: z.boolean().optional(),
-  expired: z.boolean().optional(),
-  deleted: z.boolean().optional(),
-  current: z.boolean().optional(),
-  equipment: z.array(Item).optional(),
-  skills: z.array(Item).optional(),
-  inventory: z.array(Item).optional(),
-  rucksack: z.array(Item).optional(),
-  jewels: z.array(Item).optional(),
+  ruthless: z.boolean().nullable().optional(),
+  expired: z.boolean().nullable().optional(),
+  deleted: z.boolean().nullable().optional(),
+  current: z.boolean().nullable().optional(),
+  equipment: z.array(Item).nullable().optional(),
+  skills: z.array(Item).nullable().optional(),
+  inventory: z.array(Item).nullable().optional(),
+  rucksack: z.array(Item).nullable().optional(),
+  jewels: z.array(Item).nullable().optional(),
   passives: z.object({
     hashes: z.array(z.uint32()),
     hashes_ex: z.array(z.uint32()),
     mastery_effects: z.record(z.string(), z.int32()),
     specialisations: z.record(z.string(), z.array(z.int32())),
     skill_overrides: z.record(z.string(), PassiveNode),
-    bandit_choice: z.string().optional(),
-    pantheon_major: z.string().optional(),
-    pantheon_minor: z.string().optional(),
+    bandit_choice: z.string().nullable().optional(),
+    pantheon_major: z.string().nullable().optional(),
+    pantheon_minor: z.string().nullable().optional(),
     jewel_data: z.record(z.string(), ItemJewelData),
-    quest_stats: z.array(z.string()).optional(),
-    alternate_ascendancy: z.string().optional(),
-  }).optional(),
+    quest_stats: z.array(z.string()).nullable().optional(),
+    alternate_ascendancy: z.string().nullable().optional(),
+  }).nullable().optional(),
   metadata: z.object({
-    version: z.string().optional(),
-  }).optional(),
+    version: z.string().nullable().optional(),
+  }).nullable().optional(),
 })
 export const StashTab: z.ZodType<StashTab> = z.object({
   id: z.string(),
-  parent: z.string().optional(),
-  folder: z.string().optional(),
+  parent: z.string().nullable().optional(),
+  folder: z.string().nullable().optional(),
   name: z.string(),
   type: z.string(),
-  index: z.uint32().optional(),
+  index: z.uint32().nullable().optional(),
   metadata: z.object({
-    public: z.boolean().optional(),
-    folder: z.boolean().optional(),
-    colour: z.string().optional(),
-    map: z.record(z.string(), z.any()).optional(),
+    public: z.boolean().nullable().optional(),
+    folder: z.boolean().nullable().optional(),
+    colour: z.string().nullable().optional(),
+    map: z.record(z.string(), z.any()).nullable().optional(),
   }),
-  children: z.array(z.lazy(() => StashTab)).optional(),
-  items: z.array(Item).optional(),
+  children: z.array(z.lazy(() => StashTab)).nullable().optional(),
+  items: z.array(Item).nullable().optional(),
 })
 export const LeagueAccount: z.ZodType<LeagueAccount> = z.object({
   atlas_passives: z.object({
     hashes: z.array(z.uint32()),
-  }).optional(),
+  }).nullable().optional(),
   atlas_passive_trees: z.array(z.object({
     name: z.string(),
     hashes: z.array(z.uint32()),
@@ -1375,21 +1375,21 @@ export const ItemFilter: z.ZodType<ItemFilter> = z.object({
   description: z.string(),
   version: z.string(),
   type: z.string(),
-  public: z.boolean().optional(),
-  filter: z.string().optional(),
+  public: z.boolean().nullable().optional(),
+  filter: z.string().nullable().optional(),
   validation: z.object({
     valid: z.boolean(),
-    version: z.string().optional(),
-    validated: z.string().optional(),
-  }).optional(),
+    version: z.string().nullable().optional(),
+    validated: z.string().nullable().optional(),
+  }).nullable().optional(),
 })
 export const AccountProfileGetProfileResponse: z.ZodType<AccountProfileGetProfileResponse> = z.object({
   uuid: z.string(),
   name: z.string(),
-  locale: z.string().optional(),
+  locale: z.string().nullable().optional(),
   twitch: z.object({
     name: z.string(),
-  }).optional(),
+  }).nullable().optional(),
 })
 export const AccountItemFiltersGetItemFiltersResponse: z.ZodType<AccountItemFiltersGetItemFiltersResponse> = z.object({
   filters: z.array(ItemFilter),
@@ -1402,19 +1402,19 @@ export const AccountItemFiltersCreateItemFilterResponse: z.ZodType<AccountItemFi
 })
 export const AccountItemFiltersUpdateItemFilterResponse: z.ZodType<AccountItemFiltersUpdateItemFilterResponse> = z.object({
   filter: ItemFilter,
-  error: ApiError.optional(),
+  error: ApiError.nullable().optional(),
 })
 export const LeaguesListLeaguesResponse: z.ZodType<LeaguesListLeaguesResponse> = z.object({
   leagues: z.array(League),
 })
 export const LeaguesGetLeagueResponse: z.ZodType<LeaguesGetLeagueResponse> = z.object({
-  league: League.optional(),
+  league: League.nullable().optional(),
 })
 export const LeaguesGetLeagueLadderPoE1OnlyResponse: z.ZodType<LeaguesGetLeagueLadderPoE1OnlyResponse> = z.object({
   league: League,
   ladder: z.object({
     total: z.uint32(),
-    cached_since: z.string().optional(),
+    cached_since: z.string().nullable().optional(),
     entries: z.array(LadderEntry),
   }),
 })
@@ -1429,7 +1429,7 @@ export const PvPMatchesPoE1OnlyListPvPMatchesResponse: z.ZodType<PvPMatchesPoE1O
   matches: z.array(PvPMatch),
 })
 export const PvPMatchesPoE1OnlyGetPvPMatchResponse: z.ZodType<PvPMatchesPoE1OnlyGetPvPMatchResponse> = z.object({
-  match: PvPMatch.optional(),
+  match: PvPMatch.nullable().optional(),
 })
 export const PvPMatchesPoE1OnlyGetPvPMatchLadderResponse: z.ZodType<PvPMatchesPoE1OnlyGetPvPMatchLadderResponse> = z.object({
   match: PvPMatch,
@@ -1445,13 +1445,13 @@ export const AccountCharactersListCharactersResponse: z.ZodType<AccountCharacter
   characters: z.array(Character),
 })
 export const AccountCharactersGetCharacterResponse: z.ZodType<AccountCharactersGetCharacterResponse> = z.object({
-  character: Character.optional(),
+  character: Character.nullable().optional(),
 })
 export const AccountStashesPoE1OnlyListStashesResponse: z.ZodType<AccountStashesPoE1OnlyListStashesResponse> = z.object({
   stashes: z.array(StashTab),
 })
 export const AccountStashesPoE1OnlyGetStashResponse: z.ZodType<AccountStashesPoE1OnlyGetStashResponse> = z.object({
-  stash: StashTab.optional(),
+  stash: StashTab.nullable().optional(),
 })
 export const LeagueAccountsPoE1OnlyGetLeagueAccountResponse: z.ZodType<LeagueAccountsPoE1OnlyGetLeagueAccountResponse> = z.object({
   league_account: LeagueAccount,
@@ -1460,7 +1460,7 @@ export const GuildStashesPoE1OnlyListGuildStashesResponse: z.ZodType<GuildStashe
   stashes: z.array(StashTab),
 })
 export const GuildStashesPoE1OnlyGetGuildStashResponse: z.ZodType<GuildStashesPoE1OnlyGetGuildStashResponse> = z.object({
-  stash: StashTab.optional(),
+  stash: StashTab.nullable().optional(),
 })
 export const PublicStashesPoE1OnlyGetPublicStashesResponse: z.ZodType<PublicStashesPoE1OnlyGetPublicStashesResponse> = z.object({
   next_change_id: z.string(),

@@ -31,7 +31,7 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
-    
+
   valkey-proxy:
     image: docker.io/hiett/serverless-redis-http:latest
     container_name: valkey-proxy
@@ -71,6 +71,10 @@ services:
     image: pathofexile.accountant.localhost/background-processor:latest
     container_name: background-processor
     environment:
+      PATHOFEXILE_CLIENT_ID: ${PATHOFEXILE_CLIENT_ID}
+      PATHOFEXILE_CLIENT_SECRET: ${PATHOFEXILE_CLIENT_SECRET}
+      PATHOFEXILE_CONTACT_EMAIL: ${PATHOFEXILE_CONTACT_EMAIL}
+      PATHOFEXILE_APP_VERSION: ${PATHOFEXILE_APP_VERSION}
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}
       VALKEY_URL: redis://:${VALKEY_PASSWORD}@valkey:${VALKEY_PORT}
       S3_ENDPOINT: http://minio:9000

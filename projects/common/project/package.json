@@ -12,7 +12,6 @@
         "types"
     ],
     "scripts": {
-        "pretest": "npm run build",
         "test": "vitest run",
         "prebuild:dev": "pnpm run scrape",
         "build:dev": "pnpm run build",
@@ -64,9 +63,9 @@
             "require": "./dist/src/stats.js"
         },
         "./api": {
-            "types": "./dist/src/api/poe-api.d.ts",
-            "import": "./dist/src/api/poe-api.js",
-            "require": "./dist/src/api/poe-api.js"
+            "types": "./dist/src/poe-api.gen.d.ts",
+            "import": "./dist/src/poe-api.gen.js",
+            "require": "./dist/src/poe-api.gen.js"
         },
         "./rate-limiter": {
             "types": "./dist/src/poe-rate-limiter.d.ts",

@@ -1,50 +1,50 @@
-import { beforeEach, describe, it, expect, vi } from "vitest";
+import { beforeEach, afterEach, describe, it, expect, vi } from "vitest";
+import { z } from "zod";
 
 import { PoeApi } from "./poe-api.gen.js";
-import { serverApiPaths } from "./poe.gen.js";
+
 class PoeApiImplementation extends PoeApi {
-  request = vi.fn();
+  authenticate = vi.fn().mockResolvedValue("mock-token");
+  voidAuthentication = vi.fn().mockResolvedValue(undefined);
+  fetch = vi.fn();
+
+  public static readonly ENDPOINT_DEF = {
+    method: "GET",
+    path: "/:test",
+    responseType: z.object({
+      name: z.string().optional(),
+      some: z.string().optional(),
+    }),
+  } as any;
+
+  public async testRequest(path: string = "test") {
+    return this.request(PoeApiImplementation.ENDPOINT_DEF, path);
+  }
 }
 
 describe("PoeApi", () => {
   let api: PoeApiImplementation;
+
   beforeEach(() => {
     api = new PoeApiImplementation();
   });
 
-  it("should instantiate PoeApiImplementation", () => {
-    expect(api).toBeDefined();
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
-  it("should call request method", async () => {
-    await api.listLeagues();
-    expect(api.request).toHaveBeenCalledWith(
-      serverApiPaths["List Leagues"],
-      serverApiPaths["List Leagues"].path,
+  it("should perform a basic request", async () => {
+    api.fetch.mockResolvedValue(
+      new Response(JSON.stringify({ name: "TestName" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
     );
-  });
 
-  it("should fill path parameters", async () => {
-    await api.getItemFilter("example-id");
-    expect(api.request).toHaveBeenCalledWith(
-      serverApiPaths["Get Item Filter"],
-      "/item-filter/example-id",
-    );
-  });
+    const response = await api.testRequest("test-path");
 
-  it("should handle missing optional path parameters", async () => {
-    await api.getCharacter("example");
-    expect(api.request).toHaveBeenCalledWith(
-      serverApiPaths["Get Character"],
-      "/character/example",
-    );
-  });
-
-  it("should handle present optional path parameters", async () => {
-    await api.getCharacter("example", "details");
-    expect(api.request).toHaveBeenCalledWith(
-      serverApiPaths["Get Character"],
-      "/character/details/example",
-    );
+    expect(api.authenticate).toHaveBeenCalledTimes(1);
+    expect(api.fetch).toHaveBeenCalledTimes(1);
+    expect(response).toEqual({ name: "TestName" });
   });
 });

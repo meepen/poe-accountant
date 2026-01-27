@@ -1,7 +1,14 @@
 import { MailboxProcess } from "./jobs/mailbox.js";
-import { MinuteJob } from "./jobs/minute-job.js";
+import { MinuteJob } from "./jobs/minute.job.js";
+import { PoeApiJob } from "./jobs/poe-api.job.js";
+import { UpdateCurrencyDataJob } from "./jobs/update-currency-data.job.js";
 
-const processors = [new MailboxProcess(), new MinuteJob()];
+const processors = [
+  new MailboxProcess(),
+  new MinuteJob(),
+  new PoeApiJob(),
+  new UpdateCurrencyDataJob(),
+];
 
 async function main() {
   console.log("Starting background processor...");

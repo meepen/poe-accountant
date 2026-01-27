@@ -1,12 +1,75 @@
 // This file is auto-generated from https://www.pathofexile.com/developer/docs/reference
 
-import { serverApiPaths } from "./poe.gen.js";
+import { serverApiPaths, serverEndpoint } from "./poe.gen.js";
+import { z } from "zod";
+
+
+export type ServerApi = typeof serverApiPaths[keyof typeof serverApiPaths];
 
 export abstract class PoeApi {
-  protected abstract request<T>(endpointData: typeof serverApiPaths[keyof typeof serverApiPaths], path: string, postData?: FormData): Promise<T>;
+  protected fetch(endpointData: ServerApi, endpoint: URL, options: RequestInit & { body: string | undefined }): Promise<Response> {
+    return fetch(endpoint, options);  
+  }
+  protected abstract authenticate(endpointData: ServerApi): Promise<string> | string | Promise<void> | void;
+  protected abstract voidAuthentication(endpointData: ServerApi): Promise<void> | void;
+  protected abstract get userAgent(): string;
+
+  protected async request<T>(
+    endpointData: ServerApi,
+    path: string,
+    postData?: FormData,
+    attempts = 0,
+  ): Promise<T> {
+    const authorizationToken = await this.authenticate(endpointData);
+
+    const response = await this.fetch(
+      endpointData,
+      new URL(path, serverEndpoint),
+      {
+        method: endpointData.method,
+        headers: {
+          "Accept": "application/json",
+          "User-Agent": this.userAgent,
+          ...(authorizationToken
+            ? { "Authorization": `Bearer ${authorizationToken}` }
+            : {}),
+        },
+        body: postData?.toString() ?? undefined,
+      },
+    );
+
+    if (!response.ok) {
+      // Check status, if it's 401 then we need to reauthenticate and try again.
+      switch (response.status) {
+        case 401:
+          if (attempts < 1) {
+            await this.voidAuthentication(endpointData);
+            return this.request<T>(
+              endpointData,
+              path,
+              postData,
+              attempts + 1,
+            );
+          }
+          break;
+        case 403:
+          // If it's 403, the resource requires a different scope than provided.
+          throw new Error("API request forbidden: missing required scope");
+        // 429 is handled inside of `fetch` or otherwise passed onto the caller.
+        default:
+          break;
+      }
+
+      throw new Error(
+        `API request failed with status ${response.status}: ${response.statusText}`,
+      );
+    }
+
+    return (endpointData.responseType.parse(await response.json()) as T);
+  }
 // #region Account Profile
-  public async getProfile(): Promise<(typeof serverApiPaths)["Get Profile"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["Get Profile"]['responseType']>(
+  public async getProfile(): Promise<z.infer<(typeof serverApiPaths)["Get Profile"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["Get Profile"]['responseType']>>(
       serverApiPaths["Get Profile"],
       `/profile`
     );
@@ -14,26 +77,26 @@ export abstract class PoeApi {
 // #endregion Account Profile
 
 // #region Account Item Filters
-  public async getItemFilters(): Promise<(typeof serverApiPaths)["Get Item Filters"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["Get Item Filters"]['responseType']>(
+  public async getItemFilters(): Promise<z.infer<(typeof serverApiPaths)["Get Item Filters"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["Get Item Filters"]['responseType']>>(
       serverApiPaths["Get Item Filters"],
       `/item-filter`
     );
   }
-  public async getItemFilter(id: string): Promise<(typeof serverApiPaths)["Get Item Filter"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["Get Item Filter"]['responseType']>(
+  public async getItemFilter(id: string): Promise<z.infer<(typeof serverApiPaths)["Get Item Filter"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["Get Item Filter"]['responseType']>>(
       serverApiPaths["Get Item Filter"],
       `/item-filter/${id}`
     );
   }
-  public async createItemFilter(): Promise<(typeof serverApiPaths)["Create Item Filter"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["Create Item Filter"]['responseType']>(
+  public async createItemFilter(): Promise<z.infer<(typeof serverApiPaths)["Create Item Filter"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["Create Item Filter"]['responseType']>>(
       serverApiPaths["Create Item Filter"],
       `/item-filter`
     );
   }
-  public async updateItemFilter(id: string): Promise<(typeof serverApiPaths)["Update Item Filter"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["Update Item Filter"]['responseType']>(
+  public async updateItemFilter(id: string): Promise<z.infer<(typeof serverApiPaths)["Update Item Filter"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["Update Item Filter"]['responseType']>>(
       serverApiPaths["Update Item Filter"],
       `/item-filter/${id}`
     );
@@ -41,26 +104,26 @@ export abstract class PoeApi {
 // #endregion Account Item Filters
 
 // #region Leagues
-  public async listLeagues(): Promise<(typeof serverApiPaths)["List Leagues"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["List Leagues"]['responseType']>(
+  public async listLeagues(): Promise<z.infer<(typeof serverApiPaths)["List Leagues"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["List Leagues"]['responseType']>>(
       serverApiPaths["List Leagues"],
       `/league`
     );
   }
-  public async getLeague(league: string): Promise<(typeof serverApiPaths)["Get League"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["Get League"]['responseType']>(
+  public async getLeague(league: string): Promise<z.infer<(typeof serverApiPaths)["Get League"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["Get League"]['responseType']>>(
       serverApiPaths["Get League"],
       `/league/${league}`
     );
   }
-  public async getLeagueLadderPoE1Only(league: string): Promise<(typeof serverApiPaths)["Get League Ladder (PoE1 only)"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["Get League Ladder (PoE1 only)"]['responseType']>(
+  public async getLeagueLadderPoE1Only(league: string): Promise<z.infer<(typeof serverApiPaths)["Get League Ladder (PoE1 only)"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["Get League Ladder (PoE1 only)"]['responseType']>>(
       serverApiPaths["Get League Ladder (PoE1 only)"],
       `/league/${league}/ladder`
     );
   }
-  public async getLeagueEventLadderPoE1Only(league: string): Promise<(typeof serverApiPaths)["Get League Event Ladder (PoE1 only)"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["Get League Event Ladder (PoE1 only)"]['responseType']>(
+  public async getLeagueEventLadderPoE1Only(league: string): Promise<z.infer<(typeof serverApiPaths)["Get League Event Ladder (PoE1 only)"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["Get League Event Ladder (PoE1 only)"]['responseType']>>(
       serverApiPaths["Get League Event Ladder (PoE1 only)"],
       `/league/${league}/event-ladder`
     );
@@ -68,20 +131,20 @@ export abstract class PoeApi {
 // #endregion Leagues
 
 // #region PvP Matches (PoE1 only)
-  public async listPvPMatches(): Promise<(typeof serverApiPaths)["List PvP Matches"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["List PvP Matches"]['responseType']>(
+  public async listPvPMatches(): Promise<z.infer<(typeof serverApiPaths)["List PvP Matches"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["List PvP Matches"]['responseType']>>(
       serverApiPaths["List PvP Matches"],
       `/pvp-match`
     );
   }
-  public async getPvPMatch(match: string): Promise<(typeof serverApiPaths)["Get PvP Match"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["Get PvP Match"]['responseType']>(
+  public async getPvPMatch(match: string): Promise<z.infer<(typeof serverApiPaths)["Get PvP Match"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["Get PvP Match"]['responseType']>>(
       serverApiPaths["Get PvP Match"],
       `/pvp-match/${match}`
     );
   }
-  public async getPvPMatchLadder(match: string): Promise<(typeof serverApiPaths)["Get PvP Match Ladder"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["Get PvP Match Ladder"]['responseType']>(
+  public async getPvPMatchLadder(match: string): Promise<z.infer<(typeof serverApiPaths)["Get PvP Match Ladder"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["Get PvP Match Ladder"]['responseType']>>(
       serverApiPaths["Get PvP Match Ladder"],
       `/pvp-match/${match}/ladder`
     );
@@ -89,8 +152,8 @@ export abstract class PoeApi {
 // #endregion PvP Matches (PoE1 only)
 
 // #region Account Leagues (PoE1 only)
-  public async getLeagues(realm?: string): Promise<(typeof serverApiPaths)["Get Leagues"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["Get Leagues"]['responseType']>(
+  public async getLeagues(realm?: string): Promise<z.infer<(typeof serverApiPaths)["Get Leagues"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["Get Leagues"]['responseType']>>(
       serverApiPaths["Get Leagues"],
       `/account/leagues${realm ? `/${realm}` : ''}`
     );
@@ -98,14 +161,14 @@ export abstract class PoeApi {
 // #endregion Account Leagues (PoE1 only)
 
 // #region Account Characters
-  public async listCharacters(realm?: string): Promise<(typeof serverApiPaths)["List Characters"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["List Characters"]['responseType']>(
+  public async listCharacters(realm?: string): Promise<z.infer<(typeof serverApiPaths)["List Characters"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["List Characters"]['responseType']>>(
       serverApiPaths["List Characters"],
       `/character${realm ? `/${realm}` : ''}`
     );
   }
-  public async getCharacter(name: string, realm?: string): Promise<(typeof serverApiPaths)["Get Character"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["Get Character"]['responseType']>(
+  public async getCharacter(name: string, realm?: string): Promise<z.infer<(typeof serverApiPaths)["Get Character"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["Get Character"]['responseType']>>(
       serverApiPaths["Get Character"],
       `/character${realm ? `/${realm}` : ''}/${name}`
     );
@@ -113,14 +176,14 @@ export abstract class PoeApi {
 // #endregion Account Characters
 
 // #region Account Stashes (PoE1 only)
-  public async listStashes(league: string, realm?: string): Promise<(typeof serverApiPaths)["List Stashes"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["List Stashes"]['responseType']>(
+  public async listStashes(league: string, realm?: string): Promise<z.infer<(typeof serverApiPaths)["List Stashes"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["List Stashes"]['responseType']>>(
       serverApiPaths["List Stashes"],
       `/stash${realm ? `/${realm}` : ''}/${league}`
     );
   }
-  public async getStash(league: string, stash_id: string, realm?: string, substash_id?: string): Promise<(typeof serverApiPaths)["Get Stash"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["Get Stash"]['responseType']>(
+  public async getStash(league: string, stash_id: string, realm?: string, substash_id?: string): Promise<z.infer<(typeof serverApiPaths)["Get Stash"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["Get Stash"]['responseType']>>(
       serverApiPaths["Get Stash"],
       `/stash${realm ? `/${realm}` : ''}/${league}/${stash_id}${substash_id ? `/${substash_id}` : ''}`
     );
@@ -128,8 +191,8 @@ export abstract class PoeApi {
 // #endregion Account Stashes (PoE1 only)
 
 // #region League Accounts (PoE1 only)
-  public async getLeagueAccount(league: string, realm?: string): Promise<(typeof serverApiPaths)["Get League Account"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["Get League Account"]['responseType']>(
+  public async getLeagueAccount(league: string, realm?: string): Promise<z.infer<(typeof serverApiPaths)["Get League Account"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["Get League Account"]['responseType']>>(
       serverApiPaths["Get League Account"],
       `/league-account${realm ? `/${realm}` : ''}/${league}`
     );
@@ -137,14 +200,14 @@ export abstract class PoeApi {
 // #endregion League Accounts (PoE1 only)
 
 // #region Guild Stashes (PoE1 only)
-  public async listGuildStashes(league: string, realm?: string): Promise<(typeof serverApiPaths)["List Guild Stashes"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["List Guild Stashes"]['responseType']>(
+  public async listGuildStashes(league: string, realm?: string): Promise<z.infer<(typeof serverApiPaths)["List Guild Stashes"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["List Guild Stashes"]['responseType']>>(
       serverApiPaths["List Guild Stashes"],
       `/guild${realm ? `/${realm}` : ''}/stash/${league}`
     );
   }
-  public async getGuildStash(league: string, stash_id: string, realm?: string, substash_id?: string): Promise<(typeof serverApiPaths)["Get Guild Stash"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["Get Guild Stash"]['responseType']>(
+  public async getGuildStash(league: string, stash_id: string, realm?: string, substash_id?: string): Promise<z.infer<(typeof serverApiPaths)["Get Guild Stash"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["Get Guild Stash"]['responseType']>>(
       serverApiPaths["Get Guild Stash"],
       `/guild${realm ? `/${realm}` : ''}/stash/${league}/${stash_id}${substash_id ? `/${substash_id}` : ''}`
     );
@@ -152,8 +215,8 @@ export abstract class PoeApi {
 // #endregion Guild Stashes (PoE1 only)
 
 // #region Public Stashes (PoE1 only)
-  public async getPublicStashes(realm?: string): Promise<(typeof serverApiPaths)["Get Public Stashes"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["Get Public Stashes"]['responseType']>(
+  public async getPublicStashes(realm?: string): Promise<z.infer<(typeof serverApiPaths)["Get Public Stashes"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["Get Public Stashes"]['responseType']>>(
       serverApiPaths["Get Public Stashes"],
       `/public-stash-tabs${realm ? `/${realm}` : ''}`
     );
@@ -161,8 +224,8 @@ export abstract class PoeApi {
 // #endregion Public Stashes (PoE1 only)
 
 // #region Currency Exchange
-  public async getExchangeMarkets(realm?: string, id?: string): Promise<(typeof serverApiPaths)["Get Exchange Markets"]["responseType"]> {
-    return await this.request<(typeof serverApiPaths)["Get Exchange Markets"]['responseType']>(
+  public async getExchangeMarkets(realm?: string, id?: string): Promise<z.infer<(typeof serverApiPaths)["Get Exchange Markets"]["responseType"]>> {
+    return await this.request<z.infer<(typeof serverApiPaths)["Get Exchange Markets"]['responseType']>>(
       serverApiPaths["Get Exchange Markets"],
       `/currency-exchange${realm ? `/${realm}` : ''}${id ? `/${id}` : ''}`
     );

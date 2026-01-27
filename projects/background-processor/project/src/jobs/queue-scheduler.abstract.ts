@@ -7,6 +7,8 @@ export abstract class QueueScheduler<
 > extends QueueWorker<T> {
   protected abstract readonly queueName: string;
   protected abstract readonly queueData: z.infer<T>;
+  protected readonly returnSchema = z.void();
+  protected abstract readonly cron: string;
 
   protected jobScheduler!: Queue;
 
@@ -18,7 +20,7 @@ export abstract class QueueScheduler<
     await this.jobScheduler.upsertJobScheduler(
       this.queueName,
       {
-        pattern: "* * * * *",
+        pattern: this.cron,
       },
       {
         data: this.queueData,

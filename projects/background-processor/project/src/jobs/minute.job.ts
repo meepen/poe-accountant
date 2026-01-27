@@ -5,11 +5,14 @@ const MinuteJobQueueName = "minute-job-queue";
 const MinuteJobQueueSchema = z.object({});
 
 export class MinuteJob extends QueueScheduler<typeof MinuteJobQueueSchema> {
-  protected readonly queueName = MinuteJobQueueName;
-  protected readonly schema = MinuteJobQueueSchema;
-  protected readonly queueData = {};
+  protected override readonly returnSchema = z.void();
+  protected override readonly queueName = MinuteJobQueueName;
+  protected override readonly schema = MinuteJobQueueSchema;
+  protected override readonly queueData = {};
 
-  public processJob(_data: z.infer<typeof MinuteJobQueueSchema>) {
+  protected override readonly cron = "* * * * *";
+
+  public override processJob() {
     // Implement the logic that needs to run every minute here
     console.log("Minute job executed at", new Date().toISOString());
   }
