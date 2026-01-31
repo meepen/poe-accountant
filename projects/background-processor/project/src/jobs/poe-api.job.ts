@@ -8,6 +8,18 @@ import {
   PoeApiJobName,
 } from "../schemas/poe-api.schema.js";
 
+async function getPublicIp(): Promise<string> {
+  const response = await fetch("https://checkip.amazonaws.com");
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+  const ip = (await response.text()).trim();
+  if (!ip) {
+    throw new Error("Empty IP response");
+  }
+  return ip;
+}
+
 export class PoeApiJob extends QueueWorker<
   typeof PoeApiJobSchema,
   typeof PoeApiJobReturnSchema
@@ -17,10 +29,40 @@ export class PoeApiJob extends QueueWorker<
   protected override readonly returnSchema = PoeApiJobReturnSchema;
   protected override readonly concurrency = 5;
 
-  private readonly limiter = new PoeRateLimiter(this.connection, {
+  private readonly limiter = new PoeRateLimiter({
     hitCountBuffer: 2,
     hitTimingBuffer: 2500,
   });
+
+  protected async getRuleDetails(
+    ruleDetails: Record<string, string>,
+  ): Promise<Record<string, string>> {
+    return {
+      ...ruleDetails,
+      ip: await this.getClientIp(),
+    };
+  }
+
+  private clientIp: string | null = null;
+  private ipPromise: Promise<string> | null = null;
+
+  private getClientIp(): Promise<string> | string {
+    if (this.clientIp) {
+      return this.clientIp;
+    }
+    if (!this.ipPromise) {
+      this.ipPromise = getPublicIp()
+        .then((ip) => {
+          this.clientIp = ip;
+          return ip;
+        })
+        .catch((err: unknown) => {
+          this.ipPromise = null;
+          throw err;
+        });
+    }
+    return this.ipPromise;
+  }
 
   protected override async processJob(
     data: z.infer<typeof PoeApiJobSchema>,
@@ -30,15 +72,13 @@ export class PoeApiJob extends QueueWorker<
     // Use job.id if available for traceability, otherwise generate a unique ID.
     // This ID is used to 'sign' the reservation in Redis.
     const uniqueId = job.id || crypto.randomUUID();
-    console.debug(
-      `[${uniqueId}] Processing POE API Job: ${data.endpointName} for account ${data.accountId}`,
-    );
+    console.debug(`[${uniqueId}] Processing POE API Job: ${data.endpointName}`);
 
     // 2. ATOMIC CHECK
     // We pass uniqueId so we can find and remove this specific hit if the request fails later.
     const delayRequired = await this.limiter.reserveSlot(
       data.endpointName,
-      data.accountId,
+      await this.getRuleDetails(data.ruleDetails),
       uniqueId,
     );
 
@@ -72,7 +112,7 @@ export class PoeApiJob extends QueueWorker<
       try {
         await this.limiter.updateRules(
           data.endpointName,
-          data.accountId,
+          await this.getRuleDetails(data.ruleDetails),
           response.headers,
         );
       } catch (syncError) {
@@ -121,8 +161,7 @@ export class PoeApiJob extends QueueWorker<
         try {
           await this.limiter.rollbackSlot(
             data.endpointName,
-            data.accountId,
-            uniqueId,
+            await this.getRuleDetails(data.ruleDetails),
           );
         } catch (rollbackError) {
           console.error("Failed to execute rollback", rollbackError);

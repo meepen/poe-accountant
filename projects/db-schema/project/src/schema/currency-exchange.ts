@@ -14,6 +14,8 @@ import {
 import { League } from "./league.js";
 import { relations } from "drizzle-orm/relations";
 
+// --- TABLES ---
+
 export const CurrencyExchangeHistory = pgTable(
   "currency_exchange_history",
   {
@@ -31,11 +33,7 @@ export const CurrencyExchangeHistory = pgTable(
       mode: "date",
       withTimezone: true,
     }),
-
-    createdAt: timestamp("created_at", {
-      mode: "date",
-      withTimezone: true,
-    })
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
       .notNull()
       .defaultNow(),
   },
@@ -52,9 +50,7 @@ export const CurrencyExchangeHistoryCurrency = pgTable(
     id: uuid("id").notNull().primaryKey(),
     historyId: uuid("history_id")
       .notNull()
-      .references(() => CurrencyExchangeHistory.id, {
-        onDelete: "cascade",
-      }),
+      .references(() => CurrencyExchangeHistory.id, { onDelete: "cascade" }),
     fromCurrency: text("from_currency").notNull(),
     toCurrency: text("to_currency").notNull(),
     fromVolume: bigint("from_volume", { mode: "bigint" }).notNull(),
@@ -68,51 +64,23 @@ export const CurrencyExchangeHistoryCurrency = pgTable(
       t.fromCurrency,
     ),
     index("idx_currency_exchange_league_currency_to_currency").on(t.toCurrency),
-    unique(
-      "currency_exchange_league_currency_history_id_from_currency_to_currency_unique",
-    ).on(t.historyId, t.fromCurrency, t.toCurrency),
+    unique("currency_exchange_league_currency_unique").on(
+      t.historyId,
+      t.fromCurrency,
+      t.toCurrency,
+    ),
   ],
 );
-
-export const CurrencyExchangeLeagueRelations = relations(
-  CurrencyExchangeHistory,
-  ({ one, many }) => ({
-    league: one(League, {
-      fields: [CurrencyExchangeHistory.realm, CurrencyExchangeHistory.leagueId],
-      references: [League.realm, League.leagueId],
-    }),
-    currencies: many(CurrencyExchangeHistoryCurrency),
-  }),
-);
-
-export const CurrencyExchangeHistoryCurrencyRelations = relations(
-  CurrencyExchangeHistoryCurrency,
-  ({ one }) => ({
-    history: one(CurrencyExchangeHistory, {
-      fields: [CurrencyExchangeHistoryCurrency.historyId],
-      references: [CurrencyExchangeHistory.id],
-    }),
-  }),
-);
-
-export const LeagueRelations = relations(League, ({ many }) => ({
-  currencyExchangeHistories: many(CurrencyExchangeHistory),
-}));
 
 export const CurrencyExchangeLeagueSnapshotData = pgTable(
   "currency_exchange_league_snapshot_data",
   {
     historyId: uuid("history_id")
       .notNull()
-      .references(() => CurrencyExchangeHistory.id, {
-        onDelete: "cascade",
-      }),
-    currency: text("currency").notNull(), // The item being valued
-
-    // 1. The Calculated Value (from RateResult.optimalRate)
+      .references(() => CurrencyExchangeHistory.id, { onDelete: "cascade" }),
+    currency: text("currency").notNull(),
     valuedAt: decimal("valued_at", { precision: 30, scale: 10 }).notNull(),
-    stableCurrency: text("stable_currency").notNull(), // e.g. "chaos"
-
+    stableCurrency: text("stable_currency").notNull(),
     directMarketRate: decimal("direct_market_rate", {
       precision: 30,
       scale: 10,
@@ -136,12 +104,43 @@ export const CurrencyExchangeLeagueSnapshotData = pgTable(
   ],
 );
 
+// --- RELATIONS ---
+
+export const CurrencyExchangeHistoryRelations = relations(
+  CurrencyExchangeHistory,
+  ({ one, many }) => ({
+    // 1. Link to the League Table
+    league: one(League, {
+      fields: [CurrencyExchangeHistory.realm, CurrencyExchangeHistory.leagueId],
+      references: [League.realm, League.leagueId],
+    }),
+    // 2. Link to the Raw Currencies (One-to-Many)
+    currencies: many(CurrencyExchangeHistoryCurrency),
+    // 3. Link to the Calculated Snapshots (One-to-Many)
+    snapshotData: many(CurrencyExchangeLeagueSnapshotData),
+  }),
+);
+
+export const CurrencyExchangeHistoryCurrencyRelations = relations(
+  CurrencyExchangeHistoryCurrency,
+  ({ one }) => ({
+    history: one(CurrencyExchangeHistory, {
+      fields: [CurrencyExchangeHistoryCurrency.historyId],
+      references: [CurrencyExchangeHistory.id],
+    }),
+  }),
+);
+
 export const CurrencyExchangeLeagueSnapshotDataRelations = relations(
   CurrencyExchangeLeagueSnapshotData,
   ({ one }) => ({
-    league: one(CurrencyExchangeHistory, {
+    history: one(CurrencyExchangeHistory, {
       fields: [CurrencyExchangeLeagueSnapshotData.historyId],
       references: [CurrencyExchangeHistory.id],
     }),
   }),
 );
+
+export const LeagueRelations = relations(League, ({ many }) => ({
+  currencyExchangeHistories: many(CurrencyExchangeHistory),
+}));

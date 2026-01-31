@@ -1,4 +1,4 @@
-import { createValkeyConnection } from "../../connections/valkey.js";
+import { valkey } from "../../connections/valkey.js";
 
 const PREFIX_LIMITS = "{poe}:limits";
 const PREFIX_CONFIG_POLICY = "{poe}:config:policy";
@@ -9,18 +9,6 @@ export interface PoeLimiterOptions {
   hitCountBuffer?: number;
   hitTimingBuffer?: number;
   publicIp?: string;
-}
-
-async function getPublicIp(): Promise<string> {
-  const response = await fetch("https://checkip.amazonaws.com");
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
-  }
-  const ip = (await response.text()).trim();
-  if (!ip) {
-    throw new Error("Empty IP response");
-  }
-  return ip;
 }
 
 /**
@@ -164,10 +152,7 @@ export class PoeRateLimiter {
   private clientIp: string | null = null;
   private ipPromise: Promise<string> | null = null;
 
-  constructor(
-    private readonly redis: ReturnType<typeof createValkeyConnection>,
-    options: PoeLimiterOptions = {},
-  ) {
+  constructor(options: PoeLimiterOptions = {}) {
     this.hitCountBuffer = options.hitCountBuffer ?? 0;
     this.hitTimingBuffer = options.hitTimingBuffer ?? 0;
 
@@ -179,74 +164,46 @@ export class PoeRateLimiter {
   }
 
   private registerScripts() {
-    const r = this.redis.valkey;
     // @ts-expect-error - Dynamic command check
-    if (typeof r.checkPoeLimits !== "function") {
-      r.defineCommand("checkPoeLimits", {
+    if (typeof valkey.checkPoeLimits !== "function") {
+      valkey.defineCommand("checkPoeLimits", {
         numberOfKeys: 0,
         lua: LUA_CHECK_SCRIPT,
       });
     }
     // @ts-expect-error - Dynamic command check
-    if (typeof r.syncPoeState !== "function") {
-      r.defineCommand("syncPoeState", {
+    if (typeof valkey.syncPoeState !== "function") {
+      valkey.defineCommand("syncPoeState", {
         numberOfKeys: 1,
         lua: LUA_SYNC_SCRIPT,
       });
     }
     // @ts-expect-error - Dynamic command check
-    if (typeof r.rollbackPoeHit !== "function") {
-      r.defineCommand("rollbackPoeHit", {
+    if (typeof valkey.rollbackPoeHit !== "function") {
+      valkey.defineCommand("rollbackPoeHit", {
         numberOfKeys: 0,
         lua: LUA_ROLLBACK_SCRIPT,
       });
     }
   }
 
-  private async getClientIp(): Promise<string> {
-    if (this.clientIp) {
-      return this.clientIp;
-    }
-    if (!this.ipPromise) {
-      this.ipPromise = getPublicIp()
-        .then((ip) => {
-          this.clientIp = ip;
-          return ip;
-        })
-        .catch((err: unknown) => {
-          this.ipPromise = null;
-          throw err;
-        });
-    }
-    return this.ipPromise;
-  }
-
   private getRuleNameKey(
     ruleName: string,
-    details: { ip: string; accountId?: string },
+    details: Record<string, string>,
   ): string {
-    switch (ruleName.toLowerCase()) {
-      case "account":
-        if (details.accountId) {
-          return `${ruleName}:${details.accountId}`;
-        }
-        break;
-      case "ip":
-        return `${ruleName}:${details.ip}`;
-      default:
-        break;
-    }
-    return ruleName;
+    return ruleName in details ? `${ruleName}:${details[ruleName]}` : ruleName;
   }
 
   /**
    * Helper to clear probe locks if we fail to get headers
    * or need to rollback.
    */
-  private async clearProbeLocks(endpointName: string, accountId: string) {
-    const ruleDetails = { ip: await this.getClientIp(), accountId };
+  private async clearProbeLocks(
+    endpointName: string,
+    ruleDetails: Record<string, string>,
+  ) {
     const policyKey = `${PREFIX_CONFIG_POLICY}:${endpointName}`;
-    let ruleNames = await this.redis.valkey.smembers(policyKey);
+    let ruleNames = await valkey.smembers(policyKey);
 
     if (ruleNames.length === 0) {
       ruleNames = ["ip"];
@@ -258,34 +215,36 @@ export class PoeRateLimiter {
     );
 
     if (probeKeys.length > 0) {
-      await this.redis.valkey.del(...probeKeys);
+      await valkey.del(...probeKeys);
     }
   }
 
-  async updateRules(endpointName: string, accountId: string, headers: Headers) {
-    const ruleDetails = { ip: await this.getClientIp(), accountId };
+  async updateRules(
+    endpointName: string,
+    ruleDetails: Record<string, string>,
+    headers: Headers,
+  ) {
     const rulesHeader = headers.get("x-rate-limit-rules");
 
     // FAILSAFE: If no headers (e.g. 404/500), clear locks so we don't freeze.
     if (!rulesHeader) {
-      await this.clearProbeLocks(endpointName, accountId);
+      await this.clearProbeLocks(endpointName, ruleDetails);
       return;
     }
 
-    await this.updateState(accountId, headers);
-
+    await this.updateState(ruleDetails, headers);
     const ruleNames = rulesHeader
       .toLowerCase()
       .split(",")
       .map((s) => s.trim());
     const policyKey = `${PREFIX_CONFIG_POLICY}:${endpointName}`;
 
-    const currentRules = await this.redis.valkey.smembers(policyKey);
+    const currentRules = await valkey.smembers(policyKey);
     const isPolicySame =
       currentRules.length === ruleNames.length &&
       currentRules.every((r) => ruleNames.includes(r));
 
-    const transaction = this.redis.valkey.multi();
+    const transaction = valkey.multi();
 
     if (!isPolicySame) {
       transaction.del(policyKey);
@@ -324,8 +283,7 @@ export class PoeRateLimiter {
     await transaction.exec();
   }
 
-  async updateState(accountId: string, headers: Headers) {
-    const ruleDetails = { ip: await this.getClientIp(), accountId };
+  async updateState(ruleDetails: Record<string, string>, headers: Headers) {
     const rulesHeader = headers.get("x-rate-limit-rules");
     if (!rulesHeader) {
       return;
@@ -335,7 +293,7 @@ export class PoeRateLimiter {
       .toLowerCase()
       .split(",")
       .map((s) => s.trim());
-    const pipeline = this.redis.valkey.pipeline();
+    const pipeline = valkey.pipeline();
 
     for (const ruleName of ruleNames) {
       const stateHeader = headers.get(`x-rate-limit-${ruleName}-state`);
@@ -376,14 +334,13 @@ export class PoeRateLimiter {
 
   async reserveSlot(
     endpointName: string,
-    accountId: string,
+    ruleDetails: Record<string, string>,
     jobId: string,
   ): Promise<number> {
-    const ruleDetails = { ip: await this.getClientIp(), accountId };
     const cost = 1;
     const policyKey = `${PREFIX_CONFIG_POLICY}:${endpointName}`;
 
-    let ruleNames = await this.redis.valkey.smembers(policyKey);
+    let ruleNames = await valkey.smembers(policyKey);
     if (ruleNames.length === 0) {
       ruleNames = ["ip"];
     }
@@ -402,22 +359,18 @@ export class PoeRateLimiter {
 
     // @ts-expect-error - Dynamic command
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    const result = (await this.redis.valkey.checkPoeLimits(
-      ...scriptArgs,
-    )) as number;
+    const result = (await valkey.checkPoeLimits(...scriptArgs)) as number;
 
     return result;
   }
 
   async rollbackSlot(
     endpointName: string,
-    accountId: string,
-    jobId: string,
+    ruleDetails: Record<string, string>,
   ): Promise<void> {
-    const ruleDetails = { ip: await this.getClientIp(), accountId };
     const policyKey = `${PREFIX_CONFIG_POLICY}:${endpointName}`;
 
-    let ruleNames = await this.redis.valkey.smembers(policyKey);
+    let ruleNames = await valkey.smembers(policyKey);
     if (ruleNames.length === 0) {
       ruleNames = ["ip"];
     }
@@ -429,14 +382,14 @@ export class PoeRateLimiter {
         `${PREFIX_CONFIG_RULE}:probe:${this.getRuleNameKey(r, ruleDetails)}`,
     );
     if (probeKeys.length > 0) {
-      await this.redis.valkey.del(...probeKeys);
+      await valkey.del(...probeKeys);
     }
 
     const configKeys = ruleNames.map(
       (r) => `${PREFIX_CONFIG_RULE}:${this.getRuleNameKey(r, ruleDetails)}`,
     );
 
-    const configs = await this.redis.valkey.mget(...configKeys);
+    const configs = await valkey.mget(...configKeys);
     const targetKeys: string[] = [];
 
     for (const [idx, name] of ruleNames.entries()) {
@@ -466,6 +419,6 @@ export class PoeRateLimiter {
 
     // @ts-expect-error - Dynamic command
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    await this.redis.valkey.rollbackPoeHit(jobId, ...targetKeys);
+    await valkey.rollbackPoeHit(jobId, ...targetKeys);
   }
 }

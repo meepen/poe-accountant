@@ -7,21 +7,20 @@ import {
   PoeApiJobSchema,
 } from "../schemas/poe-api.schema.js";
 import { z } from "zod";
-import { createValkeyConnection } from "./valkey.js";
+import { valkeyForBullMQ } from "./valkey.js";
 
 class ApplicationPoeApi extends PoeApi {
-  private readonly connection = createValkeyConnection();
-  private readonly queueEventsConnection = createValkeyConnection();
   protected readonly queue = new Queue<
     z.infer<typeof PoeApiJobSchema>,
     z.infer<typeof PoeApiJobReturnSchema>
   >(PoeApiJobName, {
-    connection: this.connection.valkeyForBullMQ,
+    connection: valkeyForBullMQ,
   });
   private readonly queueEvents = new QueueEvents(PoeApiJobName, {
-    connection: this.queueEventsConnection.valkeyForBullMQ,
+    connection: valkeyForBullMQ,
   });
-  protected authScopes = new Map<string, Promise<string> | null>();
+  protected authScopes = new Map<string, Promise<string>>();
+  protected authTokenMap = new Map<string, string>();
 
   protected override userAgent = `OAuth ${getEnvVar("PATHOFEXILE_CLIENT_ID")}/${getEnvVar("PATHOFEXILE_APP_VERSION")} (contact: ${getEnvVar("PATHOFEXILE_CONTACT_EMAIL")}) background-processor/ApplicationPoeApi`;
 
@@ -50,9 +49,15 @@ class ApplicationPoeApi extends PoeApi {
             `Authentication failed with status ${response.status}: ${response.statusText}`,
           );
         }
-        return response.json() as Promise<{ access_token: string }>;
+        return response.json() as Promise<{
+          access_token: string;
+          sub: string;
+        }>;
       })
-      .then((data) => data.access_token)
+      .then((data) => {
+        this.authTokenMap.set(data.access_token, data.sub);
+        return data.sub;
+      })
       .catch((err: unknown) => {
         this.authScopes.delete(endpointData.requiredScope);
         throw err;
@@ -74,8 +79,19 @@ class ApplicationPoeApi extends PoeApi {
   ): Promise<Response> {
     const headers = new Headers(options.headers || {});
 
+    const accessToken = headers.get("Authorization")?.startsWith("Bearer ")
+      ? this.authTokenMap.get(
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          headers.get("Authorization")!.substring("Bearer ".length),
+        )
+      : null;
+    const sub = accessToken ? this.authTokenMap.get(accessToken) : null;
+
     const job = await this.queue.add(crypto.randomUUID(), {
-      accountId: getEnvVar("PATHOFEXILE_CLIENT_ID"),
+      ruleDetails: {
+        client: getEnvVar("PATHOFEXILE_CLIENT_ID"),
+        ...(sub ? { account: sub } : {}),
+      },
       endpointName: endpointData.name,
       request: {
         url: endpoint.toString(),

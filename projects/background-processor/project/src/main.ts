@@ -9,6 +9,7 @@ const processors = [
   new MinuteJob(),
   new PoeApiJob(),
   new LeagueCollectorJob(),
+  new UpdateCurrencyDataJob(),
 ];
 
 async function main() {
@@ -19,7 +20,12 @@ async function main() {
   );
 }
 
+let isShuttingDown = false;
 function shutdown() {
+  if (isShuttingDown) {
+    return;
+  }
+  isShuttingDown = true;
   console.log("Shutting down...");
 
   Promise.allSettled(

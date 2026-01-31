@@ -81,39 +81,7 @@ export class CurrencyGraph {
   ) {
     this.graph = {};
 
-    // 1. Inject Vendor Recipes
-    this.injectVendorRecipes();
-
-    // 2. Process Market Data
-    for (const market of markets) {
-      const A = market.fromCurrency;
-      const B = market.toCurrency;
-
-      this.addEntry(
-        A,
-        B,
-        market.fromVolume,
-        market.toVolume,
-        market.lowestRatio,
-        market.highestRatio,
-        market.history.timestamp,
-      );
-
-      const safeLow = market.lowestRatio > 0 ? market.lowestRatio : 1;
-      const safeHigh = market.highestRatio > 0 ? market.highestRatio : 1;
-
-      this.addEntry(
-        B,
-        A,
-        market.toVolume,
-        market.fromVolume,
-        1 / safeHigh,
-        1 / safeLow,
-        market.history.timestamp,
-      );
-    }
-
-    // 3. Initialize global time bounds
+    // 1. Initialize global time bounds
     let hasData: boolean;
     [this.maxTimestamp, this.minTimestamp, hasData] = Object.values(
       this.graph,
@@ -141,6 +109,38 @@ export class CurrencyGraph {
     if (!hasData) {
       this.minTimestamp = Date.now();
       this.maxTimestamp = Date.now();
+    }
+
+    // 2. Inject Vendor Recipes
+    this.injectVendorRecipes();
+
+    // 3. Process Market Data
+    for (const market of markets) {
+      const A = market.fromCurrency;
+      const B = market.toCurrency;
+
+      this.addEntry(
+        A,
+        B,
+        market.fromVolume,
+        market.toVolume,
+        market.lowestRatio,
+        market.highestRatio,
+        market.history.timestamp,
+      );
+
+      const safeLow = market.lowestRatio > 0 ? market.lowestRatio : 1;
+      const safeHigh = market.highestRatio > 0 ? market.highestRatio : 1;
+
+      this.addEntry(
+        B,
+        A,
+        market.toVolume,
+        market.fromVolume,
+        1 / safeHigh,
+        1 / safeLow,
+        market.history.timestamp,
+      );
     }
   }
 
@@ -170,7 +170,7 @@ export class CurrencyGraph {
   }
 
   private injectVendorRecipes() {
-    const NOW = new Date();
+    const NOW = this.maxTimestamp;
     const VENDOR_VOLUME = 1_000_000_000n;
 
     for (const recipe of this.vendorRecipes) {
@@ -184,7 +184,7 @@ export class CurrencyGraph {
         volOut,
         recipe.rate,
         recipe.rate,
-        NOW,
+        new Date(NOW),
         true,
       );
     }

@@ -4,18 +4,17 @@ import {
   MailboxQueueName,
 } from "@meepen/poe-accountant-api-schema/queues/mailbox-queue";
 import { JobProcess } from "../job-process.interface.js";
-import { createValkeyConnection } from "../connections/valkey.js";
+import { valkey, valkeyForBullMQ } from "../connections/valkey.js";
 
 export class MailboxProcess implements JobProcess {
   private isRunning: boolean = true;
-  private connection = createValkeyConnection();
 
   private readonly queueMap = new Map<string, Queue>();
 
   private getJobQueue(name: string): Queue {
     if (!this.queueMap.has(name)) {
       const queue = new Queue(name, {
-        connection: this.connection.valkeyForBullMQ,
+        connection: valkeyForBullMQ,
       });
       this.queueMap.set(name, queue);
     }
@@ -40,7 +39,7 @@ export class MailboxProcess implements JobProcess {
       try {
         // blpop returns [key, element] or null if timeout
         // 0 means block indefinitely
-        const result = await this.connection.valkey.blpop(MailboxQueueName, 1); // Using 1s timeout to allow check for shutdown signals
+        const result = await valkey.blpop(MailboxQueueName, 1); // Using 1s timeout to allow check for shutdown signals
 
         if (result) {
           const [, message] = result;

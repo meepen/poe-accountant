@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { QueueWorker } from "./queue-worker.abstract.js";
 import { Queue, WorkerOptions } from "bullmq";
+import { valkeyForBullMQ } from "../connections/valkey.js";
 
 export abstract class QueueScheduler<
   T extends z.ZodType,
@@ -26,7 +27,7 @@ export abstract class QueueScheduler<
 
   public override async start(): Promise<void> {
     this.jobScheduler = new Queue(this.queueName, {
-      connection: this.connection.valkeyForBullMQ,
+      connection: valkeyForBullMQ,
     });
 
     await this.jobScheduler.upsertJobScheduler(

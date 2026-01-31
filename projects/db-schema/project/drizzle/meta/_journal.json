@@ -43,6 +43,13 @@
       "when": 1769811315594,
       "tag": "0005_glossy_supreme_intelligence",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1769823955462,
+      "tag": "0006_certain_grim_reaper",
+      "breakpoints": true
     }
   ]
 }

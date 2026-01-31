@@ -13,9 +13,13 @@ import {
   CurrencyExchangeLeagueSnapshotData,
 } from "@meepen/poe-accountant-db-schema/currency-exchange";
 import { desc, eq, InferSelectModel } from "drizzle-orm";
+import { valkey } from "../connections/valkey.js";
 
 const UpdateCurrencyDataJobQueueName = "update-currency-data-job-queue";
 const UpdateCurrencyDataJobSchema = z.object({});
+const UpdateCurrencyDataLockKey =
+  "{background-processor}:locks:update-currency-data";
+const UpdateCurrencyDataLockTtlMs = 5 * 60 * 1000;
 
 // --- Vendor Recipe Constants ---
 // TODO: this should probably live in a database or something more dynamic
@@ -66,7 +70,8 @@ export class UpdateCurrencyDataJob extends QueueScheduler<
   protected override readonly schema = UpdateCurrencyDataJobSchema;
   protected override readonly queueData = {};
 
-  protected override readonly cron = "* * * * *";
+  // Runs at 5 minutes past every hour
+  protected override readonly cron = "5 * * * *";
 
   private static async getAllExchangeData(realm: string, id?: Date) {
     const currencyData = await appApi.getExchangeMarkets({
@@ -318,7 +323,42 @@ export class UpdateCurrencyDataJob extends QueueScheduler<
   }
 
   public static async processOnce(): Promise<void> {
-    await Promise.all(realms.map((realm) => this.processRealm(realm)));
+    const lockToken = crypto.randomUUID();
+    const acquired = await valkey.set(
+      UpdateCurrencyDataLockKey,
+      lockToken,
+      "PX",
+      UpdateCurrencyDataLockTtlMs,
+      "NX",
+    );
+
+    if (acquired !== "OK") {
+      const ttl = await valkey.pttl(UpdateCurrencyDataLockKey);
+      if (ttl === -1) {
+        console.warn(
+          "[update-currency-data] Lock has no expiry; setting TTL to prevent deadlock.",
+        );
+        await valkey.pexpire(
+          UpdateCurrencyDataLockKey,
+          UpdateCurrencyDataLockTtlMs,
+        );
+      }
+      console.log(
+        "[update-currency-data] Lock already held, skipping this run.",
+      );
+      return;
+    }
+
+    try {
+      await Promise.all(realms.map((realm) => this.processRealm(realm)));
+    } finally {
+      await valkey.eval(
+        "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end",
+        1,
+        UpdateCurrencyDataLockKey,
+        lockToken,
+      );
+    }
   }
 
   public override async processJob(): Promise<void> {

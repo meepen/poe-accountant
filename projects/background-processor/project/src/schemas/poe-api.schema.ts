@@ -4,7 +4,7 @@ export const PoeApiJobName = "poe-api-job";
 
 export const PoeApiJobSchema = z.object({
   endpointName: z.string(),
-  accountId: z.string(),
+  ruleDetails: z.record(z.string(), z.string()),
   request: z.object({
     url: z.url(),
     method: z.string(),

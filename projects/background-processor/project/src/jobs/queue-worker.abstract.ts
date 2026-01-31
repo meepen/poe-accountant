@@ -1,7 +1,7 @@
 import { Worker, Job, WorkerOptions } from "bullmq";
 import { JobProcess } from "../job-process.interface.js";
-import { createValkeyConnection } from "../connections/valkey.js";
 import { z } from "zod";
+import { valkeyForBullMQ } from "../connections/valkey.js";
 
 type MaybePromise<T> = T | Promise<T>;
 
@@ -14,13 +14,11 @@ export abstract class QueueWorker<
   protected abstract readonly queueName: string;
   protected readonly concurrency = 5;
 
-  protected readonly connection = createValkeyConnection();
-
   protected worker?: Worker<z.infer<T>, z.infer<ReturnType>>;
 
   protected get workerOptions(): WorkerOptions {
     return {
-      connection: this.connection.valkeyForBullMQ,
+      connection: valkeyForBullMQ,
       concurrency: this.concurrency,
     };
   }

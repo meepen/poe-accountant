@@ -1,0 +1,2 @@
+ALTER TABLE "currency_exchange_league_currency" DROP CONSTRAINT "currency_exchange_league_currency_history_id_from_currency_to_currency_unique";--> statement-breakpoint
+ALTER TABLE "currency_exchange_league_currency" ADD CONSTRAINT "currency_exchange_league_currency_unique" UNIQUE("history_id","from_currency","to_currency");

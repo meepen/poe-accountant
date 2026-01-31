@@ -4,6 +4,7 @@ import type { AppContext, AppEnv } from "./bindings";
 import { status } from "./routes/status";
 import { redirect } from "./routes/redirect";
 import { user } from "./routes/user";
+import { prices } from "./routes/prices";
 
 const app = new Hono<AppEnv>();
 
@@ -35,6 +36,7 @@ app.use(
 app.route("/status", status);
 app.route("/redirect", redirect);
 app.route("/user", user);
+app.route("/prices", prices);
 
 app.get("/health", (c) => c.json({ status: "ok" }));
 
