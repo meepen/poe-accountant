@@ -1,3 +1,4 @@
+import { LeagueCollectorJob } from "./jobs/league-collector.job.js";
 import { MailboxProcess } from "./jobs/mailbox.js";
 import { MinuteJob } from "./jobs/minute.job.js";
 import { PoeApiJob } from "./jobs/poe-api.job.js";
@@ -7,7 +8,7 @@ const processors = [
   new MailboxProcess(),
   new MinuteJob(),
   new PoeApiJob(),
-  new UpdateCurrencyDataJob(),
+  new LeagueCollectorJob(),
 ];
 
 async function main() {
@@ -36,7 +37,9 @@ function shutdown() {
 
 process.on("SIGINT", shutdown);
 
-main().catch((error: unknown) => {
-  console.error("Unhandled error in main:", error);
-  process.exit(1);
-});
+main()
+  .then(() => UpdateCurrencyDataJob.processOnce())
+  .catch((error: unknown) => {
+    console.error("Unhandled error in main:", error);
+    process.exit(1);
+  });

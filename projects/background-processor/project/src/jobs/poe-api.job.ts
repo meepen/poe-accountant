@@ -17,7 +17,10 @@ export class PoeApiJob extends QueueWorker<
   protected override readonly returnSchema = PoeApiJobReturnSchema;
   protected override readonly concurrency = 5;
 
-  private readonly limiter = new PoeRateLimiter(this.connection);
+  private readonly limiter = new PoeRateLimiter(this.connection, {
+    hitCountBuffer: 2,
+    hitTimingBuffer: 2500,
+  });
 
   protected override async processJob(
     data: z.infer<typeof PoeApiJobSchema>,
@@ -44,7 +47,6 @@ export class PoeApiJob extends QueueWorker<
     );
 
     if (delayRequired > 0) {
-      console.log(`Rate limit hit! Backing off for ${delayRequired}ms`);
       await job.moveToDelayed(Date.now() + delayRequired, job.token);
       throw new DelayedError();
     }

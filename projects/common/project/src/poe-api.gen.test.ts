@@ -4,13 +4,14 @@ import { z } from "zod";
 import { PoeApi } from "./poe-api.gen.js";
 
 class PoeApiImplementation extends PoeApi {
-  authenticate = vi.fn().mockResolvedValue("mock-token");
-  voidAuthentication = vi.fn().mockResolvedValue(undefined);
-  fetch = vi.fn();
+  protected override readonly userAgent = "PoeApiImplementation-Test-Agent";
+  override authenticate = vi.fn().mockResolvedValue("mock-token");
+  override voidAuthentication = vi.fn().mockResolvedValue(undefined);
+  override fetch = vi.fn<InstanceType<typeof PoeApi>["fetch"]>();
 
   public static readonly ENDPOINT_DEF = {
     method: "GET",
-    path: "/:test",
+    path: "/:realm",
     responseType: z.object({
       name: z.string().optional(),
       some: z.string().optional(),
@@ -46,5 +47,18 @@ describe("PoeApi", () => {
     expect(api.authenticate).toHaveBeenCalledTimes(1);
     expect(api.fetch).toHaveBeenCalledTimes(1);
     expect(response).toEqual({ name: "TestName" });
+  });
+
+  it('should get rid of `realm` parameter when it is "pc" and optional', async () => {
+    api.fetch.mockResolvedValue(new Response(null, { status: 400 }));
+    await expect(api.getCharacter("name", "pc")).rejects.toThrow();
+
+    expect(api.fetch).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.toSatisfy((url: URL) =>
+        url.toString().endsWith("/character/name"),
+      ),
+      expect.any(Object),
+    );
   });
 });

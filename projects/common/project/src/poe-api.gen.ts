@@ -68,7 +68,8 @@ export abstract class PoeApi {
     return (endpointData.responseType.parse(await response.json()) as T);
   }
 // #region Account Profile
-  public async getProfile(): Promise<z.infer<(typeof serverApiPaths)["Get Profile"]["responseType"]>> {
+  public async getProfile(args: void): Promise<z.infer<(typeof serverApiPaths)["Get Profile"]["responseType"]>> {
+    
     return await this.request<z.infer<(typeof serverApiPaths)["Get Profile"]['responseType']>>(
       serverApiPaths["Get Profile"],
       `/profile`
@@ -77,157 +78,271 @@ export abstract class PoeApi {
 // #endregion Account Profile
 
 // #region Account Item Filters
-  public async getItemFilters(): Promise<z.infer<(typeof serverApiPaths)["Get Item Filters"]["responseType"]>> {
+  public async getItemFilters(args: { validate?: string | null }): Promise<z.infer<(typeof serverApiPaths)["Get Item Filters"]["responseType"]>> {
+    // Query Parameters: validate
+    const queryParams = new URLSearchParams();
+    if (args.validate !== undefined && args.validate !== null) {
+      queryParams.append("validate", args.validate as string);
+    }
     return await this.request<z.infer<(typeof serverApiPaths)["Get Item Filters"]['responseType']>>(
       serverApiPaths["Get Item Filters"],
-      `/item-filter`
+      `/item-filter` + `?` + queryParams.toString()
     );
   }
-  public async getItemFilter(id: string): Promise<z.infer<(typeof serverApiPaths)["Get Item Filter"]["responseType"]>> {
+  public async getItemFilter(args: { id: string; validate?: string | null }): Promise<z.infer<(typeof serverApiPaths)["Get Item Filter"]["responseType"]>> {
+    // Query Parameters: validate
+    const queryParams = new URLSearchParams();
+    if (args.validate !== undefined && args.validate !== null) {
+      queryParams.append("validate", args.validate as string);
+    }
     return await this.request<z.infer<(typeof serverApiPaths)["Get Item Filter"]['responseType']>>(
       serverApiPaths["Get Item Filter"],
-      `/item-filter/${id}`
+      `/item-filter/${args.id}` + `?` + queryParams.toString()
     );
   }
-  public async createItemFilter(): Promise<z.infer<(typeof serverApiPaths)["Create Item Filter"]["responseType"]>> {
+  public async createItemFilter(args: { validate?: string | null }): Promise<z.infer<(typeof serverApiPaths)["Create Item Filter"]["responseType"]>> {
+    // Query Parameters: validate
+    const queryParams = new URLSearchParams();
+    if (args.validate !== undefined && args.validate !== null) {
+      queryParams.append("validate", args.validate as string);
+    }
     return await this.request<z.infer<(typeof serverApiPaths)["Create Item Filter"]['responseType']>>(
       serverApiPaths["Create Item Filter"],
-      `/item-filter`
+      `/item-filter` + `?` + queryParams.toString()
     );
   }
-  public async updateItemFilter(id: string): Promise<z.infer<(typeof serverApiPaths)["Update Item Filter"]["responseType"]>> {
+  public async updateItemFilter(args: { id: string; validate?: string | null }): Promise<z.infer<(typeof serverApiPaths)["Update Item Filter"]["responseType"]>> {
+    // Query Parameters: validate
+    const queryParams = new URLSearchParams();
+    if (args.validate !== undefined && args.validate !== null) {
+      queryParams.append("validate", args.validate as string);
+    }
     return await this.request<z.infer<(typeof serverApiPaths)["Update Item Filter"]['responseType']>>(
       serverApiPaths["Update Item Filter"],
-      `/item-filter/${id}`
+      `/item-filter/${args.id}` + `?` + queryParams.toString()
     );
   }
 // #endregion Account Item Filters
 
 // #region Leagues
-  public async listLeagues(): Promise<z.infer<(typeof serverApiPaths)["List Leagues"]["responseType"]>> {
+  public async listLeagues(args: { realm?: string | null; type?: string | null; season?: string | null; limit?: string | null; offset?: string | null }): Promise<z.infer<(typeof serverApiPaths)["List Leagues"]["responseType"]>> {
+    // Query Parameters: realm, type, season, limit, offset
+    const queryParams = new URLSearchParams();
+    if (args.realm !== undefined && args.realm !== null) {
+      queryParams.append("realm", args.realm as string);
+    }
+    if (args.type !== undefined && args.type !== null) {
+      queryParams.append("type", args.type as string);
+    }
+    if (args.season !== undefined && args.season !== null) {
+      queryParams.append("season", args.season as string);
+    }
+    if (args.limit !== undefined && args.limit !== null) {
+      queryParams.append("limit", args.limit as string);
+    }
+    if (args.offset !== undefined && args.offset !== null) {
+      queryParams.append("offset", args.offset as string);
+    }
     return await this.request<z.infer<(typeof serverApiPaths)["List Leagues"]['responseType']>>(
       serverApiPaths["List Leagues"],
-      `/league`
+      `/league` + `?` + queryParams.toString()
     );
   }
-  public async getLeague(league: string): Promise<z.infer<(typeof serverApiPaths)["Get League"]["responseType"]>> {
+  public async getLeague(args: { league: string; realm?: string | null }): Promise<z.infer<(typeof serverApiPaths)["Get League"]["responseType"]>> {
+    // Query Parameters: realm
+    const queryParams = new URLSearchParams();
+    if (args.realm !== undefined && args.realm !== null) {
+      queryParams.append("realm", args.realm as string);
+    }
     return await this.request<z.infer<(typeof serverApiPaths)["Get League"]['responseType']>>(
       serverApiPaths["Get League"],
-      `/league/${league}`
+      `/league/${args.league}` + `?` + queryParams.toString()
     );
   }
-  public async getLeagueLadderPoE1Only(league: string): Promise<z.infer<(typeof serverApiPaths)["Get League Ladder (PoE1 only)"]["responseType"]>> {
+  public async getLeagueLadderPoE1Only(args: { league: string; realm?: string | null; sort?: string | null; class?: string | null; limit?: string | null; offset?: string | null }): Promise<z.infer<(typeof serverApiPaths)["Get League Ladder (PoE1 only)"]["responseType"]>> {
+    // Query Parameters: realm, sort, class, limit, offset
+    const queryParams = new URLSearchParams();
+    if (args.realm !== undefined && args.realm !== null) {
+      queryParams.append("realm", args.realm as string);
+    }
+    if (args.sort !== undefined && args.sort !== null) {
+      queryParams.append("sort", args.sort as string);
+    }
+    if (args.class !== undefined && args.class !== null) {
+      queryParams.append("class", args.class as string);
+    }
+    if (args.limit !== undefined && args.limit !== null) {
+      queryParams.append("limit", args.limit as string);
+    }
+    if (args.offset !== undefined && args.offset !== null) {
+      queryParams.append("offset", args.offset as string);
+    }
     return await this.request<z.infer<(typeof serverApiPaths)["Get League Ladder (PoE1 only)"]['responseType']>>(
       serverApiPaths["Get League Ladder (PoE1 only)"],
-      `/league/${league}/ladder`
+      `/league/${args.league}/ladder` + `?` + queryParams.toString()
     );
   }
-  public async getLeagueEventLadderPoE1Only(league: string): Promise<z.infer<(typeof serverApiPaths)["Get League Event Ladder (PoE1 only)"]["responseType"]>> {
+  public async getLeagueEventLadderPoE1Only(args: { league: string; realm?: string | null; limit?: string | null; offset?: string | null }): Promise<z.infer<(typeof serverApiPaths)["Get League Event Ladder (PoE1 only)"]["responseType"]>> {
+    // Query Parameters: realm, limit, offset
+    const queryParams = new URLSearchParams();
+    if (args.realm !== undefined && args.realm !== null) {
+      queryParams.append("realm", args.realm as string);
+    }
+    if (args.limit !== undefined && args.limit !== null) {
+      queryParams.append("limit", args.limit as string);
+    }
+    if (args.offset !== undefined && args.offset !== null) {
+      queryParams.append("offset", args.offset as string);
+    }
     return await this.request<z.infer<(typeof serverApiPaths)["Get League Event Ladder (PoE1 only)"]['responseType']>>(
       serverApiPaths["Get League Event Ladder (PoE1 only)"],
-      `/league/${league}/event-ladder`
+      `/league/${args.league}/event-ladder` + `?` + queryParams.toString()
     );
   }
 // #endregion Leagues
 
 // #region PvP Matches (PoE1 only)
-  public async listPvPMatches(): Promise<z.infer<(typeof serverApiPaths)["List PvP Matches"]["responseType"]>> {
+  public async listPvPMatches(args: { realm?: string | null; type?: string | null; season?: string | null; league?: string | null }): Promise<z.infer<(typeof serverApiPaths)["List PvP Matches"]["responseType"]>> {
+    // Query Parameters: realm, type, season, league
+    const queryParams = new URLSearchParams();
+    if (args.realm !== undefined && args.realm !== null) {
+      queryParams.append("realm", args.realm as string);
+    }
+    if (args.type !== undefined && args.type !== null) {
+      queryParams.append("type", args.type as string);
+    }
+    if (args.season !== undefined && args.season !== null) {
+      queryParams.append("season", args.season as string);
+    }
+    if (args.league !== undefined && args.league !== null) {
+      queryParams.append("league", args.league as string);
+    }
     return await this.request<z.infer<(typeof serverApiPaths)["List PvP Matches"]['responseType']>>(
       serverApiPaths["List PvP Matches"],
-      `/pvp-match`
+      `/pvp-match` + `?` + queryParams.toString()
     );
   }
-  public async getPvPMatch(match: string): Promise<z.infer<(typeof serverApiPaths)["Get PvP Match"]["responseType"]>> {
+  public async getPvPMatch(args: { match: string; realm?: string | null }): Promise<z.infer<(typeof serverApiPaths)["Get PvP Match"]["responseType"]>> {
+    // Query Parameters: realm
+    const queryParams = new URLSearchParams();
+    if (args.realm !== undefined && args.realm !== null) {
+      queryParams.append("realm", args.realm as string);
+    }
     return await this.request<z.infer<(typeof serverApiPaths)["Get PvP Match"]['responseType']>>(
       serverApiPaths["Get PvP Match"],
-      `/pvp-match/${match}`
+      `/pvp-match/${args.match}` + `?` + queryParams.toString()
     );
   }
-  public async getPvPMatchLadder(match: string): Promise<z.infer<(typeof serverApiPaths)["Get PvP Match Ladder"]["responseType"]>> {
+  public async getPvPMatchLadder(args: { match: string; realm?: string | null; limit?: string | null; offset?: string | null }): Promise<z.infer<(typeof serverApiPaths)["Get PvP Match Ladder"]["responseType"]>> {
+    // Query Parameters: realm, limit, offset
+    const queryParams = new URLSearchParams();
+    if (args.realm !== undefined && args.realm !== null) {
+      queryParams.append("realm", args.realm as string);
+    }
+    if (args.limit !== undefined && args.limit !== null) {
+      queryParams.append("limit", args.limit as string);
+    }
+    if (args.offset !== undefined && args.offset !== null) {
+      queryParams.append("offset", args.offset as string);
+    }
     return await this.request<z.infer<(typeof serverApiPaths)["Get PvP Match Ladder"]['responseType']>>(
       serverApiPaths["Get PvP Match Ladder"],
-      `/pvp-match/${match}/ladder`
+      `/pvp-match/${args.match}/ladder` + `?` + queryParams.toString()
     );
   }
 // #endregion PvP Matches (PoE1 only)
 
 // #region Account Leagues (PoE1 only)
-  public async getLeagues(realm?: string): Promise<z.infer<(typeof serverApiPaths)["Get Leagues"]["responseType"]>> {
+  public async getLeagues(args: { realm?: string | null }): Promise<z.infer<(typeof serverApiPaths)["Get Leagues"]["responseType"]>> {
+    
     return await this.request<z.infer<(typeof serverApiPaths)["Get Leagues"]['responseType']>>(
       serverApiPaths["Get Leagues"],
-      `/account/leagues${realm ? `/${realm}` : ''}`
+      `/account/leagues${args.realm && args.realm !== 'pc' ? `/${args.realm}` : ''}`
     );
   }
 // #endregion Account Leagues (PoE1 only)
 
 // #region Account Characters
-  public async listCharacters(realm?: string): Promise<z.infer<(typeof serverApiPaths)["List Characters"]["responseType"]>> {
+  public async listCharacters(args: { realm?: string | null }): Promise<z.infer<(typeof serverApiPaths)["List Characters"]["responseType"]>> {
+    
     return await this.request<z.infer<(typeof serverApiPaths)["List Characters"]['responseType']>>(
       serverApiPaths["List Characters"],
-      `/character${realm ? `/${realm}` : ''}`
+      `/character${args.realm && args.realm !== 'pc' ? `/${args.realm}` : ''}`
     );
   }
-  public async getCharacter(name: string, realm?: string): Promise<z.infer<(typeof serverApiPaths)["Get Character"]["responseType"]>> {
+  public async getCharacter(args: { name: string; realm?: string | null }): Promise<z.infer<(typeof serverApiPaths)["Get Character"]["responseType"]>> {
+    
     return await this.request<z.infer<(typeof serverApiPaths)["Get Character"]['responseType']>>(
       serverApiPaths["Get Character"],
-      `/character${realm ? `/${realm}` : ''}/${name}`
+      `/character${args.realm && args.realm !== 'pc' ? `/${args.realm}` : ''}/${args.name}`
     );
   }
 // #endregion Account Characters
 
 // #region Account Stashes (PoE1 only)
-  public async listStashes(league: string, realm?: string): Promise<z.infer<(typeof serverApiPaths)["List Stashes"]["responseType"]>> {
+  public async listStashes(args: { league: string; realm?: string | null }): Promise<z.infer<(typeof serverApiPaths)["List Stashes"]["responseType"]>> {
+    
     return await this.request<z.infer<(typeof serverApiPaths)["List Stashes"]['responseType']>>(
       serverApiPaths["List Stashes"],
-      `/stash${realm ? `/${realm}` : ''}/${league}`
+      `/stash${args.realm && args.realm !== 'pc' ? `/${args.realm}` : ''}/${args.league}`
     );
   }
-  public async getStash(league: string, stash_id: string, realm?: string, substash_id?: string): Promise<z.infer<(typeof serverApiPaths)["Get Stash"]["responseType"]>> {
+  public async getStash(args: { league: string; stash_id: string; realm?: string | null; substash_id?: string | null }): Promise<z.infer<(typeof serverApiPaths)["Get Stash"]["responseType"]>> {
+    
     return await this.request<z.infer<(typeof serverApiPaths)["Get Stash"]['responseType']>>(
       serverApiPaths["Get Stash"],
-      `/stash${realm ? `/${realm}` : ''}/${league}/${stash_id}${substash_id ? `/${substash_id}` : ''}`
+      `/stash${args.realm && args.realm !== 'pc' ? `/${args.realm}` : ''}/${args.league}/${args.stash_id}${args.substash_id ? `/${args.substash_id}` : ''}`
     );
   }
 // #endregion Account Stashes (PoE1 only)
 
 // #region League Accounts (PoE1 only)
-  public async getLeagueAccount(league: string, realm?: string): Promise<z.infer<(typeof serverApiPaths)["Get League Account"]["responseType"]>> {
+  public async getLeagueAccount(args: { league: string; realm?: string | null }): Promise<z.infer<(typeof serverApiPaths)["Get League Account"]["responseType"]>> {
+    
     return await this.request<z.infer<(typeof serverApiPaths)["Get League Account"]['responseType']>>(
       serverApiPaths["Get League Account"],
-      `/league-account${realm ? `/${realm}` : ''}/${league}`
+      `/league-account${args.realm && args.realm !== 'pc' ? `/${args.realm}` : ''}/${args.league}`
     );
   }
 // #endregion League Accounts (PoE1 only)
 
 // #region Guild Stashes (PoE1 only)
-  public async listGuildStashes(league: string, realm?: string): Promise<z.infer<(typeof serverApiPaths)["List Guild Stashes"]["responseType"]>> {
+  public async listGuildStashes(args: { league: string; realm?: string | null }): Promise<z.infer<(typeof serverApiPaths)["List Guild Stashes"]["responseType"]>> {
+    
     return await this.request<z.infer<(typeof serverApiPaths)["List Guild Stashes"]['responseType']>>(
       serverApiPaths["List Guild Stashes"],
-      `/guild${realm ? `/${realm}` : ''}/stash/${league}`
+      `/guild${args.realm && args.realm !== 'pc' ? `/${args.realm}` : ''}/stash/${args.league}`
     );
   }
-  public async getGuildStash(league: string, stash_id: string, realm?: string, substash_id?: string): Promise<z.infer<(typeof serverApiPaths)["Get Guild Stash"]["responseType"]>> {
+  public async getGuildStash(args: { league: string; stash_id: string; realm?: string | null; substash_id?: string | null }): Promise<z.infer<(typeof serverApiPaths)["Get Guild Stash"]["responseType"]>> {
+    
     return await this.request<z.infer<(typeof serverApiPaths)["Get Guild Stash"]['responseType']>>(
       serverApiPaths["Get Guild Stash"],
-      `/guild${realm ? `/${realm}` : ''}/stash/${league}/${stash_id}${substash_id ? `/${substash_id}` : ''}`
+      `/guild${args.realm && args.realm !== 'pc' ? `/${args.realm}` : ''}/stash/${args.league}/${args.stash_id}${args.substash_id ? `/${args.substash_id}` : ''}`
     );
   }
 // #endregion Guild Stashes (PoE1 only)
 
 // #region Public Stashes (PoE1 only)
-  public async getPublicStashes(realm?: string): Promise<z.infer<(typeof serverApiPaths)["Get Public Stashes"]["responseType"]>> {
+  public async getPublicStashes(args: { realm?: string | null; id?: string | null }): Promise<z.infer<(typeof serverApiPaths)["Get Public Stashes"]["responseType"]>> {
+    // Query Parameters: id
+    const queryParams = new URLSearchParams();
+    if (args.id !== undefined && args.id !== null) {
+      queryParams.append("id", args.id as string);
+    }
     return await this.request<z.infer<(typeof serverApiPaths)["Get Public Stashes"]['responseType']>>(
       serverApiPaths["Get Public Stashes"],
-      `/public-stash-tabs${realm ? `/${realm}` : ''}`
+      `/public-stash-tabs${args.realm && args.realm !== 'pc' ? `/${args.realm}` : ''}` + `?` + queryParams.toString()
     );
   }
 // #endregion Public Stashes (PoE1 only)
 
 // #region Currency Exchange
-  public async getExchangeMarkets(realm?: string, id?: string): Promise<z.infer<(typeof serverApiPaths)["Get Exchange Markets"]["responseType"]>> {
+  public async getExchangeMarkets(args: { realm?: string | null; id?: string | null }): Promise<z.infer<(typeof serverApiPaths)["Get Exchange Markets"]["responseType"]>> {
+    
     return await this.request<z.infer<(typeof serverApiPaths)["Get Exchange Markets"]['responseType']>>(
       serverApiPaths["Get Exchange Markets"],
-      `/currency-exchange${realm ? `/${realm}` : ''}${id ? `/${id}` : ''}`
+      `/currency-exchange${args.realm && args.realm !== 'pc' ? `/${args.realm}` : ''}${args.id ? `/${args.id}` : ''}`
     );
   }
 // #endregion Currency Exchange

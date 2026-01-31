@@ -22,6 +22,27 @@
       "when": 1768880239279,
       "tag": "0002_amusing_steel_serpent",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1769651799691,
+      "tag": "0003_strange_plazm",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1769765784403,
+      "tag": "0004_typical_pretty_boy",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1769811315594,
+      "tag": "0005_glossy_supreme_intelligence",
+      "breakpoints": true
     }
   ]
 }

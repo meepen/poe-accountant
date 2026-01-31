@@ -1,6 +1,6 @@
 import { Worker, Job, WorkerOptions } from "bullmq";
 import { JobProcess } from "../job-process.interface.js";
-import { createValkeyConnection } from "../valkey.js";
+import { createValkeyConnection } from "../connections/valkey.js";
 import { z } from "zod";
 
 type MaybePromise<T> = T | Promise<T>;

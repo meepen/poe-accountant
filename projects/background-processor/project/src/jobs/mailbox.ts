@@ -4,7 +4,7 @@ import {
   MailboxQueueName,
 } from "@meepen/poe-accountant-api-schema/queues/mailbox-queue";
 import { JobProcess } from "../job-process.interface.js";
-import { createValkeyConnection } from "../valkey.js";
+import { createValkeyConnection } from "../connections/valkey.js";
 
 export class MailboxProcess implements JobProcess {
   private isRunning: boolean = true;

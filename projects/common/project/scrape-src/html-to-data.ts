@@ -43,6 +43,7 @@ export function htmlToData(html: string): {
         name: string;
         method: string;
         path: string;
+        queryParams: string[];
         type: TypeDetails;
       }[];
     }
@@ -123,6 +124,20 @@ export function htmlToData(html: string): {
                 // TODO: extract required headers
 
                 // TODO: extract query parameters
+                const queryParamsSection = nextSiblingWhere(
+                  endpointHeader,
+                  (ele) =>
+                    ele.tagName === "H4" &&
+                    ele.textContent.includes("Query Parameters"),
+                );
+                const queryParamList = queryParamsSection
+                  ? Array.from(
+                      nextSiblingWhere(
+                        queryParamsSection,
+                        (ele) => ele.tagName === "UL",
+                      )?.querySelectorAll("li span.com") ?? [],
+                    )
+                  : null;
 
                 // TODO: extract body parameters
 
@@ -157,6 +172,11 @@ export function htmlToData(html: string): {
                   method,
                   path,
                   type,
+                  queryParams: queryParamList
+                    ? Array.from(queryParamList).map((param) =>
+                        param.textContent.trim(),
+                      )
+                    : [],
                 };
               },
             ),

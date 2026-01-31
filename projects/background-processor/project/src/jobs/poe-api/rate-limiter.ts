@@ -1,4 +1,4 @@
-import { createValkeyConnection } from "../../valkey.js";
+import { createValkeyConnection } from "../../connections/valkey.js";
 
 const PREFIX_LIMITS = "{poe}:limits";
 const PREFIX_CONFIG_POLICY = "{poe}:config:policy";
@@ -12,27 +12,19 @@ export interface PoeLimiterOptions {
 }
 
 async function getPublicIp(): Promise<string> {
-  try {
-    const response = await fetch("https://checkip.amazonaws.com");
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    const ip = (await response.text()).trim();
-    if (!ip) {
-      throw new Error("Empty IP response");
-    }
-    return ip;
-  } catch (error) {
-    console.error("CRITICAL: Failed to resolve public IP", error);
-    throw new Error("Failed to resolve public IP - Worker cannot start safely");
+  const response = await fetch("https://checkip.amazonaws.com");
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
   }
+  const ip = (await response.text()).trim();
+  if (!ip) {
+    throw new Error("Empty IP response");
+  }
+  return ip;
 }
 
 /**
  * CHECK SCRIPT
- *
- * 1. Implements PROBE MODE: If config is missing, allows 1 request to pass (Probe).
- * 2. Queues other requests behind the probe.
  */
 const LUA_CHECK_SCRIPT = `
 local time = redis.call('TIME')
@@ -71,22 +63,16 @@ for i, rule_name in ipairs(ARGV) do
             limits = result
         end
     else
-        -- If config is missing, we allow ONE request (the probe) to pass through
-        -- to fetch headers and populate the config. Others must wait.
-        
+        -- PROBE MODE
         local probe_key = "${PREFIX_CONFIG_RULE}:probe:" .. rule_name
-        -- Try to acquire a lock for 10 seconds (NX = set if not exist)
-        -- 10s is sufficient for the probe to finish and call updateRules
+        -- Acquire lock for 10s
         local acquired = redis.call("SET", probe_key, "1", "NX", "PX", 10000)
         
         if acquired then
-            -- We are the probe. 
-            -- 'limits' remains empty {}, so the check loop below is skipped.
-            -- We effectively return 0 (success) for this rule, allowing the job to run.
+            -- We are the probe. Return success (0 delay).
         else
-            -- A probe is already active. We must wait for it to return headers.
-            -- Return 1 second delay to check back later.
-            local probe_wait = 1000
+            -- Wait for probe.
+            local probe_wait = 1500
             if probe_wait > max_delay then max_delay = probe_wait end
         end
     end
@@ -101,7 +87,8 @@ for i, rule_name in ipairs(ARGV) do
 
         local key = "${PREFIX_LIMITS}:" .. rule_name .. ":" .. window
         
-        redis.call("ZREMRfNGEBYSCORE", key, 0, now - (window * 1000))
+        -- TYPO FIXED HERE
+        redis.call("ZREMRANGEBYSCORE", key, 0, now - (window * 1000))
         local current_hits = redis.call("ZCARD", key)
         
         if current_hits + cost > limit then
@@ -127,8 +114,8 @@ for i, rule_name in ipairs(ARGV) do
         local status, result = pcall(cjson.decode, config_json)
         if status then limits = result end
     end
-    -- If config is missing here (Probe Mode), we skip adding the hit.
-    -- The hit will be accounted for when updateState() runs after the request.
+    -- If config is missing (Probe), we skip ZADD.
+    -- The hit is added later via updateState/syncPoeState.
 
     for _, pair in ipairs(limits) do
         local window = tonumber(pair[2])
@@ -142,12 +129,6 @@ end
 return 0
 `;
 
-/**
- * SYNC SCRIPT
- *
- * Uses a "Virtual Watermark" approach to respect server state
- * without artificially extending window duration.
- */
 const LUA_SYNC_SCRIPT = `
 local time = redis.call('TIME')
 local now = (tonumber(time[1]) * 1000) + math.floor(tonumber(time[2]) / 1000)
@@ -160,20 +141,14 @@ local current_count = redis.call("ZCARD", key)
 
 if current_count < server_count then
     local diff = server_count - current_count
-    -- Use 'now' to prevent immediate expiration of ghost hits
     for j = 1, diff do
         redis.call("ZADD", key, now, "sync:" .. now .. ":" .. j)
     end
     redis.call("PEXPIRE", key, window * 1000)
 end
-
 return 0
 `;
 
-/**
- * ROLLBACK SCRIPT
- * Simple ZREM by member.
- */
 const LUA_ROLLBACK_SCRIPT = `
 local unique_id = ARGV[1]
 for i = 2, #ARGV do
@@ -264,10 +239,36 @@ export class PoeRateLimiter {
     return ruleName;
   }
 
+  /**
+   * Helper to clear probe locks if we fail to get headers
+   * or need to rollback.
+   */
+  private async clearProbeLocks(endpointName: string, accountId: string) {
+    const ruleDetails = { ip: await this.getClientIp(), accountId };
+    const policyKey = `${PREFIX_CONFIG_POLICY}:${endpointName}`;
+    let ruleNames = await this.redis.valkey.smembers(policyKey);
+
+    if (ruleNames.length === 0) {
+      ruleNames = ["ip"];
+    }
+
+    const probeKeys = ruleNames.map(
+      (r) =>
+        `${PREFIX_CONFIG_RULE}:probe:${this.getRuleNameKey(r, ruleDetails)}`,
+    );
+
+    if (probeKeys.length > 0) {
+      await this.redis.valkey.del(...probeKeys);
+    }
+  }
+
   async updateRules(endpointName: string, accountId: string, headers: Headers) {
     const ruleDetails = { ip: await this.getClientIp(), accountId };
     const rulesHeader = headers.get("x-rate-limit-rules");
+
+    // FAILSAFE: If no headers (e.g. 404/500), clear locks so we don't freeze.
     if (!rulesHeader) {
+      await this.clearProbeLocks(endpointName, accountId);
       return;
     }
 
@@ -292,6 +293,11 @@ export class PoeRateLimiter {
     }
 
     for (const ruleName of ruleNames) {
+      const probeKey = `${PREFIX_CONFIG_RULE}:probe:${this.getRuleNameKey(ruleName, ruleDetails)}`;
+
+      // ALWAYS release the probe lock if we got a response for this rule
+      transaction.del(probeKey);
+
       const limitHeader = headers.get(`x-rate-limit-${ruleName}`);
       if (!limitHeader) {
         continue;
@@ -306,13 +312,12 @@ export class PoeRateLimiter {
         if (parsedRules.length > 0) {
           const configKey = `${PREFIX_CONFIG_RULE}:${this.getRuleNameKey(ruleName, ruleDetails)}`;
           transaction.set(configKey, JSON.stringify(parsedRules));
-
-          // Clear any probe lock so other workers stop waiting immediately
-          const probeKey = `${PREFIX_CONFIG_RULE}:probe:${this.getRuleNameKey(ruleName, ruleDetails)}`;
-          transaction.del(probeKey);
         }
       } catch (err) {
-        console.warn(`Failed to parse headers for rule ${ruleName}`, err);
+        console.warn(
+          `Failed to parse headers for rule ${ruleName} (${limitHeader})`,
+          err,
+        );
       }
     }
 
@@ -360,7 +365,10 @@ export class PoeRateLimiter {
           pipeline.syncPoeState(key, serverCount, period);
         }
       } catch (err) {
-        console.warn(`Failed to parse state for rule ${ruleName}`, err);
+        console.warn(
+          `Failed to parse state for rule ${ruleName} (${stateHeader})`,
+          err,
+        );
       }
     }
     await pipeline.exec();
@@ -375,7 +383,6 @@ export class PoeRateLimiter {
     const cost = 1;
     const policyKey = `${PREFIX_CONFIG_POLICY}:${endpointName}`;
 
-    // Read Policy
     let ruleNames = await this.redis.valkey.smembers(policyKey);
     if (ruleNames.length === 0) {
       ruleNames = ["ip"];
@@ -393,22 +400,13 @@ export class PoeRateLimiter {
       ...scopedRuleNames,
     ];
 
-    try {
-      // @ts-expect-error - Dynamic command
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      const result = (await this.redis.valkey.checkPoeLimits(
-        ...scriptArgs,
-      )) as number;
+    // @ts-expect-error - Dynamic command
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    const result = (await this.redis.valkey.checkPoeLimits(
+      ...scriptArgs,
+    )) as number;
 
-      // REMOVED: Fail Closed logic (-1 check)
-      // The Lua script now returns a valid delay (0 or >0) in all cases,
-      // handling the "Probe Mode" internally.
-
-      return result;
-    } catch (error) {
-      console.error("Error in reserveSlot", error);
-      throw error;
-    }
+    return result;
   }
 
   async rollbackSlot(
@@ -422,6 +420,16 @@ export class PoeRateLimiter {
     let ruleNames = await this.redis.valkey.smembers(policyKey);
     if (ruleNames.length === 0) {
       ruleNames = ["ip"];
+    }
+
+    // NEW: Always try to clear probe locks on rollback
+    // This prevents a failed probe (e.g. network error) from freezing the queue.
+    const probeKeys = ruleNames.map(
+      (r) =>
+        `${PREFIX_CONFIG_RULE}:probe:${this.getRuleNameKey(r, ruleDetails)}`,
+    );
+    if (probeKeys.length > 0) {
+      await this.redis.valkey.del(...probeKeys);
     }
 
     const configKeys = ruleNames.map(

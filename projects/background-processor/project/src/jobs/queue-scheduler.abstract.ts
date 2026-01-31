@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { QueueWorker } from "./queue-worker.abstract.js";
-import { Queue } from "bullmq";
+import { Queue, WorkerOptions } from "bullmq";
 
 export abstract class QueueScheduler<
   T extends z.ZodType,
@@ -11,6 +11,18 @@ export abstract class QueueScheduler<
   protected abstract readonly cron: string;
 
   protected jobScheduler!: Queue;
+
+  protected override get workerOptions(): WorkerOptions {
+    return {
+      ...super.workerOptions,
+      removeOnFail: {
+        count: 0,
+      },
+      removeOnComplete: {
+        count: 0,
+      },
+    };
+  }
 
   public override async start(): Promise<void> {
     this.jobScheduler = new Queue(this.queueName, {

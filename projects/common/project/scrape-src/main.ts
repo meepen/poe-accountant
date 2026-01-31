@@ -253,7 +253,7 @@ function splitTemplateIntoParts(template: string): TemplatedPart[] {
   return results;
 }
 
-function generateArgumentsFromPath(path: string): string {
+function generateArgumentsFromPath(path: string): string[] {
   // path can contain optional parameters (e.g. `/stash[/<realm>]/list`) which should be translation to realm: string | undefined
   // it can also contain required parameters (e.g. `/character/<name>`) which should be translated to name: string
 
@@ -266,10 +266,24 @@ function generateArgumentsFromPath(path: string): string {
   // Required arguments first
   return [
     ...requiredArgs.map((arg) => `${arg.name}: string`),
-    ...optionalArgs.map((arg) => `${arg.name}?: string`),
-  ].join(", ");
+    ...optionalArgs.map((arg) => `${arg.name}?: string | null`),
+  ];
 }
 
+function generateArgumentsFromQuery(queryParams: string[]): string[] {
+  return queryParams.map((param) => {
+    // all query params are optional
+    return `${param}?: string | null`;
+  });
+}
+
+function generateArgumentType(path: string, queryParams: string[]): string {
+  const subTypes = [
+    ...generateArgumentsFromPath(path),
+    ...generateArgumentsFromQuery(queryParams),
+  ];
+  return subTypes.length === 0 ? "void" : `{ ${subTypes.join("; ")} }`;
+}
 /**
  * Fills the generated method body with the arguments expected by the template.
  * @param template The path template (e.g. `/character[/<name>]/items/<item_id>`)
@@ -284,10 +298,14 @@ function fillArgumentsToTemplate(template: string): string {
           return part.value;
         case "template":
           return part.optional
-            ? `\${${part.name} ? \`/\${${part.name}}\` : ''}`
-            : `\${${part.name}}`;
+            ? part.name === "realm"
+              ? // Right now, 'pc' is not a valid option for realm and is generally the default and not required
+                // So strip `realm` variables if value = 'pc'
+                `\${args.${part.name} && args.${part.name} !== 'pc' ? \`/\${args.${part.name}}\` : ''}`
+              : `\${args.${part.name} ? \`/\${args.${part.name}}\` : ''}`
+            : `\${args.${part.name}}`;
         default:
-          throw new Error("Unreachable");
+          part satisfies never;
       }
     })
     .join("")}\``;
@@ -302,12 +320,29 @@ for (const [categoryName, categoryEndpoints] of Object.entries(
     poeApiStream.write(`
   public async ${generateApiMethodName(
     endpoint.name,
-  )}(${generateArgumentsFromPath(endpoint.path)}): Promise<z.infer<(typeof serverApiPaths)[${JSON.stringify(
+  )}(args: ${generateArgumentType(endpoint.path, endpoint.queryParams)}): Promise<z.infer<(typeof serverApiPaths)[${JSON.stringify(
     endpoint.name,
   )}]["responseType"]>> {
+    ${
+      endpoint.queryParams.length > 0
+        ? `// Query Parameters: ${endpoint.queryParams.join(", ")}
+    const queryParams = new URLSearchParams();
+    ${endpoint.queryParams
+      .map(
+        (param) => `if (args.${param} !== undefined && args.${param} !== null) {
+      queryParams.append(${JSON.stringify(param)}, args.${param} as string);
+    }`,
+      )
+      .join("\n    ")}`
+        : ""
+    }
     return await this.request<z.infer<(typeof serverApiPaths)[${JSON.stringify(endpoint.name)}]['responseType']>>(
       serverApiPaths[${JSON.stringify(endpoint.name)}],
-      ${fillArgumentsToTemplate(endpoint.path)}
+      ${fillArgumentsToTemplate(endpoint.path)}${
+        endpoint.queryParams.length > 0
+          ? ` + \`?\` + queryParams.toString()`
+          : ""
+      }
     );
   }`);
   }

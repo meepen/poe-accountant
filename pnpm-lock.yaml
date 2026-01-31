@@ -148,15 +148,24 @@ importers:
       '@meepen/poe-accountant-api-schema':
         specifier: workspace:^
         version: link:../../api-schema/project
+      '@meepen/poe-accountant-db-schema':
+        specifier: workspace:^
+        version: link:../../db-schema/project
       '@meepen/poe-common':
         specifier: workspace:^
         version: link:../../common/project
       bullmq:
         specifier: ^5.67.1
         version: 5.67.1
+      drizzle-orm:
+        specifier: ^0.45.1
+        version: 0.45.1(@cloudflare/workers-types@4.20260117.0)(@upstash/redis@1.36.1)(postgres@3.4.8)
       ioredis:
         specifier: ^5.9.2
         version: 5.9.2
+      postgres:
+        specifier: ^3.4.8
+        version: 3.4.8
       zod:
         specifier: ^4.3.5
         version: 4.3.5

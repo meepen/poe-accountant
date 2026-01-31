@@ -1,5 +1,5 @@
 import { Redis } from "ioredis";
-import { getEnvVar } from "./utils.js";
+import { getEnvVar } from "../utils.js";
 import { WorkerOptions } from "bullmq";
 
 export function getValkeyConnectionString(): string {

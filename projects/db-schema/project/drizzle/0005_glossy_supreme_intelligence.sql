@@ -1,0 +1,2 @@
+ALTER TABLE "currency_exchange_league_snapshot_data" DROP CONSTRAINT "currency_exchange_league_snapshot_data_history_id_currency_pk";--> statement-breakpoint
+ALTER TABLE "currency_exchange_league_snapshot_data" ADD CONSTRAINT "currency_exchange_league_snapshot_data_history_id_currency_stable_currency_pk" PRIMARY KEY("history_id","currency","stable_currency");

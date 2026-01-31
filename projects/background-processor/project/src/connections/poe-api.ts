@@ -1,11 +1,11 @@
 import { PoeApi, type ServerApi } from "@meepen/poe-common/api";
-import { getEnvVar } from "./utils.js";
+import { getEnvVar } from "../utils.js";
 import { Queue, QueueEvents } from "bullmq";
 import {
   PoeApiJobName,
   PoeApiJobReturnSchema,
   PoeApiJobSchema,
-} from "./schemas/poe-api.schema.js";
+} from "../schemas/poe-api.schema.js";
 import { z } from "zod";
 import { createValkeyConnection } from "./valkey.js";
 
@@ -94,3 +94,4 @@ class ApplicationPoeApi extends PoeApi {
 }
 
 export const appApi = new ApplicationPoeApi();
+export const realms = ["pc"] as const;
