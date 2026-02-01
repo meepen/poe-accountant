@@ -1,6 +1,10 @@
 import { z } from "zod";
 
 export const PoeApiJobName = "poe-api-job";
+export enum PoeApiJobSpecialCase {
+  None = "None",
+  ExchangeRateRules = "ExchangeRateRules",
+}
 
 export const PoeApiJobSchema = z.object({
   endpointName: z.string(),
@@ -11,6 +15,7 @@ export const PoeApiJobSchema = z.object({
     headers: z.record(z.string(), z.string()).optional(),
     body: z.string().optional(),
   }),
+  specialCase: z.enum(PoeApiJobSpecialCase),
 });
 
 export const PoeApiJobReturnSchema = z.object({

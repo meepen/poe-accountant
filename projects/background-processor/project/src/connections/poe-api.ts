@@ -5,9 +5,11 @@ import {
   PoeApiJobName,
   PoeApiJobReturnSchema,
   PoeApiJobSchema,
+  PoeApiJobSpecialCase,
 } from "../schemas/poe-api.schema.js";
 import { z } from "zod";
 import { valkeyForBullMQ } from "./valkey.js";
+import { serverApiPaths } from "@meepen/poe-common";
 
 class ApplicationPoeApi extends PoeApi {
   protected readonly queue = new Queue<
@@ -72,12 +74,27 @@ class ApplicationPoeApi extends PoeApi {
     this.authScopes.delete(endpointData.requiredScope);
   }
 
+  private createSpecialCase(
+    endpointData: ServerApi,
+    _endpoint: URL,
+    _options: RequestInit & { body: string | undefined },
+  ): PoeApiJobSpecialCase {
+    switch (endpointData) {
+      case serverApiPaths["Get Exchange Markets"]:
+        return PoeApiJobSpecialCase.ExchangeRateRules;
+      default:
+        break;
+    }
+
+    return PoeApiJobSpecialCase.None;
+  }
+
   protected override async fetch(
     endpointData: ServerApi,
     endpoint: URL,
     options: RequestInit & { body: string | undefined },
   ): Promise<Response> {
-    const headers = new Headers(options.headers || {});
+    const headers = new Headers(options.headers);
 
     const accessToken = headers.get("Authorization")?.startsWith("Bearer ")
       ? this.authTokenMap.get(
@@ -99,6 +116,7 @@ class ApplicationPoeApi extends PoeApi {
         headers: Object.fromEntries(headers.entries()),
         body: options.body,
       },
+      specialCase: this.createSpecialCase(endpointData, endpoint, options),
     });
 
     const result = await job.waitUntilFinished(this.queueEvents);

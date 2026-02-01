@@ -6,7 +6,9 @@ import {
   PoeApiJobSchema,
   PoeApiJobReturnSchema,
   PoeApiJobName,
+  PoeApiJobSpecialCase,
 } from "../schemas/poe-api.schema.js";
+import { serverApiPaths } from "@meepen/poe-common";
 
 async function getPublicIp(): Promise<string> {
   const response = await fetch("https://checkip.amazonaws.com");
@@ -106,20 +108,39 @@ export class PoeApiJob extends QueueWorker<
         `[${uniqueId}] Received response with status ${response.status}`,
       );
 
+      const responseText = await response.text();
+      let updateRules = true;
+
+      if (data.specialCase === PoeApiJobSpecialCase.ExchangeRateRules) {
+        // Check if url.endsWith(response.data.next_change_id), if so they have bucketed rules.
+        const exchangeData = serverApiPaths[
+          "Get Exchange Markets"
+        ].responseType.parse(JSON.parse(responseText));
+        if (data.request.url.endsWith(String(exchangeData.next_change_id))) {
+          console.debug(
+            `[${uniqueId}] Detected bucketed exchange rate rules, updating limiter state`,
+          );
+          // Assuming we don't call this too often...
+          updateRules = false;
+        }
+      }
+
       // 4. SYNCHRONIZATION
       // Update rules immediately to reconcile server state
       // Note: We swallow errors here to avoid 'Double Spend' (failing a successful job).
-      try {
-        await this.limiter.updateRules(
-          data.endpointName,
-          await this.getRuleDetails(data.ruleDetails),
-          response.headers,
-        );
-      } catch (syncError) {
-        console.warn(
-          "Failed to sync rate limits after successful API call",
-          syncError,
-        );
+      if (updateRules) {
+        try {
+          await this.limiter.updateRules(
+            data.endpointName,
+            await this.getRuleDetails(data.ruleDetails),
+            response.headers,
+          );
+        } catch (syncError) {
+          console.warn(
+            "Failed to sync rate limits after successful API call",
+            syncError,
+          );
+        }
       }
 
       // 5. FAILSAFE (429)
@@ -143,7 +164,6 @@ export class PoeApiJob extends QueueWorker<
         throw new DelayedError();
       }
 
-      const responseText = await response.text();
       console.debug(`[${uniqueId}] API request completed successfully`);
 
       return {
