@@ -1,19 +1,17 @@
 import { useState } from "react";
-import {
-  Typography,
-  Box,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  useTheme,
-  Modal,
-  FormControlLabel,
-  Checkbox,
-} from "@mui/material";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Modal from "@mui/material/Modal";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Checkbox from "@mui/material/Checkbox";
+import { useTheme } from "@mui/material/styles";
 import { useSession } from "../components/SessionContext";
 import { useTranslation } from "react-i18next";
 import ViewHistoryTabs from "./Dashboard/ViewHistoryTabs";

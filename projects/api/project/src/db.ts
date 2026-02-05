@@ -1,7 +1,9 @@
 import { drizzle } from "drizzle-orm/postgres-js";
-import * as schema from "@meepen/poe-accountant-db-schema";
+import schema from "@meepen/poe-accountant-db-schema";
 import postgres from "postgres";
 import { AppBindings } from "./bindings";
+
+console.log(schema);
 
 export function getDb(env: AppBindings) {
   const client = postgres(env.HYPERDRIVE.connectionString, { max: 10 });
