@@ -69,25 +69,45 @@ export class CurrencyDatabaseManager {
     const result = await tx
       .insert(CurrencyExchangeHistoryCurrency)
       .values(
-        leagueData.map<
-          InferSelectModel<typeof CurrencyExchangeHistoryCurrency>
-        >((market) => {
-          const [fromCurrency, toCurrency] = market.market_id.split("|");
-          return {
-            id: crypto.randomUUID(),
-            historyId: this.league.id,
-            fromCurrency,
-            toCurrency,
-            highestRatio:
-              market.highest_ratio[fromCurrency] /
-              market.highest_ratio[toCurrency],
-            lowestRatio:
-              market.lowest_ratio[fromCurrency] /
-              market.lowest_ratio[toCurrency],
-            fromVolume: BigInt(market.volume_traded[fromCurrency]),
-            toVolume: BigInt(market.volume_traded[toCurrency]),
-          };
-        }),
+        leagueData
+          .map<InferSelectModel<typeof CurrencyExchangeHistoryCurrency> | null>(
+            (market) => {
+              const [fromCurrency, toCurrency] = market.market_id.split("|");
+              const fromHigh = market.highest_ratio[fromCurrency];
+              const toHigh = market.highest_ratio[toCurrency];
+              const fromLow = market.lowest_ratio[fromCurrency];
+              const toLow = market.lowest_ratio[toCurrency];
+
+              if (
+                !Number.isFinite(fromHigh) ||
+                !Number.isFinite(toHigh) ||
+                !Number.isFinite(fromLow) ||
+                !Number.isFinite(toLow) ||
+                toHigh <= 0 ||
+                toLow <= 0
+              ) {
+                return null;
+              }
+
+              return {
+                id: crypto.randomUUID(),
+                historyId: this.league.id,
+                fromCurrency,
+                toCurrency,
+                highestRatio: fromHigh / toHigh,
+                lowestRatio: fromLow / toLow,
+                fromVolume: BigInt(market.volume_traded[fromCurrency]),
+                toVolume: BigInt(market.volume_traded[toCurrency]),
+              };
+            },
+          )
+          .filter(
+            (
+              market,
+            ): market is InferSelectModel<
+              typeof CurrencyExchangeHistoryCurrency
+            > => market !== null,
+          ),
       )
       .onConflictDoNothing()
       .returning();

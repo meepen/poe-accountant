@@ -69,7 +69,6 @@ tasks:
     cmds:
       - task: containers:default
         vars:
-          REGISTRY: "{{.REGISTRY}}"
           BUILDER: "{{.BUILDER}}"
 
   docker:push:
@@ -81,13 +80,24 @@ tasks:
     cmds:
       - doctl auth init -t {{.TF_VAR_do_token}}
       - doctl registry login
+      - "{{if eq .BUILDER \"podman\"}}mkdir -p \"$HOME/.config/containers\" && podman login registry.digitalocean.com -u doctl -p {{.TF_VAR_do_token}} --authfile \"$HOME/.config/containers/auth.json\"{{end}}"
       - task: docker:build
-        vars:
-          REGISTRY: "{{.REGISTRY}}"
+      - |
+          {{if eq .BUILDER "podman"}}PODMAN_AUTHFILE="$HOME/.config/containers/auth.json";{{end}}
+          {{.BUILDER}} tag pathofexile.accountant.localhost/frontend:latest {{.REGISTRY}}/frontend:latest &&
+          {{.BUILDER}} push {{if eq .BUILDER "podman"}}--authfile "$PODMAN_AUTHFILE" {{end}}{{.REGISTRY}}/frontend:latest
+      - |
+          {{if eq .BUILDER "podman"}}PODMAN_AUTHFILE="$HOME/.config/containers/auth.json";{{end}}
+          {{.BUILDER}} tag pathofexile.accountant.localhost/api:latest {{.REGISTRY}}/api:latest &&
+          {{.BUILDER}} push {{if eq .BUILDER "podman"}}--authfile "$PODMAN_AUTHFILE" {{end}}{{.REGISTRY}}/api:latest
+      - |
+          {{if eq .BUILDER "podman"}}PODMAN_AUTHFILE="$HOME/.config/containers/auth.json";{{end}}
+          {{.BUILDER}} tag pathofexile.accountant.localhost/background-processor:latest {{.REGISTRY}}/background-processor:latest &&
+          {{.BUILDER}} push {{if eq .BUILDER "podman"}}--authfile "$PODMAN_AUTHFILE" {{end}}{{.REGISTRY}}/background-processor:latest
       - echo "Pushing external images"
       - "{{.BUILDER}} pull docker.io/hiett/serverless-redis-http:latest"
       - "{{.BUILDER}} tag docker.io/hiett/serverless-redis-http:latest {{.REGISTRY}}/valkey-proxy:latest"
-      - "{{.BUILDER}} push {{.REGISTRY}}/valkey-proxy:latest"
+      - "{{if eq .BUILDER \"podman\"}}PODMAN_AUTHFILE=\"$HOME/.config/containers/auth.json\"; {{end}}{{.BUILDER}} push {{if eq .BUILDER \"podman\"}}--authfile \"$PODMAN_AUTHFILE\" {{end}}{{.REGISTRY}}/valkey-proxy:latest"
 
   setup:
     cmds:
@@ -100,6 +110,7 @@ tasks:
     env:
       NODE_OPTIONS: "--import tsx"
     cmds:
+      - pnpm --filter=@meepen/poe-accountant-db-schema run build
       - pnpm --filter=@meepen/poe-accountant-db-schema exec drizzle-kit generate
 
   migrations:apply:

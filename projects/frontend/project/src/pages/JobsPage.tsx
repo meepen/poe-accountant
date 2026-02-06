@@ -15,14 +15,14 @@ import {
 } from "@mui/material";
 import { z } from "zod";
 import { ApiEndpoint } from "@meepen/poe-accountant-api-schema/api/api-endpoints.enum";
-import { UserJobDto } from "@meepen/poe-accountant-api-schema/api/user.job.dto";
+import { UserJobDto } from "@meepen/poe-accountant-api-schema/api/dtos/user/user.job.dto";
 import { useTranslation } from "react-i18next";
-import { useSession } from "../components/SessionContext";
+import { useApi } from "../components/SessionContext";
 
 type UserJob = z.infer<typeof UserJobDto>;
 
 export default function JobsPage() {
-  const { api } = useSession();
+  const api = useApi();
   const { t } = useTranslation();
   const [jobs, setJobs] = useState<UserJob[] | null>(null);
   const [loading, setLoading] = useState(true);

@@ -51,7 +51,9 @@ describe("PoeApi", () => {
 
   it('should get rid of `realm` parameter when it is "pc" and optional', async () => {
     api.fetch.mockResolvedValue(new Response(null, { status: 400 }));
-    await expect(api.getCharacter("name", "pc")).rejects.toThrow();
+    await expect(
+      api.getCharacter({ name: "name", realm: "pc" }),
+    ).rejects.toThrow();
 
     expect(api.fetch).toHaveBeenCalledWith(
       expect.any(Object),

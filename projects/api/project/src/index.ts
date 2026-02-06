@@ -5,6 +5,7 @@ import { status } from "./routes/status";
 import { redirect } from "./routes/redirect";
 import { user } from "./routes/user";
 import { prices } from "./routes/prices";
+import { league } from "./routes/league";
 
 const app = new Hono<AppEnv>();
 
@@ -37,6 +38,7 @@ app.route("/status", status);
 app.route("/redirect", redirect);
 app.route("/user", user);
 app.route("/prices", prices);
+app.route("/league", league);
 
 app.get("/health", (c) => c.json({ status: "ok" }));
 

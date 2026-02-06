@@ -20,8 +20,12 @@ resource "digitalocean_app" "poe_accountant" {
 
         image {
           registry_type = worker.value.registry_type
+          registry       = var.registry_name
           repository    = worker.value.image_repository
           tag           = worker.value.image_tag
+          deploy_on_push {
+            enabled = true
+          }
         }
 
         dynamic "env" {
@@ -44,8 +48,12 @@ resource "digitalocean_app" "poe_accountant" {
 
         image {
           registry_type = service.value.registry_type
+          registry       = var.registry_name
           repository    = service.value.image_repository
           tag           = service.value.image_tag
+          deploy_on_push {
+            enabled = true
+          }
         }
 
         dynamic "env" {

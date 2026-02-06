@@ -2,10 +2,21 @@ import { Hono } from "hono";
 import { AppEnv } from "../bindings";
 import { valkeyCache } from "../utils/cache";
 import { getDb } from "../db";
-import { z } from "zod";
-import { zValidator } from "@hono/zod-validator";
+import {
+  ApiEndpoint,
+  ApiEndpointMethods,
+} from "@meepen/poe-accountant-api-schema/api/api-endpoints.enum";
+import {
+  CurrencyExchangeHistory,
+  CurrencyExchangeLeagueSnapshotData,
+} from "@meepen/poe-accountant-db-schema";
+import { and, desc, eq } from "drizzle-orm";
+import { ApiResponse } from "@meepen/poe-accountant-api-schema/api/api-request-data.dto";
 
 export const prices = new Hono<AppEnv>();
+
+ApiEndpoint.GetExchangeRatesCurrency satisfies "prices/exchange-rates/:realm/:leagueId/currency/:currency";
+ApiEndpointMethods[ApiEndpoint.GetExchangeRatesCurrency] satisfies "GET";
 
 prices.get(
   "/exchange-rates/:realm/:leagueId/currency/:currency",
@@ -46,6 +57,10 @@ prices.get(
   },
 );
 
+ApiEndpoint.GetExchangeRatesCurrencyHistorical satisfies "prices/exchange-rates/:realm/:leagueId/currency/:currency/historical";
+ApiEndpointMethods[
+  ApiEndpoint.GetExchangeRatesCurrencyHistorical
+] satisfies "GET";
 prices.get(
   "/exchange-rates/:realm/:leagueId/currency/:currency/historical",
   async (c) => {
@@ -54,6 +69,97 @@ prices.get(
 
     const db = getDb(c.env);
 
-    // TODO:
+    const results = await db.query.CurrencyExchangeHistory.findMany({
+      where: (data, { eq, and, gte }) =>
+        and(
+          eq(data.realm, realm),
+          eq(data.leagueId, leagueId),
+          gte(data.timestamp, new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)),
+        ),
+      orderBy: (history, { desc }) => [desc(history.timestamp)],
+      with: {
+        snapshotData: {
+          where: (data, { eq }) => eq(data.currency, currency),
+        },
+      },
+    });
+
+    if (results.length === 0) {
+      return c.notFound();
+    }
+
+    return c.json(
+      results
+        .flatMap((result) => result.snapshotData)
+        .map<ApiResponse<ApiEndpoint.GetExchangeRatesCurrencyHistorical>[0]>(
+          (data) => ({
+            ...data,
+            dataStaleness: data.dataStaleness.toISOString(),
+            liquidity: data.liquidity.toString(),
+          }),
+        ),
+    );
+  },
+);
+
+ApiEndpoint.GetExchangeRatesCurrencyList satisfies "prices/exchange-rates/:realm/:leagueId/currency";
+ApiEndpointMethods[ApiEndpoint.GetExchangeRatesCurrencyList] satisfies "GET";
+prices.get(
+  "/exchange-rates/:realm/:leagueId/currency",
+  valkeyCache({
+    ttl() {
+      const livesUntil = new Date();
+      livesUntil.setMinutes(0, 0, 0);
+      livesUntil.setHours(livesUntil.getHours() + 1);
+      return Math.floor((livesUntil.getTime() - Date.now()) / 1000);
+    },
+    keyPrefix: "exchange-rates:currency-list",
+  }),
+  async (c) => {
+    const { realm, leagueId } = c.req.param();
+
+    const db = getDb(c.env);
+
+    const results = await db
+      .selectDistinctOn([CurrencyExchangeLeagueSnapshotData.currency], {
+        currency: CurrencyExchangeLeagueSnapshotData.currency,
+        value: CurrencyExchangeLeagueSnapshotData.valuedAt,
+        stableCurrency: CurrencyExchangeLeagueSnapshotData.stableCurrency,
+        timestamp: CurrencyExchangeHistory.timestamp,
+      })
+      .from(CurrencyExchangeLeagueSnapshotData)
+      .innerJoin(
+        CurrencyExchangeHistory,
+        eq(
+          CurrencyExchangeLeagueSnapshotData.historyId,
+          CurrencyExchangeHistory.id,
+        ),
+      )
+      .where(() =>
+        and(
+          eq(CurrencyExchangeHistory.realm, realm),
+          eq(CurrencyExchangeHistory.leagueId, leagueId),
+        ),
+      )
+      .orderBy(
+        CurrencyExchangeLeagueSnapshotData.currency,
+        desc(CurrencyExchangeHistory.timestamp),
+      );
+
+    if (results.length === 0) {
+      return c.notFound();
+    }
+
+    return c.json(
+      results.map<ApiResponse<ApiEndpoint.GetExchangeRatesCurrencyList>[0]>(
+        (data) => ({
+          currency: data.currency,
+          value: {
+            currency: data.stableCurrency,
+            amount: data.value,
+          },
+        }),
+      ),
+    );
   },
 );

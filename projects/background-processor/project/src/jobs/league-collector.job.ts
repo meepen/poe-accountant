@@ -19,12 +19,16 @@ export class LeagueCollectorJob extends QueueScheduler<
   protected override readonly cron = "0 */6 * * *";
 
   protected async processJob(): Promise<void> {
+    await LeagueCollectorJob.processNow();
+  }
+
+  public static async processNow() {
     await Promise.all(
       realms.map((realm) => LeagueCollectorJob.collectAllLeagues(realm)),
     );
   }
 
-  public static async collectAllLeagues(realm: string) {
+  private static async collectAllLeagues(realm: string) {
     const limit = 50;
     for (let offset = 0; ; offset += limit) {
       const leagues = await appApi.listLeagues({

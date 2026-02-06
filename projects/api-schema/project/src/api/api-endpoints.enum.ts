@@ -4,10 +4,11 @@
 export enum ApiEndpoint {
   UserLogin = "redirect/login",
 
-  PriceItemRequest = "item/price",
-  PriceTabRequest = "tab/price",
-  PriceItemResult = "item/price/result",
-  PriceTabResult = "tab/price/result",
+  GetExchangeRatesCurrencyList = "prices/exchange-rates/:realm/:leagueId/currency",
+  GetExchangeRatesCurrency = "prices/exchange-rates/:realm/:leagueId/currency/:currency",
+  GetExchangeRatesCurrencyHistorical = "prices/exchange-rates/:realm/:leagueId/currency/:currency/historical",
+
+  GetLeagues = "league",
 
   GetUser = "user",
   GetUserJobs = "user/jobs",
@@ -16,10 +17,11 @@ export enum ApiEndpoint {
 export const ApiEndpointMethods = {
   [ApiEndpoint.UserLogin]: "REDIRECT",
 
-  [ApiEndpoint.PriceItemRequest]: "POST",
-  [ApiEndpoint.PriceTabRequest]: "POST",
-  [ApiEndpoint.PriceItemResult]: "GET",
-  [ApiEndpoint.PriceTabResult]: "GET",
+  [ApiEndpoint.GetExchangeRatesCurrencyList]: "GET",
+  [ApiEndpoint.GetExchangeRatesCurrency]: "GET",
+  [ApiEndpoint.GetExchangeRatesCurrencyHistorical]: "GET",
+
+  [ApiEndpoint.GetLeagues]: "GET",
 
   [ApiEndpoint.GetUser]: "GET",
   [ApiEndpoint.GetUserJobs]: "GET",

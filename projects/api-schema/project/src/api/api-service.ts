@@ -17,21 +17,65 @@ export class ApiError extends Error {
   }
 }
 
+type ApiRouteParamKey<T extends string> =
+  T extends `${infer _Start}:${infer Param}/${infer Rest}`
+    ? Param | ApiRouteParamKey<Rest>
+    : T extends `${infer _Start}:${infer Param}`
+      ? Param
+      : never;
+
+type ApiRouteParamData<T extends string> = {
+  [K in ApiRouteParamKey<T>]: string;
+};
+
+type ArgumentsForEndpoint<T extends ApiEndpoint> = [
+  ...(ApiRouteParamData<T> extends infer ParamData
+    ? keyof ParamData extends never
+      ? []
+      : [params: ParamData]
+    : []),
+  ...(ApiResultResponseData<T>[0] extends object
+    ? [data: ApiResultResponseData<T>[0]]
+    : []),
+];
+
 export class ApiService {
-  constructor(public readonly baseUrl: URL) {}
+  constructor(
+    public readonly baseUrl: URL,
+    private readonly fetcher = fetch,
+  ) {}
 
   async request<T extends ApiEndpoint>(
     endpoint: T,
-    ...data: ApiResultResponseData<T>[0] extends object
-      ? [data: ApiResultResponseData<T>[0]]
-      : []
+    ...data: ArgumentsForEndpoint<T>
   ): Promise<ApiResultResponseData<T>[1]> {
-    const response = await fetch(new URL(endpoint, this.baseUrl), {
+    const split = endpoint.split("/");
+    const hasParams = split.some((part) => part.startsWith(":"));
+
+    const params = split
+      .map((part) => {
+        if (!part.startsWith(":")) {
+          return part;
+        }
+        const paramName = part.slice(1) as keyof ApiRouteParamData<T>;
+        const paramValue = (data[0] as Partial<ApiRouteParamData<T>>)[
+          paramName
+        ];
+        if (paramValue == null) {
+          throw new Error(`Missing parameter value for ${paramName}`);
+        }
+        return encodeURIComponent(paramValue);
+      })
+      .join("/");
+
+    const dataContent = hasParams ? data.slice(1) : data;
+
+    const response = await this.fetcher(new URL(params, this.baseUrl), {
       method: ApiEndpointMethods[endpoint],
       credentials: "include",
-      ...(data.length > 0
+      ...(dataContent.length > 0
         ? {
-            body: JSON.stringify(data[0]),
+            body: JSON.stringify(dataContent[0]),
             headers: { "Content-Type": "application/json" },
           }
         : {}),

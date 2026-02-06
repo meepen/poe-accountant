@@ -76,6 +76,10 @@ module "apps" {
         "S3_ENDPOINT"          = "https://${var.cloudflare_account_id}.r2.cloudflarestorage.com"
         "S3_ACCESS_KEY_ID"     = module.r2.access_key_id
         "S3_SECRET_ACCESS_KEY" = module.r2.secret_access_key
+        "PATHOFEXILE_CLIENT_ID"     = var.pathofexile_client_id
+        "PATHOFEXILE_CLIENT_SECRET" = var.pathofexile_client_secret
+        "PATHOFEXILE_CONTACT_EMAIL" = var.pathofexile_contact_email
+        "PATHOFEXILE_APP_VERSION"   = var.pathofexile_app_version
       }
     }
   }

@@ -8,7 +8,7 @@ import { setCookie } from "hono/cookie";
 import { fetchWrapper } from "../fetch-wrapper";
 import { getDb } from "../db";
 import { createOrUpdateUser, createSession, getSessionUser } from "../db/user";
-import { sessionCookieName } from "@meepen/poe-accountant-api-schema/api/user.dto";
+import { sessionCookieName } from "@meepen/poe-accountant-api-schema/api/dtos/user/user.dto";
 
 export const redirect = new Hono<AppEnv>();
 

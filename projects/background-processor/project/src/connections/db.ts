@@ -1,5 +1,5 @@
 import postgres from "postgres";
-import * as schema from "@meepen/poe-accountant-db-schema";
+import schema from "@meepen/poe-accountant-db-schema";
 import { getEnvVar } from "../utils.js";
 import { drizzle } from "drizzle-orm/postgres-js";
 import {

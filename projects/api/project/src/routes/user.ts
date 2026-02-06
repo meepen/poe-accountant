@@ -7,7 +7,7 @@ import { AppEnv } from "../bindings";
 import { getSessionUser } from "../db/user";
 import { getValkey } from "../valkey";
 import { getDb } from "../db";
-import { UserJobDto } from "@meepen/poe-accountant-api-schema/api/user.job.dto";
+import { UserJobDto } from "@meepen/poe-accountant-api-schema/api/dtos/user/user.job.dto";
 import { z } from "zod";
 
 export const user = new Hono<AppEnv>();

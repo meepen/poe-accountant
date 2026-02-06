@@ -181,3 +181,13 @@ variable "pathofexile_redirect_url" {
   description = "Path of Exile OAuth Redirect URL"
   type        = string
 }
+
+variable "pathofexile_contact_email" {
+  description = "Contact email used in Path of Exile OAuth user agent"
+  type        = string
+}
+
+variable "pathofexile_app_version" {
+  description = "App version used in Path of Exile OAuth user agent"
+  type        = string
+}

@@ -12,12 +12,18 @@ RUN corepack prepare pnpm@^10.26.1 --activate
 WORKDIR /app
 USER root
 
-COPY --from=pathofexile.accountant.localhost/root-config /out/pnpm-lock.yaml .
-COPY --from=pathofexile.accountant.localhost/root-config /out/pnpm-workspace.yaml .
-COPY projects /app/projects
-RUN pnpm install --frozen-lockfile
+ENV PNPM_STORE_PATH=/pnpm-store
 
-RUN --mount=type=secret,id=env \
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+RUN --mount=type=cache,target=/pnpm-store pnpm fetch
+
+COPY . .
+
+RUN --mount=type=cache,target=/pnpm-store pnpm install --offline --frozen-lockfile
+
+RUN --mount=type=cache,target=/pnpm-store \
+    --mount=type=secret,id=env \
     set -a; . /run/secrets/env; set +a; pnpm -r build
 
 

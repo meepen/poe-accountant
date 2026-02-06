@@ -9,7 +9,7 @@ function getEnvVar(name: string): string {
 }
 
 export default defineConfig({
-  schema: "./src/schema/*.ts",
+  schema: "./dist/src/schema/*.js",
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {

@@ -24,7 +24,7 @@ class ApplicationPoeApi extends PoeApi {
   protected authScopes = new Map<string, Promise<string>>();
   protected authTokenMap = new Map<string, string>();
 
-  protected override userAgent = `OAuth ${getEnvVar("PATHOFEXILE_CLIENT_ID")}/${getEnvVar("PATHOFEXILE_APP_VERSION")} (contact: ${getEnvVar("PATHOFEXILE_CONTACT_EMAIL")}) background-processor/ApplicationPoeApi`;
+  protected override userAgent = `OAuth ${getEnvVar("PATHOFEXILE_CLIENT_ID")}/${getEnvVar("PATHOFEXILE_APP_VERSION")} (contact: ${getEnvVar("PATHOFEXILE_CONTACT_EMAIL")}) background-processor/${ApplicationPoeApi.name}`;
 
   protected override authenticate(endpointData: ServerApi): Promise<string> {
     const authPromise = this.authScopes.get(endpointData.requiredScope);
@@ -32,18 +32,22 @@ class ApplicationPoeApi extends PoeApi {
       return authPromise;
     }
 
+    const headers = {
+      "User-Agent": this.userAgent,
+      "Content-Type": "application/x-www-form-urlencoded",
+    };
+
+    const body = new URLSearchParams({
+      grant_type: "client_credentials",
+      client_id: getEnvVar("PATHOFEXILE_CLIENT_ID"),
+      client_secret: getEnvVar("PATHOFEXILE_CLIENT_SECRET"),
+      scope: endpointData.requiredScope,
+    });
+
     const newAuthPromise = fetch("https://www.pathofexile.com/oauth/token", {
       method: "POST",
-      headers: {
-        "User-Agent": this.userAgent,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        grant_type: "client_credentials",
-        client_id: getEnvVar("PATHOFEXILE_CLIENT_ID"),
-        client_secret: getEnvVar("PATHOFEXILE_CLIENT_SECRET"),
-        scope: endpointData.requiredScope,
-      }),
+      headers,
+      body,
     })
       .then((response) => {
         if (!response.ok) {
@@ -54,11 +58,12 @@ class ApplicationPoeApi extends PoeApi {
         return response.json() as Promise<{
           access_token: string;
           sub: string;
+          [key: string]: unknown;
         }>;
       })
       .then((data) => {
         this.authTokenMap.set(data.access_token, data.sub);
-        return data.sub;
+        return data.access_token;
       })
       .catch((err: unknown) => {
         this.authScopes.delete(endpointData.requiredScope);

@@ -2,29 +2,17 @@ import { InferResultType } from "../../connections/db.js";
 
 // --- Types ---
 
-type TimeSeries<
-  NumberType extends bigint | number,
-  Currencies extends string[] = [string, string],
-> = Record<Currencies[number], NumberType>;
-
-/**
- * Represents a single market data point for a currency pair.
- */
-export type MarketData<Currencies extends string[] = [string, string]> = {
-  volumeTraded: TimeSeries<bigint, Currencies>;
-  lowestRatio: TimeSeries<number, Currencies>;
-  occurredAt: Date;
-  isVendor?: boolean;
-};
-
-export type MarketDataEntry<FromCurrency extends string> = {
-  [toCurrency: string]:
-    | MarketData<[FromCurrency, typeof toCurrency]>[]
-    | undefined;
-};
-export type MarketDataMap = {
-  [fromCurrency: string]: MarketDataEntry<typeof fromCurrency> | undefined;
-};
+export interface MarketInput {
+  fromCurrency: string;
+  toCurrency: string;
+  fromVolume: bigint;
+  toVolume: bigint;
+  lowestRatio: number;
+  highestRatio: number;
+  history: {
+    timestamp: Date;
+  };
+}
 
 export type CurrencyExchangeWithRelations = InferResultType<
   "CurrencyExchangeHistoryCurrency",
@@ -34,6 +22,35 @@ export type CurrencyExchangeWithRelations = InferResultType<
     };
   }
 >;
+
+type TimeSeries<
+  NumberType extends bigint | number,
+  Currencies extends string[] = [string, string],
+> = Record<Currencies[number], NumberType>;
+
+export type MarketData<Currencies extends string[] = [string, string]> = {
+  volumeTraded: TimeSeries<bigint, Currencies>;
+  lowestRatio: TimeSeries<number, Currencies>;
+  occurredAt: Date;
+  isVendor?: boolean;
+};
+
+export type VendorRecipe = {
+  from: string;
+  to: string;
+  rate: number;
+};
+
+/**
+ * Optimized edge data, pre-calculated during initialization.
+ */
+interface ProcessedEdge {
+  vwap: number;
+  totalVolume: bigint;
+  recencyRatio: number;
+  lastUpdate: number;
+  friction: number; // Pre-calculated cost penalty
+}
 
 /**
  * Result of the rate calculation for a specific currency.
@@ -51,75 +68,159 @@ export interface RateResult {
   lastUpdate: Date;
 }
 
-interface EdgeAnalysis {
-  totalVolume: bigint;
-  vwap: number;
-  recencyRatio: number;
-  lastUpdate: number;
-}
-
-export type VendorRecipe = {
-  from: string;
-  to: string;
+type HeapNode = {
+  cost: number;
+  currency: string;
   rate: number;
+  path: string[];
+  minLiquidity: bigint;
+  oldestUpdate: number;
+  friction: number;
 };
 
-// --- Class Implementation ---
+class MinHeap {
+  private heap: HeapNode[] = [];
+
+  push(node: HeapNode) {
+    this.heap.push(node);
+    this.bubbleUp(this.heap.length - 1);
+  }
+
+  pop(): HeapNode | undefined {
+    if (this.heap.length === 0) {
+      return undefined;
+    }
+    const top = this.heap[0];
+    const bottom = this.heap.pop();
+    if (this.heap.length > 0 && bottom) {
+      this.heap[0] = bottom;
+      this.sinkDown(0);
+    }
+    return top;
+  }
+
+  size(): number {
+    return this.heap.length;
+  }
+
+  private bubbleUp(index: number) {
+    while (index > 0) {
+      const parentIndex = Math.floor((index - 1) / 2);
+      if (this.heap[index].cost >= this.heap[parentIndex].cost) {
+        break;
+      }
+      [this.heap[index], this.heap[parentIndex]] = [
+        this.heap[parentIndex],
+        this.heap[index],
+      ];
+      index = parentIndex;
+    }
+  }
+
+  private sinkDown(index: number) {
+    const length = this.heap.length;
+    const element = this.heap[index];
+    for (;;) {
+      const leftChildIdx = 2 * index + 1;
+      const rightChildIdx = 2 * index + 2;
+      let leftChild, rightChild;
+      let swap = null;
+
+      if (leftChildIdx < length) {
+        leftChild = this.heap[leftChildIdx];
+        if (leftChild.cost < element.cost) {
+          swap = leftChildIdx;
+        }
+      }
+
+      if (rightChildIdx < length) {
+        rightChild = this.heap[rightChildIdx];
+        if (
+          (swap === null && rightChild.cost < element.cost) ||
+          (swap !== null && leftChild && rightChild.cost < leftChild.cost)
+        ) {
+          swap = rightChildIdx;
+        }
+      }
+
+      if (swap === null) {
+        break;
+      }
+      [this.heap[index], this.heap[swap]] = [this.heap[swap], this.heap[index]];
+      index = swap;
+    }
+  }
+}
+
+// --- Main Class ---
 
 /**
  * Graph structure representing currency exchange markets.
  * Capable of finding optimal exchange paths and calculating rates.
  */
 export class CurrencyGraph {
-  private graph: MarketDataMap;
+  // Map<ToCurrency, Map<FromCurrency, ProcessedEdge>>
+  private incomingEdges: Map<string, Map<string, ProcessedEdge>> = new Map();
+
+  // We keep a forward map specifically for "Direct Rate" lookups in the final result step
+  private forwardEdges: Map<string, Map<string, ProcessedEdge>> = new Map();
+
   private minTimestamp: number;
   private maxTimestamp: number;
 
   constructor(
-    markets: CurrencyExchangeWithRelations[],
+    markets: MarketInput[],
     private readonly vendorRecipes: readonly VendorRecipe[],
   ) {
-    this.graph = {};
+    // 1. Temporary Raw Data Collection
+    // We must group all raw entries first before analyzing edges
+    const rawGraph: Record<string, Record<string, MarketData[]>> = {};
 
-    // 1. Initialize global time bounds
-    let hasData: boolean;
-    [this.maxTimestamp, this.minTimestamp, hasData] = Object.values(
-      this.graph,
-    ).reduce<[number, number, boolean]>(
-      ([maxTime, minTime, hasData], neighbors) => {
-        for (const dataArray of Object.values(
-          neighbors as NonNullable<typeof neighbors>,
-        )) {
-          for (const entry of dataArray as NonNullable<typeof dataArray>) {
-            const time = entry.occurredAt.getTime();
-            if (time < minTime) {
-              minTime = time;
-            }
-            if (time > maxTime) {
-              maxTime = time;
-            }
-            hasData = true;
-          }
-        }
-        return [maxTime, minTime, hasData];
-      },
-      [-Infinity, Infinity, false],
-    );
+    let globalMin = Infinity;
+    let globalMax = -Infinity;
+    let hasData = false;
 
-    if (!hasData) {
-      this.minTimestamp = Date.now();
-      this.maxTimestamp = Date.now();
-    }
+    const addRaw = (
+      from: string,
+      to: string,
+      volFrom: bigint,
+      volTo: bigint,
+      ratioFrom: number,
+      ratioTo: number,
+      timestamp: Date,
+      isVendor = false,
+    ) => {
+      if (!(from in rawGraph)) {
+        rawGraph[from] = {};
+      }
+      if (!(to in rawGraph[from])) {
+        rawGraph[from][to] = [];
+      }
 
-    // 2. Inject Vendor Recipes
-    this.injectVendorRecipes();
+      const time = timestamp.getTime();
+      if (time < globalMin) {
+        globalMin = time;
+      }
+      if (time > globalMax) {
+        globalMax = time;
+      }
+      hasData = true;
 
-    // 3. Process Market Data
+      rawGraph[from][to].push({
+        volumeTraded: { [from]: volFrom, [to]: volTo },
+        lowestRatio: { [from]: ratioFrom, [to]: ratioTo },
+        occurredAt: timestamp,
+        isVendor,
+      });
+    };
+
+    // Process Database Markets
     for (const market of markets) {
       const A = market.fromCurrency;
       const B = market.toCurrency;
 
-      this.addEntry(
+      // Add Forward A -> B
+      addRaw(
         A,
         B,
         market.fromVolume,
@@ -129,10 +230,10 @@ export class CurrencyGraph {
         market.history.timestamp,
       );
 
+      // Add Reverse B -> A
       const safeLow = market.lowestRatio > 0 ? market.lowestRatio : 1;
       const safeHigh = market.highestRatio > 0 ? market.highestRatio : 1;
-
-      this.addEntry(
+      addRaw(
         B,
         A,
         market.toVolume,
@@ -142,80 +243,90 @@ export class CurrencyGraph {
         market.history.timestamp,
       );
     }
-  }
 
-  private addEntry(
-    from: string,
-    to: string,
-    volFrom: bigint,
-    volTo: bigint,
-    ratioFrom: number,
-    ratioTo: number,
-    timestamp: Date,
-    isVendor = false,
-  ) {
-    if (!this.graph[from]) {
-      this.graph[from] = {};
-    }
-    if (!this.graph[from][to]) {
-      this.graph[from][to] = [];
+    // Initialize Time Bounds
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (!hasData) {
+      this.minTimestamp = Date.now();
+      this.maxTimestamp = Date.now();
+    } else {
+      this.minTimestamp = globalMin;
+      this.maxTimestamp = globalMax;
     }
 
-    this.graph[from][to].push({
-      volumeTraded: { [from]: volFrom, [to]: volTo },
-      lowestRatio: { [from]: ratioFrom, [to]: ratioTo },
-      occurredAt: timestamp,
-      isVendor,
-    });
-  }
-
-  private injectVendorRecipes() {
-    const NOW = this.maxTimestamp;
+    // Inject Vendor Recipes (treated as current time)
     const VENDOR_VOLUME = 1_000_000_000n;
-
     for (const recipe of this.vendorRecipes) {
       const volIn = VENDOR_VOLUME;
       const volOut = BigInt(Math.floor(Number(VENDOR_VOLUME) * recipe.rate));
-
-      this.addEntry(
+      addRaw(
         recipe.from,
         recipe.to,
         volIn,
         volOut,
         recipe.rate,
         recipe.rate,
-        new Date(NOW),
+        new Date(this.maxTimestamp),
         true,
       );
+    }
+
+    // 2. Process Edges (Pre-calculation)
+    // Convert raw data arrays into single ProcessedEdge objects
+    for (const fromCurrency in rawGraph) {
+      for (const toCurrency in rawGraph[fromCurrency]) {
+        const dataArray = rawGraph[fromCurrency][toCurrency];
+
+        // Analyze the edge ONCE here
+        const analysis = this.analyzeEdge(fromCurrency, toCurrency, dataArray);
+
+        // Filter out dead edges immediately
+        if (analysis.totalVolume <= 0n || analysis.vwap <= 0) {
+          continue;
+        }
+
+        const friction = this.calculateEdgeFriction(
+          analysis.totalVolume,
+          analysis.recencyRatio,
+        );
+
+        const processed: ProcessedEdge = {
+          ...analysis,
+          friction,
+        };
+
+        // Store in Incoming Graph (To -> From) for Dijkstra
+        if (!this.incomingEdges.has(toCurrency)) {
+          this.incomingEdges.set(toCurrency, new Map());
+        }
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        this.incomingEdges.get(toCurrency)!.set(fromCurrency, processed);
+
+        // Store in Forward Graph (From -> To) for direct rate lookup
+        if (!this.forwardEdges.has(fromCurrency)) {
+          this.forwardEdges.set(fromCurrency, new Map());
+        }
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        this.forwardEdges.get(fromCurrency)!.set(toCurrency, processed);
+      }
     }
   }
 
   /**
    * Calculates optimal exchange rates relative to a stable currency.
-   * Uses a modified Dijkstra's algorithm to find the most efficient paths
-   * taking into account price, volume, and data recency.
-   *
-   * @param stableCurrency The currency to use as the base for calculations (default: "chaos")
-   * @returns A map of currency names to their rate analysis results
+   * Uses a modified Dijkstra's algorithm with a Binary Heap.
    */
   public getRatesRelativeTo(
     stableCurrency: string = "chaos",
   ): Map<string, RateResult> {
-    const pq: {
-      cost: number;
-      currency: string;
-      rate: number;
-      path: string[];
-      minLiquidity: bigint;
-      oldestUpdate: number;
-      friction: number;
-    }[] = [];
+    const pq = new MinHeap();
+    const minCosts = new Map<string, number>();
+    const results = new Map<string, RateResult>();
+    const visited = new Set<string>();
 
     const MAX_LIQUIDITY = 9_000_000_000_000_000_000n;
 
-    // Track minimum costs to prune expensive paths early
-    const minCosts = new Map<string, number>();
-
+    // Initialization
     pq.push({
       cost: 0,
       currency: stableCurrency,
@@ -228,12 +339,9 @@ export class CurrencyGraph {
 
     minCosts.set(stableCurrency, 0);
 
-    const results = new Map<string, RateResult>();
-    const visited = new Set<string>();
-
-    while (pq.length > 0) {
-      pq.sort((a, b) => a.cost - b.cost);
-
+    while (pq.size() > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const node = pq.pop()!;
       const {
         cost,
         currency: currentCurrency,
@@ -242,10 +350,9 @@ export class CurrencyGraph {
         minLiquidity,
         oldestUpdate,
         friction,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      } = pq.shift()!;
+      } = node;
 
-      // Prune if we've found a better path to this node already
+      // Pruning
       if (
         minCosts.has(currentCurrency) &&
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -259,41 +366,32 @@ export class CurrencyGraph {
       }
       visited.add(currentCurrency);
 
-      // --- 1. Direct Rate Analysis & Metrics ---
+      // --- 1. Result Construction ---
+      // We perform the final metric checks here using the pre-built Forward Graph
+
       let directRate: number | null = null;
-      let forwardEdgeAnalysis: EdgeAnalysis | null = null;
-      let reverseEdgeAnalysis: EdgeAnalysis | null = null;
+      let exitLiquidity = 0n;
 
-      if (currentCurrency !== stableCurrency) {
-        // Forward: Selling Current -> Buying Stable
-        const forwardData = this.graph[currentCurrency]?.[stableCurrency];
-        if (forwardData) {
-          forwardEdgeAnalysis = this.analyzeEdge(
-            currentCurrency,
-            stableCurrency,
-            forwardData,
-          );
-          if (forwardEdgeAnalysis.vwap > 0) {
-            directRate = forwardEdgeAnalysis.vwap;
-          }
-        }
-
-        // Reverse Fallback
-        if (!directRate) {
-          const reverseData = this.graph[stableCurrency]?.[currentCurrency];
-          if (reverseData) {
-            reverseEdgeAnalysis = this.analyzeEdge(
-              stableCurrency,
-              currentCurrency,
-              reverseData,
-            );
-            if (reverseEdgeAnalysis.vwap > 0) {
-              directRate = 1.0 / reverseEdgeAnalysis.vwap;
-            }
-          }
-        }
-      } else {
+      if (currentCurrency === stableCurrency) {
         directRate = 1.0;
+        exitLiquidity = MAX_LIQUIDITY;
+      } else {
+        // Direct Path: Current -> Stable
+        const forwardEdge = this.forwardEdges
+          .get(currentCurrency)
+          ?.get(stableCurrency);
+        if (forwardEdge && forwardEdge.vwap > 0) {
+          directRate = forwardEdge.vwap;
+          exitLiquidity = forwardEdge.totalVolume;
+        } else {
+          // Reverse Fallback: Stable -> Current (Inverted)
+          const reverseEdge = this.forwardEdges
+            .get(stableCurrency)
+            ?.get(currentCurrency);
+          if (reverseEdge && reverseEdge.vwap > 0) {
+            directRate = 1.0 / reverseEdge.vwap;
+          }
+        }
       }
 
       const arbitragePercentage =
@@ -303,15 +401,17 @@ export class CurrencyGraph {
 
       const reliability = 100 / (1 + friction);
 
+      // Calculate Exit Rate (Selling to Stable)
       let exitRate = 0;
-      let exitLiquidity = 0n;
-
       if (currentCurrency === stableCurrency) {
         exitRate = 1.0;
-        exitLiquidity = MAX_LIQUIDITY;
-      } else if (forwardEdgeAnalysis && forwardEdgeAnalysis.vwap > 0) {
-        exitRate = forwardEdgeAnalysis.vwap;
-        exitLiquidity = forwardEdgeAnalysis.totalVolume;
+      } else {
+        const forwardEdge = this.forwardEdges
+          .get(currentCurrency)
+          ?.get(stableCurrency);
+        if (forwardEdge) {
+          exitRate = forwardEdge.vwap;
+        }
       }
 
       const roundTripRate = currentRate * exitRate;
@@ -329,76 +429,53 @@ export class CurrencyGraph {
         lastUpdate: new Date(oldestUpdate),
       });
 
-      // --- Traverse Neighbors ---
+      // --- 2. Traverse Neighbors (Optimized) ---
+      // We are looking for: Source -> Current (How did we get here?)
+      // We check the Incoming Graph.
 
-      // Iterate through connected neighbors (adjacency list)
-      const adjacentNodes = this.graph[currentCurrency] || {};
+      const sources = this.incomingEdges.get(currentCurrency);
 
-      for (const potentialSource in adjacentNodes) {
-        // Avoid cycles
-        if (path.includes(potentialSource)) {
-          continue;
+      if (sources) {
+        for (const [sourceCurrency, edge] of sources.entries()) {
+          // Cycle prevention
+          if (path.includes(sourceCurrency)) {
+            continue;
+          }
+
+          // Algorithm Math (using pre-calculated edge)
+          const newRate = currentRate * edge.vwap;
+
+          // Cost Calculation
+          const priceScore = -Math.log(edge.vwap);
+          const edgeFriction = edge.friction; // Already calculated
+
+          const newCost = cost + priceScore + edgeFriction * 0.1;
+          const newFriction = friction + edgeFriction;
+
+          if (
+            minCosts.has(sourceCurrency) &&
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            minCosts.get(sourceCurrency)! <= newCost
+          ) {
+            continue;
+          }
+          minCosts.set(sourceCurrency, newCost);
+
+          const newLiquidity =
+            edge.totalVolume < minLiquidity ? edge.totalVolume : minLiquidity;
+          const newOldestUpdate =
+            edge.lastUpdate < oldestUpdate ? edge.lastUpdate : oldestUpdate;
+
+          pq.push({
+            cost: newCost,
+            currency: sourceCurrency,
+            rate: newRate,
+            path: [sourceCurrency, ...path], // Prepend source
+            minLiquidity: newLiquidity,
+            oldestUpdate: newOldestUpdate,
+            friction: newFriction,
+          });
         }
-
-        // We are looking for edges: Source -> Current
-        // Access data from the Source's adjacency list
-        const dataArray = this.graph[potentialSource]?.[currentCurrency];
-
-        if (!dataArray) {
-          continue;
-        } // Should not happen given adjacency check, but safe
-
-        const analysis = this.analyzeEdge(
-          potentialSource,
-          currentCurrency,
-          dataArray,
-        );
-
-        if (analysis.totalVolume <= 0n || analysis.vwap <= 0) {
-          continue;
-        }
-
-        const newRate = currentRate * analysis.vwap;
-
-        // Cost Calculation
-        const priceScore = -Math.log(analysis.vwap);
-        const edgeFriction = this.calculateEdgeFriction(
-          analysis.totalVolume,
-          analysis.recencyRatio,
-        );
-
-        const newCost = cost + priceScore + edgeFriction * 0.1;
-        const newFriction = friction + edgeFriction;
-
-        // Prune paths that are more expensive than what we've already found
-        if (
-          minCosts.has(potentialSource) &&
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          minCosts.get(potentialSource)! <= newCost
-        ) {
-          continue;
-        }
-        minCosts.set(potentialSource, newCost);
-
-        const newLiquidity =
-          analysis.totalVolume < minLiquidity
-            ? analysis.totalVolume
-            : minLiquidity;
-
-        const newOldestUpdate =
-          analysis.lastUpdate < oldestUpdate
-            ? analysis.lastUpdate
-            : oldestUpdate;
-
-        pq.push({
-          cost: newCost,
-          currency: potentialSource,
-          rate: newRate,
-          path: [potentialSource, ...path],
-          minLiquidity: newLiquidity,
-          oldestUpdate: newOldestUpdate,
-          friction: newFriction,
-        });
       }
     }
 
@@ -406,29 +483,31 @@ export class CurrencyGraph {
   }
 
   /**
-   * Analyzes an edge (market data) between two currencies.
-   * Calculates metrics like Volume Weighted Average Price (VWAP) and recency.
-   *
-   * @param fromCurrency The source currency ID
-   * @param toCurrency The target currency ID
-   * @param dataArray Array of market data entries
-   * @returns Analysis result including VWAP and volume
+   * Internal helper to analyze raw edge data.
+   * This is now only called inside the constructor.
    */
-  private analyzeEdge<FromCurrency extends string, ToCurrency extends string>(
-    fromCurrency: FromCurrency,
-    toCurrency: ToCurrency,
-    dataArray: MarketData<[FromCurrency, ToCurrency]>[],
-  ): EdgeAnalysis {
+  private analyzeEdge(
+    fromCurrency: string,
+    toCurrency: string,
+    dataArray: MarketData[],
+  ): Omit<ProcessedEdge, "friction"> {
     let activeData = dataArray;
 
+    // Outlier Filtration (IQR)
     if (dataArray.length >= 4) {
       const rates = dataArray
         .map((d) => {
           const vFrom = Number(d.volumeTraded[fromCurrency]);
           const vTo = Number(d.volumeTraded[toCurrency]);
-          return vFrom > 0 ? vTo / vFrom : 0;
+          const rate = vFrom > 0 ? vTo / vFrom : 0;
+          return Number.isFinite(rate) ? rate : 0;
         })
+        .filter((rate) => rate > 0)
         .sort((a, b) => a - b);
+
+      if (rates.length === 0) {
+        return this.emptyAnalysis();
+      }
 
       const q1 = rates[Math.floor(rates.length * 0.25)];
       const q3 = rates[Math.floor(rates.length * 0.75)];
@@ -443,16 +522,26 @@ export class CurrencyGraph {
         const rate =
           Number(d.volumeTraded[toCurrency]) /
           Number(d.volumeTraded[fromCurrency]);
+        if (!Number.isFinite(rate) || rate <= 0) {
+          return false;
+        }
         return rate >= lowerBound && rate <= upperBound;
       });
     } else if (dataArray.length > 1) {
+      // Basic Median Filter for small datasets
       const rates = dataArray
         .map((d) => {
           const vFrom = Number(d.volumeTraded[fromCurrency]);
           const vTo = Number(d.volumeTraded[toCurrency]);
-          return vFrom > 0 ? vTo / vFrom : 0;
+          const rate = vFrom > 0 ? vTo / vFrom : 0;
+          return Number.isFinite(rate) ? rate : 0;
         })
+        .filter((rate) => rate > 0)
         .sort((a, b) => a - b);
+
+      if (rates.length === 0) {
+        return this.emptyAnalysis();
+      }
 
       const median = rates[Math.floor(rates.length / 2)];
 
@@ -463,6 +552,9 @@ export class CurrencyGraph {
         const rate =
           Number(d.volumeTraded[toCurrency]) /
           Number(d.volumeTraded[fromCurrency]);
+        if (!Number.isFinite(rate) || rate <= 0) {
+          return false;
+        }
         return rate <= median * 3 && rate >= median / 3;
       });
     }
@@ -502,7 +594,6 @@ export class CurrencyGraph {
 
       totalWeightedFromVolume += Number(volFrom) * weight;
       totalWeightedToVolume += Number(volTo) * weight;
-
       totalFromVolumeRaw += volFrom;
     }
 
@@ -522,23 +613,19 @@ export class CurrencyGraph {
     };
   }
 
-  /**
-   * Calculates a friction value for an edge based on volume and recency.
-   * Higher friction edges are less likely to be chosen in the optimal path.
-   *
-   * @param volume Total volume of the edge
-   * @param recencyRatio Ratio of how recent the data is (0-1)
-   * @returns Calculated friction score
-   */
-  private calculateEdgeFriction(volume: bigint, recencyRatio: number): number {
-    // Basic transaction cost (one hop)
-    const BASE_HOP_PENALTY = 0.02;
-    // Volume impact: Higher volume = lower friction.
-    // Adjusted to be less punishing: 0.5 / log10(1M) ≈ 0.08
-    const volumeCost = 0.5 / Math.log10(Number(volume) + 10);
-    // Staleness penalty: Old data (recency 0) adds 2.0 friction (dropping max reliability to ~33%)
-    const stalenessPenalty = (1 - recencyRatio) * 2.0;
+  private emptyAnalysis(): Omit<ProcessedEdge, "friction"> {
+    return {
+      totalVolume: 0n,
+      vwap: 0,
+      recencyRatio: 0,
+      lastUpdate: 0,
+    };
+  }
 
+  private calculateEdgeFriction(volume: bigint, recencyRatio: number): number {
+    const BASE_HOP_PENALTY = 0.02;
+    const volumeCost = 0.5 / Math.log10(Number(volume) + 10);
+    const stalenessPenalty = (1 - recencyRatio) * 2.0;
     return BASE_HOP_PENALTY + volumeCost + stalenessPenalty;
   }
 }

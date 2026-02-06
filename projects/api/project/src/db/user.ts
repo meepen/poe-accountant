@@ -8,7 +8,7 @@ import { z } from "zod";
 import {
   sessionCookieName,
   UserDto,
-} from "@meepen/poe-accountant-api-schema/api/user.dto";
+} from "@meepen/poe-accountant-api-schema/api/dtos/user/user.dto";
 
 export async function getUser(
   db: Database,

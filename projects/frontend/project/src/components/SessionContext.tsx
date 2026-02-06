@@ -8,7 +8,7 @@ import {
   useCallback,
 } from "react";
 import { ApiEndpoint } from "@meepen/poe-accountant-api-schema/api/api-endpoints.enum";
-import { UserDto } from "@meepen/poe-accountant-api-schema/api/user.dto";
+import { UserDto } from "@meepen/poe-accountant-api-schema/api/dtos/user/user.dto";
 import { z } from "zod";
 import { ApiService } from "@meepen/poe-accountant-api-schema/api/api-service";
 
@@ -28,7 +28,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const api = useMemo(
-    () => new ApiService(new URL(import.meta.env.VITE_API_BASE_URL)),
+    () =>
+      new ApiService(
+        new URL(import.meta.env.VITE_API_BASE_URL),
+        (input, init) => fetch(input, { ...init, credentials: "include" }),
+      ),
     [],
   );
 
@@ -100,4 +104,9 @@ export function useSession() {
     throw new Error("useSession must be used within a SessionProvider");
   }
   return context;
+}
+
+export function useApi() {
+  const { api } = useSession();
+  return api;
 }
