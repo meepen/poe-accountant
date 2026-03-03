@@ -1,8 +1,8 @@
 import { createMiddleware } from "hono/factory";
 import { z } from "zod";
-import { getValkey } from "../valkey";
-import { AppEnv } from "../bindings";
-import { StatusCode } from "hono/utils/http-status";
+import type { ValkeyEnv } from "../middleware/valkey";
+import type { AppEnv } from "../bindings";
+import type { StatusCode } from "hono/utils/http-status";
 
 type CacheOptions = {
   ttl: number | (() => number);
@@ -18,14 +18,14 @@ const cacheObject = z.object({
 export const valkeyCache = (options: CacheOptions) => {
   const { ttl, keyPrefix } = options;
 
-  return createMiddleware<AppEnv>(async (c, next) => {
+  return createMiddleware<AppEnv & ValkeyEnv>(async (c, next) => {
     if (c.req.method !== "GET") {
       // Only cache GET requests
       await next();
       return;
     }
 
-    const client = getValkey(c.env);
+    const client = c.get("valkey");
 
     const key = `${keyPrefix}:${c.req.path}`;
 

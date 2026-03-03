@@ -1,5 +1,6 @@
-import { Job, DelayedError } from "bullmq";
-import { z } from "zod";
+import type { Job } from "bullmq";
+import { DelayedError } from "bullmq";
+import type { z } from "zod";
 import { QueueWorker } from "./queue-worker.abstract.js";
 import { PoeRateLimiter } from "./poe-api/rate-limiter.js";
 import {
@@ -73,7 +74,7 @@ export class PoeApiJob extends QueueWorker<
     // 1. IDENTITY
     // Use job.id if available for traceability, otherwise generate a unique ID.
     // This ID is used to 'sign' the reservation in Redis.
-    const uniqueId = job.id || crypto.randomUUID();
+    const uniqueId = job.id ?? crypto.randomUUID();
     console.debug(`[${uniqueId}] Processing POE API Job: ${data.endpointName}`);
 
     // 2. ATOMIC CHECK
@@ -115,8 +116,11 @@ export class PoeApiJob extends QueueWorker<
         // Check if url.endsWith(response.data.next_change_id), if so they have bucketed rules.
         const exchangeData = serverApiPaths[
           "Get Exchange Markets"
-        ].responseType.parse(JSON.parse(responseText));
-        if (data.request.url.endsWith(String(exchangeData.next_change_id))) {
+        ].responseType.safeParse(JSON.parse(responseText));
+        if (
+          exchangeData.success &&
+          data.request.url.endsWith(String(exchangeData.data.next_change_id))
+        ) {
           console.debug(
             `[${uniqueId}] Detected bucketed exchange rate rules, updating limiter state`,
           );
@@ -182,6 +186,7 @@ export class PoeApiJob extends QueueWorker<
           await this.limiter.rollbackSlot(
             data.endpointName,
             await this.getRuleDetails(data.ruleDetails),
+            uniqueId,
           );
         } catch (rollbackError) {
           console.error("Failed to execute rollback", rollbackError);

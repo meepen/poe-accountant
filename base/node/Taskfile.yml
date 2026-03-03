@@ -16,11 +16,6 @@ tasks:
     cmds:
       - pnpm run build
 
-  lint:
-    desc: Lint the project
-    cmds:
-      - pnpm run lint
-
   test:
     desc: Run tests
     cmds:

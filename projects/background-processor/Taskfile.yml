@@ -11,3 +11,15 @@ tasks:
     desc: Start the background processor
     cmds:
       - task: base:start
+
+  start:prod:
+    desc: Start the background processor in production mode
+    deps: [build]
+    dir: ./project
+    cmds:
+      - pnpm run start
+
+  build:
+    desc: Build the project
+    cmds:
+      - task: base:build

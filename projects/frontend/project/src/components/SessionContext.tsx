@@ -1,32 +1,39 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-  useMemo,
-  useCallback,
-} from "react";
+import type { ReactNode } from "react";
+import { useReducer, useEffect, useMemo, useCallback } from "react";
 import { ApiEndpoint } from "@meepen/poe-accountant-api-schema/api/api-endpoints.enum";
-import { UserDto } from "@meepen/poe-accountant-api-schema/api/dtos/user/user.dto";
-import { z } from "zod";
 import { ApiService } from "@meepen/poe-accountant-api-schema/api/api-service";
+import type { SessionContextType, User } from "./session-context";
+import { SessionContext } from "./session-context";
 
-type User = z.infer<typeof UserDto>;
-
-interface SessionContextType {
+type SessionState = {
   user: User | null;
-  login: () => void;
-  logout: () => void;
   isLoading: boolean;
-  api: ApiService;
+};
+
+type SessionAction =
+  | { type: "loaded"; user: User }
+  | { type: "unauthorized" }
+  | { type: "logout" };
+
+function sessionReducer(
+  state: SessionState,
+  action: SessionAction,
+): SessionState {
+  switch (action.type) {
+    case "loaded":
+      return { user: action.user, isLoading: false };
+    case "unauthorized":
+      return { ...state, isLoading: false };
+    case "logout":
+      return { ...state, user: null };
+  }
 }
 
-const SessionContext = createContext<SessionContextType | undefined>(undefined);
-
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [{ user, isLoading }, dispatch] = useReducer(sessionReducer, {
+    user: null,
+    isLoading: true,
+  });
   const api = useMemo(
     () =>
       new ApiService(
@@ -40,23 +47,22 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     api
       .request(ApiEndpoint.GetUser)
       .then((cachedUser) => {
-        setIsLoading(false);
-        setUser(cachedUser);
+        dispatch({ type: "loaded", user: cachedUser });
       })
       .catch((error: unknown) => {
         console.error("Error retrieving user:", error);
-        setIsLoading(false);
+        dispatch({ type: "unauthorized" });
       });
   }, [api]);
 
-  const login = () => {
+  const login = useCallback(() => {
     window.location.href = `${import.meta.env.VITE_API_BASE_URL}/${ApiEndpoint.UserLogin}?redirect_to=${encodeURIComponent(
       window.location.href,
     )}`;
-  };
+  }, []);
 
   const logout = useCallback(() => {
-    setUser(null);
+    dispatch({ type: "logout" });
   }, []);
 
   useEffect(() => {
@@ -69,7 +75,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const timeUntilExpiration = expiresAt.getTime() - now.getTime();
 
     if (timeUntilExpiration <= 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       logout();
       return;
     }
@@ -91,22 +96,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     };
   }, [user, logout]);
 
-  return (
-    <SessionContext.Provider value={{ user, login, logout, isLoading, api }}>
-      {children}
-    </SessionContext.Provider>
+  const contextValue = useMemo<SessionContextType>(
+    () => ({ user, login, logout, isLoading, api }),
+    [user, login, logout, isLoading, api],
   );
-}
 
-export function useSession() {
-  const context = useContext(SessionContext);
-  if (context === undefined) {
-    throw new Error("useSession must be used within a SessionProvider");
-  }
-  return context;
-}
-
-export function useApi() {
-  const { api } = useSession();
-  return api;
+  return <SessionContext value={contextValue}>{children}</SessionContext>;
 }

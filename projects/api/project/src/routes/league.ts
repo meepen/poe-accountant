@@ -1,19 +1,18 @@
 import { Hono } from "hono";
-import { AppEnv } from "../bindings";
-import { getDb } from "../db";
 import {
   ApiEndpoint,
   ApiEndpointMethods,
 } from "@meepen/poe-accountant-api-schema/api/api-endpoints.enum";
-import { ApiResponse } from "@meepen/poe-accountant-api-schema/api/api-request-data.dto";
+import type { ApiResponse } from "@meepen/poe-accountant-api-schema/api/api-request-data.dto";
+import type { IndexEnv } from "..";
 
-export const league = new Hono<AppEnv>();
+export const league = new Hono<IndexEnv>();
 
 ApiEndpoint.GetLeagues satisfies "league";
 ApiEndpointMethods[ApiEndpoint.GetLeagues] satisfies "GET";
 
 league.get("", async (c) => {
-  const db = getDb(c.env);
+  const db = c.get("db");
 
   const leagues = await db.query.League.findMany({
     where: (league, { isNotNull, and, gte, lte, or }) =>

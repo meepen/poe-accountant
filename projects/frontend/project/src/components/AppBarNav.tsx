@@ -7,9 +7,12 @@ import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
+import FormControl from "@mui/material/FormControl";
+import Select from "@mui/material/Select";
+import type { SelectChangeEvent } from "@mui/material/Select";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 type AppBarUser = {
@@ -24,6 +27,8 @@ type AppBarNavProps = {
 
 export default function AppBarNav({ user, login, logout }: AppBarNavProps) {
   const { t } = useTranslation();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [developerAnchorEl, setDeveloperAnchorEl] =
     useState<null | HTMLElement>(null);
@@ -48,32 +53,110 @@ export default function AppBarNav({ user, login, logout }: AppBarNavProps) {
     handleMenuClose();
   };
 
+  const availableRoutes = user
+    ? [
+        { path: "/", label: t("menu_dashboard") },
+        { path: "/jobs", label: t("menu_jobs") },
+        {
+          path: "/league-inspection",
+          label: t("menu_league_inspection"),
+        },
+      ]
+    : [{ path: "/", label: t("menu_dashboard") }];
+  const availableRoutePaths = availableRoutes.map((route) => route.path);
+  const selectedRoute = availableRoutePaths.includes(location.pathname)
+    ? location.pathname
+    : "/";
+
+  const handleRouteChange = (event: SelectChangeEvent) => {
+    const route = event.target.value;
+    void navigate(route);
+  };
+
   return (
     <AppBar position="static">
       <Toolbar disableGutters>
-        <Button
-          component={RouterLink}
-          to="/"
-          color="inherit"
+        <Box
           sx={{
+            display: "flex",
+            alignItems: "center",
             alignSelf: "stretch",
-            borderRadius: 0,
-            p: 0,
+            height: "100%",
             mr: 4,
-            textTransform: "none",
-            "&:hover": {
-              backgroundColor: "transparent",
-            },
           }}
         >
-          <Typography
-            variant="h6"
-            component="div"
-            sx={{ mx: 2, color: "inherit" }}
+          <Button
+            component={RouterLink}
+            to="/"
+            color="inherit"
+            sx={{
+              alignSelf: "stretch",
+              borderRadius: 0,
+              p: 0,
+              mr: 1,
+              textTransform: "none",
+              "&:hover": {
+                backgroundColor: "transparent",
+              },
+            }}
           >
-            {t("app_title")}
-          </Typography>
-        </Button>
+            <Typography
+              variant="h6"
+              component="div"
+              sx={{ mx: 2, color: "inherit" }}
+            >
+              {t("app_title")}
+            </Typography>
+          </Button>
+          <Divider
+            orientation="vertical"
+            flexItem
+            sx={{ alignSelf: "stretch", my: 0, mx: 1 }}
+          />
+          <FormControl
+            size="small"
+            variant="standard"
+            sx={{ minWidth: 0, alignSelf: "stretch" }}
+          >
+            <Select
+              value={selectedRoute}
+              onChange={handleRouteChange}
+              disableUnderline
+              sx={{
+                color: "inherit",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                "& .MuiSelect-select": {
+                  fontSize: "1.05rem",
+                  fontWeight: 500,
+                  lineHeight: 1.3,
+                  display: "flex",
+                  alignItems: "center",
+                  height: "100%",
+                  py: 0,
+                  pl: 0.75,
+                  pr: "1.75rem !important",
+                },
+                "& .MuiSelect-icon": {
+                  color: "inherit",
+                  right: 4,
+                },
+              }}
+            >
+              {availableRoutes.map((route) => (
+                <MenuItem key={route.path} value={route.path}>
+                  {route.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Divider
+            orientation="vertical"
+            flexItem
+            sx={{ alignSelf: "stretch", my: 0, mx: 1.25 }}
+          />
+        </Box>
         {user ? (
           <>
             <Box sx={{ flexGrow: 1 }} />

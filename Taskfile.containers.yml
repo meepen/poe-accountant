@@ -45,7 +45,7 @@ tasks:
     cmds:
       - task: _build
         vars:
-          NAME: base
+          NAME: pathofexile.accountant.localhost/base
           DOCKERFILE: base/node/Dockerfile
           EXTRA_FLAGS: "--secret id=env,src=.env"
           BUILDER: "{{.BUILDER}}"

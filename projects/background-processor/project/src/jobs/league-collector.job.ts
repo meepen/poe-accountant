@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { QueueScheduler } from "./queue-scheduler.abstract.js";
-import { appApi, realms } from "../connections/poe-api.js";
+import { appApi, realms } from "../connections/application-poe-api.js";
 import { db } from "../connections/db.js";
 import { League } from "@meepen/poe-accountant-db-schema";
-import { InferSelectModel, sql } from "drizzle-orm";
+import type { InferSelectModel } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 const LeagueCollectorJobQueueName = "league-collector-job-queue";
 const LeagueCollectorJobSchema = z.object({});

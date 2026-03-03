@@ -1,47 +1,40 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const selectMock = vi.fn();
+const findManyMock = vi.fn();
 const transactionMock = vi.fn();
 
 vi.mock("../connections/db.js", () => ({
   db: {
-    select: selectMock,
+    query: {
+      CurrencyExchangeHistory: {
+        findMany: findManyMock,
+      },
+    },
     transaction: transactionMock,
   },
 }));
-
-const makeSelectChain = <T>(result: T[]) => {
-  const chain = {
-    from: vi.fn(() => chain),
-    innerJoin: vi.fn(() => chain),
-    leftJoin: vi.fn(() => chain),
-    where: vi.fn(() => chain),
-    orderBy: vi.fn(() => chain),
-    limit: vi.fn(async () => result),
-  };
-  return chain;
-};
 
 describe("UpdateCurrencySnapshotsJob", () => {
   const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
   const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
   beforeEach(() => {
-    selectMock.mockReset();
+    findManyMock.mockReset();
     transactionMock.mockReset();
     logSpy.mockClear();
     warnSpy.mockClear();
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   it("skips when no missing snapshots are found", async () => {
-    selectMock.mockReturnValue(makeSelectChain([]));
+    findManyMock.mockResolvedValue([]);
 
-    const { UpdateCurrencySnapshotsJob } =
-      await import("./update-currency-snapshots.job.js");
+    const { UpdateCurrencySnapshotsJob } = await import(
+      "./update-currency-snapshots.job.js"
+    );
 
     await UpdateCurrencySnapshotsJob.processNow();
 
@@ -61,10 +54,18 @@ describe("UpdateCurrencySnapshotsJob", () => {
       createdAt: new Date("2024-01-01T00:00:00.000Z"),
     };
 
-    selectMock.mockReturnValue(makeSelectChain([history]));
+    findManyMock
+      .mockResolvedValueOnce([
+        {
+          ...history,
+          currencies: [{ id: "currency-1" }],
+          snapshotData: [],
+        },
+      ])
+      .mockResolvedValueOnce([]);
     transactionMock.mockImplementation(
-      async (handler: (tx: unknown) => void) => {
-        handler({
+      async (handler: (tx: unknown) => Promise<unknown>) => {
+        await handler({
           query: {
             CurrencyExchangeLeagueSnapshotData: {
               findFirst: vi.fn().mockResolvedValue({ historyId: history.id }),
@@ -74,12 +75,13 @@ describe("UpdateCurrencySnapshotsJob", () => {
       },
     );
 
-    const { UpdateCurrencySnapshotsJob } =
-      await import("./update-currency-snapshots.job.js");
+    const { UpdateCurrencySnapshotsJob } = await import(
+      "./update-currency-snapshots.job.js"
+    );
 
     const persistSpy = vi
       .spyOn(UpdateCurrencySnapshotsJob, "persistExchangeSnapshots")
-      .mockResolvedValue(null);
+      .mockResolvedValue();
 
     await UpdateCurrencySnapshotsJob.processNow();
 
@@ -99,37 +101,55 @@ describe("UpdateCurrencySnapshotsJob", () => {
       createdAt: new Date("2024-01-01T00:00:00.000Z"),
     };
 
-    selectMock.mockReturnValue(makeSelectChain([history]));
+    findManyMock
+      .mockResolvedValueOnce([
+        {
+          ...history,
+          currencies: [{ id: "currency-1" }],
+          snapshotData: [],
+        },
+      ])
+      .mockResolvedValueOnce([]);
+
+    const txMock = {
+      query: {
+        CurrencyExchangeLeagueSnapshotData: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+      },
+    };
+
     transactionMock.mockImplementation(
-      async (handler: (tx: unknown) => void) => {
-        handler({
-          query: {
-            CurrencyExchangeLeagueSnapshotData: {
-              findFirst: vi.fn().mockResolvedValue(null),
-            },
-          },
-        });
+      async (handler: (tx: unknown) => Promise<unknown>) => {
+        await handler(txMock);
       },
     );
 
-    const { UpdateCurrencySnapshotsJob } =
-      await import("./update-currency-snapshots.job.js");
+    const { UpdateCurrencySnapshotsJob } = await import(
+      "./update-currency-snapshots.job.js"
+    );
 
     const persistSpy = vi
       .spyOn(UpdateCurrencySnapshotsJob, "persistExchangeSnapshots")
-      .mockResolvedValue(null);
+      .mockResolvedValue();
 
     await UpdateCurrencySnapshotsJob.processNow();
 
     expect(transactionMock).toHaveBeenCalledTimes(1);
-    expect(persistSpy).toHaveBeenCalledWith(
-      {},
-      "pc",
-      {
-        timestamp: history.timestamp,
-        nextChangeId: history.timestamp,
-      },
-      new Map([["Standard", history]]),
-    );
+    expect(persistSpy).toHaveBeenCalledTimes(1);
+
+    const [txArg, realmArg, contextArg, historyMapArg] =
+      persistSpy.mock.calls[0];
+
+    expect(txArg).toBe(txMock);
+    expect(realmArg).toBe("pc");
+    expect(contextArg).toEqual({
+      timestamp: history.timestamp,
+      nextChangeId: history.timestamp,
+    });
+    expect(historyMapArg).toBeInstanceOf(Map);
+    expect(
+      (historyMapArg as Map<string, { id: string }>).get("Standard")?.id,
+    ).toBe(history.id);
   });
 });

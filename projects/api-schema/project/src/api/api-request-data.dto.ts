@@ -5,6 +5,14 @@ import { UserJobDto } from "./dtos/user/user.job.dto.js";
 import { LeagueDto } from "./dtos/league/league.dto.js";
 import { PriceListDto } from "./dtos/prices/price-list.dto.js";
 import { PriceHistoryDto } from "./dtos/prices/price-history.dto.js";
+import {
+  SyncUserInventoryJobDataDto,
+  SyncUserInventoryResponseDto,
+} from "./dtos/user/sync-user-inventory.dto.js";
+import {
+  UserInventorySnapshotDetailDto,
+  UserInventorySnapshotDto,
+} from "./dtos/user/user-inventory-snapshot.dto.js";
 
 export const ApiResultResponseTypes = {
   [ApiEndpoint.UserLogin]: [z.never(), z.never()],
@@ -16,7 +24,21 @@ export const ApiResultResponseTypes = {
   [ApiEndpoint.GetLeagues]: [z.void(), z.array(LeagueDto)],
 
   [ApiEndpoint.GetUser]: [z.void(), UserDto],
-  [ApiEndpoint.GetUserJobs]: [z.void(), z.array(UserJobDto)],
+  [ApiEndpoint.GetUserJobs]: [z.void(), z.array(z.string())],
+  [ApiEndpoint.GetUserJobResult]: [z.void(), UserJobDto],
+  [ApiEndpoint.SyncUserInventory]: [z.void(), SyncUserInventoryResponseDto],
+  [ApiEndpoint.GetUserInventorySnapshots]: [
+    z.void(),
+    z.array(UserInventorySnapshotDto),
+  ],
+  [ApiEndpoint.GetUserInventorySnapshot]: [
+    z.void(),
+    UserInventorySnapshotDetailDto,
+  ],
+  [ApiEndpoint.GetUserInventorySnapshotData]: [
+    z.void(),
+    SyncUserInventoryJobDataDto,
+  ],
 } as const;
 
 export type ApiResultResponseData<T extends ApiEndpoint> = [

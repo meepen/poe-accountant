@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { QueueWorker } from "./queue-worker.abstract.js";
-import { Queue, WorkerOptions } from "bullmq";
+import type { WorkerOptions } from "bullmq";
+import { Queue } from "bullmq";
 import { valkeyForBullMQ } from "../connections/valkey.js";
 
 export abstract class QueueScheduler<

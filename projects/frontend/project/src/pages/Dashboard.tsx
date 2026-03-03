@@ -3,6 +3,7 @@ import {
   Typography,
   Box,
   Paper,
+  Button,
   Table,
   TableBody,
   TableCell,
@@ -13,10 +14,12 @@ import {
   Modal,
   FormControlLabel,
   Checkbox,
+  Alert,
 } from "@mui/material";
-import { useSession } from "../components/SessionContext";
+import { useApi, useSession } from "../components/session-hooks";
 import { useTranslation } from "react-i18next";
 import ViewHistoryTabs from "./Dashboard/ViewHistoryTabs";
+import { ApiEndpoint } from "@meepen/poe-accountant-api-schema";
 
 // Placeholder data
 const ITEMS = [
@@ -76,8 +79,13 @@ function ItemTable() {
 
 export default function Dashboard() {
   const { user } = useSession();
+  const api = useApi();
   const { t } = useTranslation();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<
+    { severity: "success" | "error"; message: string } | undefined
+  >(undefined);
 
   if (!user) {
     return null;
@@ -88,6 +96,27 @@ export default function Dashboard() {
   };
   const handleCloseSettings = () => {
     setSettingsOpen(false);
+  };
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    setSyncStatus(undefined);
+
+    try {
+      const result = await api.request(ApiEndpoint.SyncUserInventory);
+      setSyncStatus({
+        severity: "success",
+        message: t("dashboard_sync_success", { jobId: result.id }),
+      });
+    } catch (error: unknown) {
+      console.error("Failed to sync inventory:", error);
+      setSyncStatus({
+        severity: "error",
+        message: t("dashboard_sync_error"),
+      });
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   return (
@@ -111,6 +140,23 @@ export default function Dashboard() {
           minWidth: 0,
         }}
       >
+        <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+          <Button
+            variant="contained"
+            onClick={() => {
+              void handleSync();
+            }}
+            disabled={isSyncing}
+          >
+            {isSyncing
+              ? t("dashboard_sync_in_progress")
+              : t("dashboard_sync_button")}
+          </Button>
+        </Box>
+        {syncStatus ? (
+          <Alert severity={syncStatus.severity}>{syncStatus.message}</Alert>
+        ) : null}
+
         {/* Top Chart */}
         <MoneyChart />
 

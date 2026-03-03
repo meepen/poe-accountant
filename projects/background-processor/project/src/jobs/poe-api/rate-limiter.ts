@@ -367,6 +367,7 @@ export class PoeRateLimiter {
   async rollbackSlot(
     endpointName: string,
     ruleDetails: Record<string, string>,
+    jobId: string,
   ): Promise<void> {
     const policyKey = `${PREFIX_CONFIG_POLICY}:${endpointName}`;
 

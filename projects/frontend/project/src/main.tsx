@@ -15,24 +15,24 @@ function getRoot() {
   return rootElement;
 }
 
-const LoadingFallback = () => (
-  <Box
-    sx={{
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      height: "100vh",
-      backgroundColor: "#080606",
-      color: "#efe5d3",
-    }}
-  >
-    <CircularProgress sx={{ color: "#dcb678" }} />
-  </Box>
-);
-
 ReactDOM.createRoot(getRoot()).render(
   <React.StrictMode>
-    <Suspense fallback={<LoadingFallback />}>
+    <Suspense
+      fallback={
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+            backgroundColor: "#080606",
+            color: "#efe5d3",
+          }}
+        >
+          <CircularProgress sx={{ color: "#dcb678" }} />
+        </Box>
+      }
+    >
       <SessionProvider>
         <BrowserRouter>
           <App />

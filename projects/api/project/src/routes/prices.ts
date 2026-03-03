@@ -1,7 +1,5 @@
 import { Hono } from "hono";
-import { AppEnv } from "../bindings";
 import { valkeyCache } from "../utils/cache";
-import { getDb } from "../db";
 import {
   ApiEndpoint,
   ApiEndpointMethods,
@@ -11,9 +9,10 @@ import {
   CurrencyExchangeLeagueSnapshotData,
 } from "@meepen/poe-accountant-db-schema";
 import { and, desc, eq } from "drizzle-orm";
-import { ApiResponse } from "@meepen/poe-accountant-api-schema/api/api-request-data.dto";
+import type { ApiResponse } from "@meepen/poe-accountant-api-schema/api/api-request-data.dto";
+import type { IndexEnv } from "..";
 
-export const prices = new Hono<AppEnv>();
+export const prices = new Hono<IndexEnv>();
 
 ApiEndpoint.GetExchangeRatesCurrency satisfies "prices/exchange-rates/:realm/:leagueId/currency/:currency";
 ApiEndpointMethods[ApiEndpoint.GetExchangeRatesCurrency] satisfies "GET";
@@ -32,7 +31,7 @@ prices.get(
   async (c) => {
     const { realm, leagueId, currency } = c.req.param();
 
-    const db = getDb(c.env);
+    const db = c.get("db");
 
     const result = await db.query.CurrencyExchangeHistory.findFirst({
       where: (history, { eq, and }) =>
@@ -67,7 +66,7 @@ prices.get(
     // for now get the last 5 days of data and return it
     const { realm, leagueId, currency } = c.req.param();
 
-    const db = getDb(c.env);
+    const db = c.get("db");
 
     const results = await db.query.CurrencyExchangeHistory.findMany({
       where: (data, { eq, and, gte }) =>
@@ -118,7 +117,7 @@ prices.get(
   async (c) => {
     const { realm, leagueId } = c.req.param();
 
-    const db = getDb(c.env);
+    const db = c.get("db");
 
     const results = await db
       .selectDistinctOn([CurrencyExchangeLeagueSnapshotData.currency], {

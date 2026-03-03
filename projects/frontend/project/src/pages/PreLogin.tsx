@@ -1,5 +1,5 @@
 import { Typography, Button, Box, Container } from "@mui/material";
-import { useSession } from "../components/SessionContext";
+import { useSession } from "../components/session-hooks";
 import { useTranslation } from "react-i18next";
 
 export default function PreLogin() {

@@ -1,20 +1,26 @@
+import type { JobProcess } from "./job-process.interface.js";
 import { LeagueCollectorJob } from "./jobs/league-collector.job.js";
 import { MailboxProcess } from "./jobs/mailbox.js";
-import { MinuteJob } from "./jobs/minute.job.js";
 import { PoeApiJob } from "./jobs/poe-api.job.js";
+import { StaticTradeDataJob } from "./jobs/static-trade-data.job.js";
+import { SyncUserInventoryJob } from "./jobs/sync-user-inventory.job.js";
 import { UpdateCurrencyDataJob } from "./jobs/update-currency-data.job.js";
 import { UpdateCurrencySnapshotsJob } from "./jobs/update-currency-snapshots.job.js";
 
-const processors = [
+const staticTradeDataJob = new StaticTradeDataJob();
+const processors: JobProcess[] = [
   new MailboxProcess(),
-  new MinuteJob(),
   new PoeApiJob(),
+  new SyncUserInventoryJob(),
   new LeagueCollectorJob(),
   new UpdateCurrencyDataJob(),
   new UpdateCurrencySnapshotsJob(),
+  staticTradeDataJob,
 ];
 
 async function main() {
+  console.log("Static data starting to load...");
+  await staticTradeDataJob.processNow();
   console.log("Starting background processor...");
 
   await Promise.all(

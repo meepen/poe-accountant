@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import { basename, join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { cp, mkdir, rm, writeFile } from "node:fs/promises";
-import { z } from "zod";
+import type { z } from "zod";
 
 function collectCode(code: Generator<string>): string {
   const result: string[] = [];
@@ -41,7 +41,7 @@ async function importTypescriptCode<T = any>(code: string): Promise<T> {
   await mkdir(tmp, { recursive: true });
   try {
     await writeFile(tmpFile, jsCode.outputText);
-    await cp(join(baseDir, "dist/src"), join(tmp), {
+    await cp(join(baseDir, "src"), join(tmp), {
       recursive: true,
     });
 

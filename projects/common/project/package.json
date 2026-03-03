@@ -13,65 +13,32 @@
     ],
     "scripts": {
         "test": "vitest run",
-        "prebuild:dev": "pnpm run scrape",
-        "build:dev": "pnpm run build",
-        "build": "tsup --config tsup.config.ts",
-        "prebuild": "rimraf dist",
-        "tsc": "tsup --config tsup.config.ts",
-        "scrape": "tsx scrape-src/main.ts",
-        "lint": "eslint ."
+        "scrape": "tsx scrape-src/main.ts"
     },
     "devDependencies": {
         "@types/jsdom": "^21.1.7",
-        "@types/node": "^24",
-        "@eslint/js": "^9.39.2",
-        "axios": "^1.10.0",
+        "@types/node": "^24.11.0",
+        "axios": "^1.13.6",
         "jsdom": "^26.1.0",
-        "rimraf": "^6.0.1",
-        "tsup": "^8.5.1",
-        "tsx": "^4.20.3",
-        "typescript": "^5.8.3",
+        "tsx": "^4.21.0",
+        "typescript": "^5.9.3",
         "vite-tsconfig-paths": "^5.1.4",
         "vitest": "^3.2.4",
-        "typescript-eslint": "^8.53.0",
-        "eslint": "^9.39.2",
-        "jiti": "^2.6.1",
-        "eslint-config-prettier": "^10.1.8",
-        "eslint-plugin-prettier": "^5.5.4",
-        "globals": "^17.0.0",
-        "zod": "^4.3.5"
+        "zod": "^4.3.6"
     },
     "type": "module",
     "files": [
-        "src/**/*.d.ts",
-        "dist/**/*.js",
-        "dist/**/*.js.map",
-        "dist/**/*.d.ts",
-        "!dist/**/*.test.js",
-        "!dist/**/*.test.js.map",
-        "!dist/**/*.test.d.ts",
+        "src/**/*.ts",
         "package.json"
     ],
     "exports": {
         ".": {
-            "types": "./dist/src/poe.gen.d.ts",
-            "import": "./dist/src/poe.gen.js",
-            "require": "./dist/src/poe.gen.js"
-        },
-        "./stats": {
-            "types": "./dist/src/stats.d.ts",
-            "import": "./dist/src/stats.js",
-            "require": "./dist/src/stats.js"
+            "types": "./src/poe.gen.ts",
+            "import": "./src/poe.gen.ts"
         },
         "./api": {
-            "types": "./dist/src/poe-api.gen.d.ts",
-            "import": "./dist/src/poe-api.gen.js",
-            "require": "./dist/src/poe-api.gen.js"
-        },
-        "./rate-limiter": {
-            "types": "./dist/src/poe-rate-limiter.d.ts",
-            "import": "./dist/src/poe-rate-limiter.js",
-            "require": "./dist/src/poe-rate-limiter.js"
+            "types": "./src/poe-api.gen.ts",
+            "import": "./src/poe-api.gen.ts"
         }
     },
     "author": {

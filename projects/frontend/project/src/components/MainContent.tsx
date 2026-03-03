@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { lazy } from "react";
-import { useSession } from "./SessionContext";
+import { useSession } from "./session-hooks";
 
 const PreLogin = lazy(() => import("../pages/PreLogin"));
 const Dashboard = lazy(() => import("../pages/Dashboard"));

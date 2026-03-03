@@ -8,7 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 import { LineChart } from "@mui/x-charts/LineChart";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { ChartData } from "./types";
 
@@ -35,6 +35,33 @@ export default function RelativeCurrencyChart({
 }: RelativeCurrencyChartProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const seriesWithConfidence = useMemo(
+    () =>
+      chartData.series.map((series) => ({
+        ...series,
+        valueFormatter: (
+          value: number | null,
+          context: { dataIndex?: number },
+        ) => {
+          if (value === null || Number.isNaN(value)) {
+            return null;
+          }
+          const rawConfidence =
+            typeof context.dataIndex === "number"
+              ? series.confidence.at(context.dataIndex)
+              : null;
+          let confidenceLabel = "n/a";
+          if (typeof rawConfidence === "number" && !Number.isNaN(rawConfidence)) {
+            const percentValue =
+              rawConfidence > 1 ? rawConfidence : rawConfidence * 100;
+            const rounded = percentValue.toFixed(1).replace(/\.0$/, "");
+            confidenceLabel = `${rounded}%`;
+          }
+          return `${value} (conf: ${confidenceLabel})`;
+        },
+      })),
+    [chartData.series],
+  );
 
   return (
     <>
@@ -99,6 +126,7 @@ export default function RelativeCurrencyChart({
         ) : (
           <LineChart
             grid={{ vertical: true, horizontal: true }}
+            axisHighlight={{ x: "line" }}
             xAxis={[
               {
                 data: chartData.x,
@@ -113,7 +141,7 @@ export default function RelativeCurrencyChart({
                 },
               },
             ]}
-            series={chartData.series}
+            series={seriesWithConfidence}
             margin={{ left: 50, right: 20, top: 20, bottom: 20 }}
             sx={{
               overflow: "visible",

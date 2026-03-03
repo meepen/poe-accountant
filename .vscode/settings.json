@@ -14,12 +14,17 @@
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
   "editor.formatOnSave": true,
-  "eslint.format.enable": true,
+  "eslint.format.enable": false,
   "editor.defaultFormatter": "dbaeumer.vscode-eslint",
-  "[typescript]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
-  },
   "eslint.workingDirectories": [
     { "mode": "auto" }
-  ]
+  ],
+  "typescript.preferences.preferTypeOnlyAutoImports": true,
+  "typescript.format.enable": false,
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
 }

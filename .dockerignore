@@ -1,10 +1,11 @@
 # General:
 **/.*
+!.npmrc
 scripts
 **/*.md
 infrastructure
 .envrc
-docker-compose.yml
+compose.yml
 flake.*
 Taskfile*.yml
 *.tgz
@@ -17,3 +18,11 @@ Taskfile*.yml
 **/.tmp
 **/docs
 **/scrape-src
+
+/config
+/terraform
+.vscode
+**/*.Dockerfile
+**/Dockerfile
+**/Taskfile.*.yml
+**/Taskfile.yml

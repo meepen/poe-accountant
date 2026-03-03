@@ -1,4 +1,4 @@
-import { AppBindings } from "./bindings";
+import type { AppBindings } from "./bindings";
 
 export function fetchWrapper(
   env: AppBindings,

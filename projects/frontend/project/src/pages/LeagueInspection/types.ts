@@ -1,6 +1,6 @@
-import { z } from "zod";
-import { LeagueDto } from "@meepen/poe-accountant-api-schema/api/dtos/league/league.dto";
-import { PriceListDto } from "@meepen/poe-accountant-api-schema/api/dtos/prices/price-list.dto";
+import type { z } from "zod";
+import type { LeagueDto } from "@meepen/poe-accountant-api-schema/api/dtos/league/league.dto";
+import type { PriceListDto } from "@meepen/poe-accountant-api-schema/api/dtos/prices/price-list.dto";
 
 export type League = z.infer<typeof LeagueDto>;
 export type PriceListItem = z.infer<typeof PriceListDto>[number];
@@ -24,5 +24,9 @@ export type HistoryState = {
 
 export type ChartData = {
   x: Date[];
-  series: { data: (number | null)[]; label: string }[];
+  series: {
+    data: (number | null)[];
+    confidence: (number | null)[];
+    label: string;
+  }[];
 };

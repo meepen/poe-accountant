@@ -2,7 +2,7 @@ import postgres from "postgres";
 import schema from "@meepen/poe-accountant-db-schema";
 import { getEnvVar } from "../utils.js";
 import { drizzle } from "drizzle-orm/postgres-js";
-import {
+import type {
   BuildQueryResult,
   DBQueryConfig,
   ExtractTablesWithRelations,

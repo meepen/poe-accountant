@@ -12,6 +12,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { League } from "./league.js";
+import { UserInventorySnapshot } from "./user-inventory-snapshot.js";
 import { relations } from "drizzle-orm/relations";
 
 // --- TABLES ---
@@ -143,4 +144,5 @@ export const CurrencyExchangeLeagueSnapshotDataRelations = relations(
 
 export const LeagueRelations = relations(League, ({ many }) => ({
   currencyExchangeHistories: many(CurrencyExchangeHistory),
+  userInventorySnapshots: many(UserInventorySnapshot),
 }));

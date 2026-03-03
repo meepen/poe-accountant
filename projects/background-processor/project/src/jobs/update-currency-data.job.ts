@@ -1,10 +1,12 @@
 import { QueueScheduler } from "./queue-scheduler.abstract.js";
 import { z } from "zod";
-import { appApi, realms } from "../connections/poe-api.js";
+import { appApi, realms } from "../connections/application-poe-api.js";
 import { CurrencyDatabaseManager } from "./update-currency-data/currency-database-manager.js";
-import { db, DbTransaction } from "../connections/db.js";
+import type { DbTransaction } from "../connections/db.js";
+import { db } from "../connections/db.js";
 import { CurrencyExchangeHistory } from "@meepen/poe-accountant-db-schema/currency-exchange";
-import { desc, eq, InferSelectModel } from "drizzle-orm";
+import type { InferSelectModel } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { valkey } from "../connections/valkey.js";
 import { UpdateCurrencySnapshotsJob } from "./update-currency-snapshots.job.js";
 
@@ -66,13 +68,7 @@ export class UpdateCurrencyDataJob extends QueueScheduler<
     tx: DbTransaction,
     realm: string,
     nextTimestamp?: Date | null,
-  ): Promise<
-    | [
-        Awaited<ReturnType<typeof this.getAllExchangeData>>,
-        Map<string, CurrencyDatabaseManager>,
-      ]
-    | null
-  > {
+  ): Promise<Awaited<ReturnType<typeof this.getAllExchangeData>> | null> {
     console.log(`[${realm}] Checking for new exchange data...`);
     const latestId = nextTimestamp
       ? null
@@ -147,41 +143,21 @@ export class UpdateCurrencyDataJob extends QueueScheduler<
       }),
     );
 
-    return [exchangeData, leagueList];
+    return exchangeData;
   }
 
   private static async processRealm(realm: string): Promise<void> {
     let timestamp: Date | null = null;
     while (
       (timestamp = await db.transaction(async (tx) => {
-        const data = await this.processRealmOnce(tx, realm, timestamp);
-        if (!data) {
+        const result = await this.processRealmOnce(tx, realm, timestamp);
+        if (!result) {
           return null;
         }
-
-        const [result, leagueList] = data;
 
         console.log(
           `[${realm}] Processed exchange data for ${result.timestamp.toISOString()}`,
         );
-
-        const historyByLeague = new Map(
-          Array.from(leagueList.entries()).map(([leagueId, manager]) => [
-            leagueId,
-            manager.league,
-          ]),
-        );
-
-        const nextTimestamp =
-          await UpdateCurrencySnapshotsJob.persistExchangeSnapshots(
-            tx,
-            realm,
-            result,
-            historyByLeague,
-          );
-        if (nextTimestamp) {
-          return nextTimestamp;
-        }
 
         if (result.timestamp.getTime() === result.nextChangeId.getTime()) {
           return null;
@@ -233,6 +209,8 @@ export class UpdateCurrencyDataJob extends QueueScheduler<
         lockToken,
       );
     }
+
+    await UpdateCurrencySnapshotsJob.processNow();
   }
 
   public override async processJob(): Promise<void> {

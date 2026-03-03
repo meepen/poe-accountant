@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Container } from "@mui/material";
 import { ApiEndpoint } from "@meepen/poe-accountant-api-schema/api/api-endpoints.enum";
-import { useApi } from "../components/SessionContext";
 import { useTranslation } from "react-i18next";
 import LeagueInspectionContent from "./LeagueInspection/LeagueInspectionContent";
 import LeagueInspectionHeader from "./LeagueInspection/LeagueInspectionHeader";
@@ -12,6 +11,7 @@ import type {
   PriceHistoryItem,
   PriceListItem,
 } from "./LeagueInspection/types";
+import { useApi } from "../components/session-hooks";
 
 const DEFAULT_CURRENCY_MATCH = /^(divine)$/i;
 
@@ -234,19 +234,31 @@ export default function LeagueInspection() {
     const series = selectedCurrencies.map((currency) => {
       const entries = historyByCurrency[currency]?.data ?? [];
       const valueByTime = new Map<number, number>();
+      const confidenceByTime = new Map<number, number>();
       entries
         .filter((entry) => entry.stableCurrency === relativeCurrency)
         .forEach((entry) => {
           const time = new Date(entry.dataStaleness).getTime();
           const value = Number(entry.valuedAt);
+          const confidence =
+            typeof entry.confidenceScore === "number"
+              ? entry.confidenceScore
+              : null;
           if (!Number.isNaN(time) && !Number.isNaN(value)) {
             valueByTime.set(time, value);
+            if (confidence !== null && !Number.isNaN(confidence)) {
+              confidenceByTime.set(time, confidence);
+            }
           }
         });
 
       const data = x.map((time) => valueByTime.get(time.getTime()) ?? null);
+      const confidence = x.map(
+        (time) => confidenceByTime.get(time.getTime()) ?? null,
+      );
       return {
         data,
+        confidence,
         label: currency,
       };
     });

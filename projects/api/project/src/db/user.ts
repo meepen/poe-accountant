@@ -1,14 +1,13 @@
 import { getCookie } from "hono/cookie";
-import { AppContext } from "../bindings";
-import { Database } from "../db";
+import type { AppEnv } from "../bindings";
+import type { Database } from "../middleware/db";
 import { User } from "@meepen/poe-accountant-db-schema/user";
-import { InferSelectModel } from "drizzle-orm/table";
-import { Redis } from "@upstash/redis";
-import { z } from "zod";
-import {
-  sessionCookieName,
-  UserDto,
-} from "@meepen/poe-accountant-api-schema/api/dtos/user/user.dto";
+import type { InferSelectModel } from "drizzle-orm/table";
+import type { Redis } from "@upstash/redis";
+import type { z } from "zod";
+import type { UserDto } from "@meepen/poe-accountant-api-schema/api/dtos/user/user.dto";
+import { sessionCookieName } from "@meepen/poe-accountant-api-schema/api/dtos/user/user.dto";
+import type { Context } from "hono";
 
 export async function getUser(
   db: Database,
@@ -27,9 +26,9 @@ export async function getUser(
 
 const valkeySessionPrefix = "session:";
 
-export async function getSessionUser(
+export async function getSessionUser<C extends AppEnv>(
   redis: Redis,
-  c: AppContext,
+  c: Context<C>,
 ): Promise<z.infer<typeof UserDto> | null> {
   const cookie = getCookie(c, sessionCookieName);
   if (!cookie) {

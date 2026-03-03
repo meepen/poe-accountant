@@ -1,11 +1,9 @@
 import { z } from "zod";
 
-export const UserJobDto = z.object({
-  id: z.uuid(),
+export const UserJobDto = z
+  .object({
+    id: z.string(),
+  })
+  .catchall(z.unknown());
 
-  isComplete: z.boolean(),
-  statusText: z.string(),
-
-  createdAt: z.iso.datetime(),
-  updatedAt: z.iso.datetime(),
-});
+export type UserJobDto = z.infer<typeof UserJobDto>;

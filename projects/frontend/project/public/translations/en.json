@@ -21,12 +21,17 @@
   "jobs_empty": "No jobs found.",
   "jobs_table_id": "ID",
   "jobs_table_status": "Status",
+  "jobs_show_data": "Show Data",
+  "jobs_hide_data": "Hide Data",
+  "jobs_loading_job_data": "Loading job data...",
+  "jobs_error_loading_job_data": "Failed to load job data.",
   "jobs_table_completed": "Completed",
   "jobs_table_created_at": "Created At",
   "jobs_table_updated_at": "Updated At",
   "yes": "Yes",
   "no": "No",
   "menu_account": "Account",
+  "menu_dashboard": "Dashboard",
   "menu_developer": "Developer",
   "menu_jobs": "Jobs",
   "menu_league_inspection": "League Inspection",
@@ -51,5 +56,9 @@
   "league_inspection_relative_title": "Relative To",
   "league_inspection_relative_label": "Relative Currency",
   "league_inspection_show": "Show",
-  "league_inspection_toggle_currency": "Toggle {{currency}} in chart"
+  "league_inspection_toggle_currency": "Toggle {{currency}} in chart",
+  "dashboard_sync_button": "Sync Inventory",
+  "dashboard_sync_in_progress": "Syncing...",
+  "dashboard_sync_success": "Inventory sync queued (job: {{jobId}})",
+  "dashboard_sync_error": "Failed to start inventory sync."
 }

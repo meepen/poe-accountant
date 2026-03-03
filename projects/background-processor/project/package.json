@@ -7,40 +7,32 @@
   "author": "",
   "type": "module",
   "scripts": {
-    "build": "tsup src/main.ts --tsconfig tsconfig.lib.json --format esm",
+    "build": "tsup src/main.ts src/workers/snapshot.worker.ts --tsconfig tsconfig.lib.json --format esm",
     "start": "node dist/main.js",
     "start:dev": "tsx src/main.ts",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "lint": "eslint ."
+    "test:watch": "vitest"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.971.0",
+    "@aws-sdk/client-s3": "^3.1000.0",
     "@meepen/poe-accountant-api-schema": "workspace:^",
     "@meepen/poe-accountant-db-schema": "workspace:^",
     "@meepen/poe-common": "workspace:^",
-    "bullmq": "^5.67.1",
+    "bullmq": "^5.70.1",
     "drizzle-orm": "^0.45.1",
-    "ioredis": "^5.9.2",
+    "ioredis": "^5.10.0",
     "postgres": "^3.4.8",
-    "zod": "^4.3.5"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@swc/cli": "^0.6.0",
-    "@swc/core": "^1.12.9",
-    "@types/node": "^24",
-    "@eslint/js": "^9.39.2",
-    "eslint": "^9.39.2",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.4",
-    "globals": "^17.0.0",
-    "jiti": "^2.6.1",
+    "@swc/core": "^1.15.17",
+    "@types/node": "^24.11.0",
     "tsup": "^8.5.1",
-    "typescript": "^5.9.2",
-    "typescript-eslint": "^8.53.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
     "unplugin-swc": "^1.5.9",
-    "vitest": "^4.0.17",
-    "tsx": "^4.21.0"
+    "vitest": "^4.0.18"
   },
   "files": [
     "dist"

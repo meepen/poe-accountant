@@ -1,6 +1,7 @@
-import { Worker, Job, WorkerOptions } from "bullmq";
-import { JobProcess } from "../job-process.interface.js";
-import { z } from "zod";
+import type { Job, WorkerOptions } from "bullmq";
+import { Worker } from "bullmq";
+import type { JobProcess } from "../job-process.interface.js";
+import type { z } from "zod";
 import { valkeyForBullMQ } from "../connections/valkey.js";
 
 type MaybePromise<T> = T | Promise<T>;
@@ -8,7 +9,8 @@ type MaybePromise<T> = T | Promise<T>;
 export abstract class QueueWorker<
   T extends z.ZodType,
   ReturnType extends z.ZodType = z.ZodVoid,
-> implements JobProcess {
+> implements JobProcess
+{
   protected abstract readonly schema: T;
   protected abstract readonly returnSchema: ReturnType;
   protected abstract readonly queueName: string;

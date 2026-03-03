@@ -5,10 +5,13 @@
     "skipLibCheck": true
   },
   "include": [
-    "src/**/*.tsx?"
+    "src/**/*.ts",
+    "src/**/*.tsx"
   ],
   "exclude": [
-    "src/**/*.test.tsx?",
-    "src/**/*.mock.tsx?"
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.mock.ts",
+    "src/**/*.mock.tsx"
   ]
 }

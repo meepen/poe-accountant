@@ -1,8 +1,7 @@
-import { ApiEndpoint, ApiEndpointMethods } from "./api-endpoints.enum.js";
-import {
-  ApiResultResponseData,
-  ApiResultResponseTypes,
-} from "./api-request-data.dto.js";
+import type { ApiEndpoint } from "./api-endpoints.enum.js";
+import { ApiEndpointMethods } from "./api-endpoints.enum.js";
+import type { ApiResultResponseData } from "./api-request-data.dto.js";
+import { ApiResultResponseTypes } from "./api-request-data.dto.js";
 
 export class ApiError extends Error {
   public readonly name = "ApiError";

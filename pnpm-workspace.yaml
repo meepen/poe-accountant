@@ -1,2 +1,5 @@
 packages:
   - './projects/*/project'
+
+onlyBuiltDependencies:
+  - workerd

@@ -11,6 +11,7 @@
         "outDir": "dist",
         "types": ["@cloudflare/workers-types", "@types/node"]
     },
+    "files": [],
     "references": [
         { "path": "./tsconfig.app.json" },
         { "path": "./tsconfig.test.json" },

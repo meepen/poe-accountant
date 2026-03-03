@@ -12,13 +12,21 @@ vi.mock("../connections/valkey.js", () => ({
     pexpire: pexpireMock,
     eval: evalMock,
   },
+  valkeyForBullMQ: {},
 }));
 
-vi.mock("../connections/poe-api.js", () => ({
+vi.mock("../connections/application-poe-api.js", () => ({
   appApi: {
     getExchangeMarkets: vi.fn(),
   },
   realms: ["pc", "console"],
+}));
+
+const snapshotProcessNowMock = vi.fn();
+vi.mock("./update-currency-snapshots.job.js", () => ({
+  UpdateCurrencySnapshotsJob: {
+    processNow: snapshotProcessNowMock,
+  },
 }));
 
 describe("UpdateCurrencyDataJob", () => {
@@ -26,10 +34,12 @@ describe("UpdateCurrencyDataJob", () => {
   const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
   beforeEach(() => {
+    vi.resetModules();
     setMock.mockReset();
     pttlMock.mockReset();
     pexpireMock.mockReset();
     evalMock.mockReset();
+    snapshotProcessNowMock.mockReset();
     logSpy.mockClear();
     warnSpy.mockClear();
   });
@@ -42,8 +52,9 @@ describe("UpdateCurrencyDataJob", () => {
     setMock.mockResolvedValue(null);
     pttlMock.mockResolvedValue(-1);
 
-    const { UpdateCurrencyDataJob } =
-      await import("./update-currency-data.job.js");
+    const { UpdateCurrencyDataJob } = await import(
+      "./update-currency-data.job.js"
+    );
 
     const processRealmSpy = vi
       .spyOn(
@@ -63,8 +74,9 @@ describe("UpdateCurrencyDataJob", () => {
     setMock.mockResolvedValue("OK");
     evalMock.mockResolvedValue(1);
 
-    const { UpdateCurrencyDataJob } =
-      await import("./update-currency-data.job.js");
+    const { UpdateCurrencyDataJob } = await import(
+      "./update-currency-data.job.js"
+    );
 
     const processRealmSpy = vi
       .spyOn(
@@ -77,5 +89,6 @@ describe("UpdateCurrencyDataJob", () => {
 
     expect(processRealmSpy).toHaveBeenCalledTimes(2);
     expect(evalMock).toHaveBeenCalledTimes(1);
+    expect(snapshotProcessNowMock).toHaveBeenCalledTimes(1);
   });
 });

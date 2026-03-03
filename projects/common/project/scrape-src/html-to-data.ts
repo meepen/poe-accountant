@@ -1,5 +1,5 @@
-import { DOMWindow } from "jsdom";
-import { ObjectTypeDetails } from "./object-type-details.js";
+import type { DOMWindow } from "jsdom";
+import type { ObjectTypeDetails } from "./object-type-details.js";
 import { JSDOM } from "jsdom";
 
 const htmlTab = String.fromCharCode(0x2002) + String.fromCharCode(0x2003);

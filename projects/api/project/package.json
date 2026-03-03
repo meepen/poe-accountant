@@ -8,42 +8,34 @@
   "type": "module",
   "scripts": {
     "build": "wrangler deploy src/index.ts --dry-run --outdir=dist",
-    "start": "wrangler dev --ip 0.0.0.0 --port 4000 --local --config wrangler.toml --var PATHOFEXILE_CLIENT_ID:$PATHOFEXILE_CLIENT_ID --var PATHOFEXILE_CLIENT_SECRET:$PATHOFEXILE_CLIENT_SECRET --var PATHOFEXILE_REDIRECT_URL:$PATHOFEXILE_REDIRECT_URL --var FRONTEND_URL:$FRONTEND_URL --var CORS_ORIGIN:$FRONTEND_URL --var S3_SECRET_ACCESS_KEY:$S3_SECRET_ACCESS_KEY --var S3_ACCESS_KEY_ID:$S3_ACCESS_KEY_ID --var S3_BUCKET_NAME:$S3_BUCKET_NAME --var S3_SECRET_ACCESS_KEY:$S3_SECRET_ACCESS_KEY --var S3_ENDPOINT:$S3_ENDPOINT --var VALKEY_PROXY_URL:$VALKEY_PROXY_URL --var VALKEY_TOKEN:$VALKEY_TOKEN",
+    "start": "wrangler dev --ip 0.0.0.0 --port 4000 --local --config wrangler.toml --var PATHOFEXILE_CLIENT_ID:$PATHOFEXILE_CLIENT_ID --var PATHOFEXILE_CLIENT_SECRET:$PATHOFEXILE_CLIENT_SECRET --var PATHOFEXILE_REDIRECT_URL:$PATHOFEXILE_REDIRECT_URL --var FRONTEND_URL:$FRONTEND_URL --var CORS_ORIGIN:$FRONTEND_URL --var S3_SECRET_ACCESS_KEY:$S3_SECRET_ACCESS_KEY --var S3_ACCESS_KEY_ID:$S3_ACCESS_KEY_ID --var S3_BUCKET_NAME:$S3_BUCKET_NAME --var S3_ENDPOINT:$S3_ENDPOINT --var VALKEY_PROXY_URL:$VALKEY_PROXY_URL --var VALKEY_TOKEN:$VALKEY_TOKEN",
     "start:dev": "pnpm run start",
-    "test": "echo 'Done' && exit 0",
-    "test:watch": "vitest",
-    "lint": "eslint ."
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.7.6",
     "@meepen/poe-accountant-api-schema": "workspace:^",
     "@meepen/poe-accountant-db-schema": "workspace:^",
     "@meepen/poe-common": "workspace:^",
-    "@upstash/redis": "^1.36.1",
+    "@upstash/redis": "^1.36.3",
     "aws4fetch": "^1.0.20",
     "drizzle-orm": "^0.45.1",
-    "hono": "^4.11.4",
-    "ioredis": "^5.9.2",
+    "hono": "^4.12.3",
+    "ioredis": "^5.10.0",
     "postgres": "^3.4.8",
-    "zod": "^4.3.5"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260117.0",
+    "@cloudflare/workers-types": "^4.20260305.0",
     "@swc/cli": "^0.6.0",
-    "@swc/core": "^1.12.9",
-    "@types/node": "^24.10.9",
-    "@eslint/js": "^9.39.2",
-    "eslint": "^9.39.2",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.4",
-    "globals": "^17.0.0",
-    "jiti": "^2.6.1",
+    "@swc/core": "^1.15.17",
+    "@types/node": "^24.11.0",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.9.2",
-    "typescript-eslint": "^8.53.0",
+    "typescript": "^5.9.3",
     "unplugin-swc": "^1.5.9",
-    "vitest": "^4.0.17",
-    "wrangler": "^4.59.2"
+    "vitest": "^4.0.18",
+    "wrangler": "^4.69.0"
   },
   "files": [
     "dist/index.js"

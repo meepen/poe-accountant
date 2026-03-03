@@ -6,7 +6,7 @@ import {
   CircularProgress,
   useMediaQuery,
 } from "@mui/material";
-import { useSession } from "./components/SessionContext";
+import { useSession } from "./components/session-hooks";
 import { createAppTheme } from "./theme";
 import AppBarNav from "./components/AppBarNav";
 import FooterBar from "./components/FooterBar";

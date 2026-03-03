@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     globals: true,
     root: "./",
+    setupFiles: ["./src/test/setup-env.ts"],
   },
   plugins: [
     // This is required to build the test files with SWC

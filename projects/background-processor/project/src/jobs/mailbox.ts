@@ -3,7 +3,7 @@ import {
   MailboxQueue,
   MailboxQueueName,
 } from "@meepen/poe-accountant-api-schema/queues/mailbox-queue";
-import { JobProcess } from "../job-process.interface.js";
+import type { JobProcess } from "../job-process.interface.js";
 import { valkey, valkeyForBullMQ } from "../connections/valkey.js";
 
 export class MailboxProcess implements JobProcess {
@@ -24,11 +24,12 @@ export class MailboxProcess implements JobProcess {
 
   private async processMessage(incomingMessage: string) {
     const {
+      messageId,
       data: { targetQueue, message },
       priority,
     } = MailboxQueue.parse(JSON.parse(incomingMessage));
 
-    await this.getJobQueue(targetQueue).add(crypto.randomUUID(), message, {
+    await this.getJobQueue(targetQueue).add(messageId, message, {
       priority,
     });
     console.log(`Resubmitted job '${targetQueue}' to BullMQ queue'`);

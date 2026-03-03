@@ -1,7 +1,7 @@
 import type { Hyperdrive } from "@cloudflare/workers-types";
 import type { Context } from "hono";
 
-type AppBindings = {
+export type AppBindings = {
   PATHOFEXILE_CLIENT_ID: string;
   PATHOFEXILE_CLIENT_SECRET: string;
   PATHOFEXILE_REDIRECT_URL: string;
@@ -19,6 +19,8 @@ type AppBindings = {
   S3_SECRET_ACCESS_KEY: string;
 };
 
-type AppEnv = { Bindings: AppBindings };
+export type AppEnv = {
+  Bindings: AppBindings;
+};
 
 export type AppContext = Context<AppEnv>;

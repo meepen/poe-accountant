@@ -1,23 +1,20 @@
 import { z } from "zod";
 import { QueueScheduler } from "./queue-scheduler.abstract.js";
-import { db, DbTransaction } from "../connections/db.js";
+import type { DbTransaction } from "../connections/db.js";
+import { db } from "../connections/db.js";
+import type { CurrencyExchangeHistory } from "@meepen/poe-accountant-db-schema/currency-exchange";
+import { CurrencyExchangeLeagueSnapshotData } from "@meepen/poe-accountant-db-schema/currency-exchange";
+import type { CurrencyExchangeWithRelations } from "./update-currency-data/market-graph.js";
 import {
-  CurrencyExchangeHistory,
-  CurrencyExchangeHistoryCurrency,
-  CurrencyExchangeLeagueSnapshotData,
-} from "@meepen/poe-accountant-db-schema/currency-exchange";
-import {
-  CurrencyExchangeWithRelations,
   CurrencyGraph,
   type VendorRecipe,
 } from "./update-currency-data/market-graph.js";
-import { and, desc, InferSelectModel, sql } from "drizzle-orm";
+import type { InferSelectModel } from "drizzle-orm";
 
 const UpdateCurrencySnapshotsJobQueueName =
   "update-currency-snapshots-job-queue";
 const UpdateCurrencySnapshotsJobSchema = z.object({});
 const SnapshotBackfillBatchSize = 50;
-const DirectRateDeviationClamp = 3;
 
 // --- Vendor Recipe Constants ---
 // TODO: this should probably live in a database or something more dynamic
@@ -81,58 +78,107 @@ export class UpdateCurrencySnapshotsJob extends QueueScheduler<
   }
 
   public static async processNow(): Promise<void> {
-    const missingSnapshots = await db
-      .select()
-      .from(CurrencyExchangeHistory)
-      .where(
-        and(
-          sql`exists (select 1 from ${CurrencyExchangeHistoryCurrency} where ${CurrencyExchangeHistoryCurrency.historyId} = ${CurrencyExchangeHistory.id})`,
-          sql`not exists (select 1 from ${CurrencyExchangeLeagueSnapshotData} where ${CurrencyExchangeLeagueSnapshotData.historyId} = ${CurrencyExchangeHistory.id})`,
-        ),
-      )
-      .orderBy(desc(CurrencyExchangeHistory.timestamp))
-      .limit(SnapshotBackfillBatchSize);
+    let batch = 0;
+    let cursor: { timestamp: Date; id: string } | null = null;
+    let processing = true;
 
-    if (missingSnapshots.length === 0) {
-      console.log("[currency-snapshots] No missing snapshots detected.");
-      return;
-    }
-
-    console.log(
-      `[currency-snapshots] Backfilling ${missingSnapshots.length} history records without snapshots...`,
-    );
-
-    for (const history of missingSnapshots) {
-      await db.transaction(async (tx) => {
-        const existingSnapshot =
-          await tx.query.CurrencyExchangeLeagueSnapshotData.findFirst({
-            where: (data, { eq }) => eq(data.historyId, history.id),
+    while (processing) {
+      const candidates = await db.query.CurrencyExchangeHistory.findMany({
+        where: (history, { and, lt, eq, or }) => {
+          if (!cursor) {
+            return undefined;
+          }
+          return or(
+            lt(history.timestamp, cursor.timestamp),
+            and(
+              eq(history.timestamp, cursor.timestamp),
+              lt(history.id, cursor.id),
+            ),
+          );
+        },
+        orderBy: (history, { desc }) => [
+          desc(history.timestamp),
+          desc(history.id),
+        ],
+        limit: SnapshotBackfillBatchSize,
+        with: {
+          currencies: {
+            limit: 1,
+            columns: {
+              id: true,
+            },
+          },
+          snapshotData: {
+            limit: 1,
             columns: {
               historyId: true,
             },
-          });
-        if (existingSnapshot) {
-          console.log(
-            `[currency-snapshots] Snapshot already exists for history ${history.id}, skipping.`,
-          );
-          return;
-        }
-
-        const historyByLeague = new Map<
-          string,
-          InferSelectModel<typeof CurrencyExchangeHistory>
-        >([[history.leagueId, history]]);
-
-        await this.persistExchangeSnapshots(
-          tx,
-          history.realm,
-          {
-            timestamp: history.timestamp,
-            nextChangeId: history.nextTimestamp ?? history.timestamp,
           },
-          historyByLeague,
-        );
+        },
       });
+
+      if (candidates.length === 0) {
+        if (batch === 0) {
+          console.log("[currency-snapshots] No missing snapshots detected.");
+        }
+        processing = false;
+        continue;
+      }
+
+      // Update cursor for next iteration
+      const last = candidates[candidates.length - 1];
+      cursor = { timestamp: last.timestamp, id: last.id };
+
+      const missingSnapshots = candidates.filter(
+        (h) => h.currencies.length > 0 && h.snapshotData.length === 0,
+      );
+
+      if (missingSnapshots.length === 0) {
+        batch++;
+        continue;
+      }
+
+      console.log(
+        `[currency-snapshots] Batch ${batch + 1}: Backfilling ${
+          missingSnapshots.length
+        } history records without snapshots...`,
+      );
+
+      await Promise.all(
+        missingSnapshots.map((history) =>
+          db.transaction(async (tx) => {
+            const existingSnapshot =
+              await tx.query.CurrencyExchangeLeagueSnapshotData.findFirst({
+                where: (data, { eq }) => eq(data.historyId, history.id),
+                columns: {
+                  historyId: true,
+                },
+              });
+            if (existingSnapshot) {
+              console.log(
+                `[currency-snapshots] Snapshot already exists for history ${history.id}, skipping.`,
+              );
+              return;
+            }
+
+            const historyByLeague = new Map<
+              string,
+              InferSelectModel<typeof CurrencyExchangeHistory>
+            >([[history.leagueId, history]]);
+
+            await this.persistExchangeSnapshots(
+              tx,
+              history.realm,
+              {
+                timestamp: history.timestamp,
+                nextChangeId: history.nextTimestamp ?? history.timestamp,
+              },
+              historyByLeague,
+            );
+          }),
+        ),
+      );
+      batch++;
     }
   }
 
@@ -144,20 +190,30 @@ export class UpdateCurrencySnapshotsJob extends QueueScheduler<
       string,
       InferSelectModel<typeof CurrencyExchangeHistory>
     >,
-  ): Promise<Date | null> {
+  ): Promise<void> {
     // Retrieve 24 hours of data for this realm to build the market graph
     const sinceDate = new Date(
       result.timestamp.getTime() - 24 * 60 * 60 * 1000,
     );
+    const targetLeagueIds = Array.from(historyByLeague.keys());
     const currencyData = await tx.query.CurrencyExchangeHistory.findMany({
-      where: (league, { and, eq, between }) =>
+      where: (league, { and, eq, between, inArray }) =>
         and(
           eq(league.realm, realm),
+          inArray(league.leagueId, targetLeagueIds),
           between(league.timestamp, sinceDate, result.timestamp),
         ),
       orderBy: (league, { desc }) => [desc(league.timestamp)],
       with: {
         currencies: true,
+      },
+      columns: {
+        id: true,
+        leagueId: true,
+        realm: true,
+        timestamp: true,
+        nextTimestamp: true,
+        createdAt: true,
       },
     });
 
@@ -207,23 +263,27 @@ export class UpdateCurrencySnapshotsJob extends QueueScheduler<
       // TODO: Determine if the league is Ruthless properly, this requires the parent League to be populated which isn't always the case...
       const isRuthless = leagueId.toLowerCase().includes("ruthless");
 
+      console.time(`[${realm}] [${leagueId}] Graph construction`);
       const currencyGraph = new CurrencyGraph(
         markets,
         isRuthless ? RUTHLESS_VENDOR_RECIPES : STANDARD_VENDOR_RECIPES,
       );
+      console.timeEnd(`[${realm}] [${leagueId}] Graph construction`);
 
+      console.time(`[${realm}] [${leagueId}] Rate calculation`);
       const rates = Array.from(
         currencyGraph
           .getRatesRelativeTo("chaos")
           .values()
           .filter((rate) => rate.currency !== "chaos"),
       );
+      console.timeEnd(`[${realm}] [${leagueId}] Rate calculation`);
 
       if (rates.length === 0) {
         console.warn(
           `[${realm}] [${leagueId}] No currency rates calculated, skipping database snapshot.`,
         );
-        return result.nextChangeId;
+        return;
       }
 
       console.log(
@@ -236,24 +296,15 @@ export class UpdateCurrencySnapshotsJob extends QueueScheduler<
           )}, reliability: ${rate.reliability.toFixed(1)}%, liquidity: ${rate.liquidity.toString()})`,
         );
       }
-      await tx.insert(CurrencyExchangeLeagueSnapshotData).values(
-        rates.map<InferSelectModel<typeof CurrencyExchangeLeagueSnapshotData>>(
-          (rate) => {
+      await tx
+        .insert(CurrencyExchangeLeagueSnapshotData)
+        .values(
+          rates.map<
+            InferSelectModel<typeof CurrencyExchangeLeagueSnapshotData>
+          >((rate) => {
             const directRate = rate.directRate ?? null;
-            let valuedAt = rate.optimalRate;
-            let calculationPath = rate.path;
-
-            if (directRate && directRate > 0) {
-              const ratio = rate.optimalRate / directRate;
-              if (
-                !Number.isFinite(ratio) ||
-                ratio > DirectRateDeviationClamp ||
-                ratio < 1 / DirectRateDeviationClamp
-              ) {
-                valuedAt = directRate;
-                calculationPath = [rate.currency, "chaos"];
-              }
-            }
+            const valuedAt = rate.optimalRate;
+            const calculationPath = rate.path;
 
             return {
               historyId: history.id,
@@ -266,11 +317,17 @@ export class UpdateCurrencySnapshotsJob extends QueueScheduler<
               dataStaleness: result.timestamp,
               calculationPath,
             };
-          },
-        ),
-      );
+          }),
+        )
+        .onConflictDoNothing({
+          target: [
+            CurrencyExchangeLeagueSnapshotData.historyId,
+            CurrencyExchangeLeagueSnapshotData.currency,
+            CurrencyExchangeLeagueSnapshotData.stableCurrency,
+          ],
+        });
     }
 
-    return null;
+    return;
   }
 }

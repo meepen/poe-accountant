@@ -1,5 +1,5 @@
-import { TypeDetails } from "./html-to-data.js";
-import { ObjectTypeDetails } from "./object-type-details.js";
+import type { TypeDetails } from "./html-to-data.js";
+import type { ObjectTypeDetails } from "./object-type-details.js";
 
 class TokenLexer {
   constructor(

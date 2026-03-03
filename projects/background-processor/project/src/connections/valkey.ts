@@ -1,6 +1,6 @@
 import { Redis } from "ioredis";
 import { getEnvVar } from "../utils.js";
-import { WorkerOptions } from "bullmq";
+import type { WorkerOptions } from "bullmq";
 
 function getValkeyConnectionString(): string {
   return getEnvVar("VALKEY_URL");
@@ -9,6 +9,7 @@ function getValkeyConnectionString(): string {
 function createValkeyConnection() {
   const valkey = new Redis(getValkeyConnectionString(), {
     maxRetriesPerRequest: null,
+    lazyConnect: true,
   });
 
   return {

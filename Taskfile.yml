@@ -38,6 +38,10 @@ tasks:
     cmds:
       - pnpm install
 
+  install:ci:
+    cmds:
+      - pnpm install --frozen-lockfile
+
   start:
     cmds:
       - "{{.BUILDER}} compose -f compose.yml up -d"
@@ -57,12 +61,29 @@ tasks:
 
   lint:
     cmds:
-      - pnpm -r lint
+      - pnpm lint
+
+  typecheck:
+    cmds:
+      - pnpm -r exec tsc -p tsconfig.json --noEmit
+
+  prettier:check:
+    cmds:
+      - |
+          pnpm dlx prettier@3.6.2 --check \
+            "projects/*/project/src/**/*.{ts,tsx,js,jsx,mjs,cjs,mts,cts,json,css,scss,md,html}" \
+            "projects/common/project/scrape-src/**/*.{ts,tsx,js,jsx,mjs,cjs,mts,cts,json,css,scss,md,html}"
 
   build:
     deps: [install]
     cmds:
       - pnpm -r build
+
+  ci:check:
+    desc: Run formatter, lint, tests, and builds for CI
+    deps: [install:ci, prettier:check, lint, typecheck, test]
+    cmds:
+      - task: build
 
   docker:build: 
     desc: "Build all container images"
@@ -110,7 +131,6 @@ tasks:
     env:
       NODE_OPTIONS: "--import tsx"
     cmds:
-      - pnpm --filter=@meepen/poe-accountant-db-schema run build
       - pnpm --filter=@meepen/poe-accountant-db-schema exec drizzle-kit generate
 
   migrations:apply:
@@ -132,6 +152,74 @@ tasks:
       - task: migrations:apply
         vars:
           URL: "{{.DATABASE_URL}}"
+
+  psql:
+    desc: Connect to the database with psql using env credentials
+    cmds:
+      - psql "${DB_CONN:-$DATABASE_URL}"
+
+  psql:remote:
+    desc: Connect to the remote database with psql
+    vars:
+      DATABASE_URL:
+        sh: cd terraform && tofu output -raw postgres_url
+    cmds:
+      - psql "{{.DATABASE_URL}}"
+
+  redis:
+    desc: Connect to Valkey/Redis using env credentials
+    vars:
+      URL:
+        sh: |
+          if [ -n "${REDIS_CONN:-}" ]; then
+            echo "$REDIS_CONN";
+          else
+            HOST="${VALKEY_HOST:-localhost}";
+            PORT="${VALKEY_PORT:-6379}";
+            USERNAME="${VALKEY_USERNAME:-default}";
+            PASSWORD="${VALKEY_PASSWORD:-}";
+            PASSWORD="${PASSWORD#\"}"; PASSWORD="${PASSWORD%\"}";
+            if [ -n "$PASSWORD" ]; then
+              ENCODED_PASSWORD="$(PASSWORD=${PASSWORD} node -e 'const {PASSWORD}=process.env; process.stdout.write(encodeURIComponent(PASSWORD))')"
+              ENCODED_USERNAME="$(USERNAME=${USERNAME} node -e 'const {USERNAME}=process.env; process.stdout.write(encodeURIComponent(USERNAME))')"
+                      echo "redis://$ENCODED_USERNAME:$ENCODED_PASSWORD@$HOST:$PORT";
+            else
+              echo "redis://$HOST:$PORT";
+            fi
+          fi
+    cmds:
+      - cmd: redis-cli -u "{{.URL}}" {{.CLI_ARGS}}
+
+  redis:remote:
+    desc: Connect to remote Valkey/Redis
+    vars:
+      VALKEY_URL:
+        sh: cd terraform && tofu output -raw valkey_uri
+    cmds:
+      - redis-cli -u "{{.VALKEY_URL}}" {{.CLI_ARGS}}
+
+  redis:clear:
+    desc: "Clear remote Redis keys by pattern (default: *)"
+    vars:
+      URL: ""
+    cmds:
+      - |
+          PATTERN={{.CLI_ARGS}};
+          if [ -z "$PATTERN" ]; then
+            echo "No pattern provided";
+            exit 1;
+          fi;
+          REDIS_CONN="{{.URL}}" task redis -- --scan --pattern $PATTERN | REDIS_CONN="{{.URL}}" xargs -r task redis -- del
+
+  redis:clear:remote:
+    desc: "Clear remote Redis keys by pattern (default: *)"
+    vars:
+      VALKEY_URL:
+        sh: cd terraform && tofu output -raw valkey_uri
+    cmds:
+      - task: redis:clear
+        vars:
+          URL: "{{.VALKEY_URL}}"
 
   deploy:
     desc: Deploy infrastructure and applications
