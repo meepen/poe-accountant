@@ -1,0 +1,1 @@
+ALTER TABLE "user_leagues" ALTER COLUMN "id" DROP DEFAULT;

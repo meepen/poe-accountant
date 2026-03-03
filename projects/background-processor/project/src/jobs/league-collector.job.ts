@@ -46,6 +46,7 @@ export class LeagueCollectorJob extends QueueScheduler<
             leagueId: league.id,
             leagueName: league.name ?? null,
             realm,
+            rules: league.rules?.map((rule) => rule.id) ?? [],
             startDate: league.startAt ? new Date(league.startAt) : null,
             endDate: league.endAt ? new Date(league.endAt) : null,
           })),
@@ -55,6 +56,7 @@ export class LeagueCollectorJob extends QueueScheduler<
             startDate: sql`excluded.start_date`,
             endDate: sql`excluded.end_date`,
             leagueName: sql`excluded.league_name`,
+            rules: sql`excluded.rules`,
           },
           target: [League.realm, League.leagueId],
         })

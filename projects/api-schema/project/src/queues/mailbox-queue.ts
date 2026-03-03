@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ItemPriceMailboxSchema } from "./item-price.message.js";
 import { InventorySyncMailboxSchema } from "./inventory-sync.message.js";
 import { CharacterReceiverMailboxSchema } from "./character-receiver.message.js";
+import { UserLeagueSyncMailboxSchema } from "./user-league-sync.message.js";
 
 export const MailboxQueue = z.object({
   messageId: z.uuid(),
@@ -9,6 +10,7 @@ export const MailboxQueue = z.object({
     ItemPriceMailboxSchema,
     InventorySyncMailboxSchema,
     CharacterReceiverMailboxSchema,
+    UserLeagueSyncMailboxSchema,
   ]),
   priority: z.number().default(1000),
 });

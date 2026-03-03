@@ -4,6 +4,7 @@ import {
   text,
   uuid,
   primaryKey,
+  json,
 } from "drizzle-orm/pg-core";
 
 export const League = pgTable(
@@ -21,6 +22,7 @@ export const League = pgTable(
       mode: "date",
       withTimezone: true,
     }),
+    rules: json("rules").notNull().default([]),
   },
   (t) => [primaryKey({ columns: [t.realm, t.leagueId] })],
 );

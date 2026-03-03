@@ -51,7 +51,10 @@ export default function RelativeCurrencyChart({
               ? series.confidence.at(context.dataIndex)
               : null;
           let confidenceLabel = "n/a";
-          if (typeof rawConfidence === "number" && !Number.isNaN(rawConfidence)) {
+          if (
+            typeof rawConfidence === "number" &&
+            !Number.isNaN(rawConfidence)
+          ) {
             const percentValue =
               rawConfidence > 1 ? rawConfidence : rawConfidence * 100;
             const rounded = percentValue.toFixed(1).replace(/\.0$/, "");

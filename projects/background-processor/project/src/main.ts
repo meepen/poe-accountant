@@ -3,7 +3,7 @@ import { LeagueCollectorJob } from "./jobs/league-collector.job.js";
 import { MailboxProcess } from "./jobs/mailbox.js";
 import { PoeApiJob } from "./jobs/poe-api.job.js";
 import { StaticTradeDataJob } from "./jobs/static-trade-data.job.js";
-import { SyncUserInventoryJob } from "./jobs/sync-user-inventory.job.js";
+import { SyncUserLeaguesJob } from "./jobs/sync-user-inventory.job.js";
 import { UpdateCurrencyDataJob } from "./jobs/update-currency-data.job.js";
 import { UpdateCurrencySnapshotsJob } from "./jobs/update-currency-snapshots.job.js";
 
@@ -11,7 +11,7 @@ const staticTradeDataJob = new StaticTradeDataJob();
 const processors: JobProcess[] = [
   new MailboxProcess(),
   new PoeApiJob(),
-  new SyncUserInventoryJob(),
+  new SyncUserLeaguesJob(),
   new LeagueCollectorJob(),
   new UpdateCurrencyDataJob(),
   new UpdateCurrencySnapshotsJob(),

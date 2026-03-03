@@ -5,7 +5,6 @@ import { status } from "./routes/status";
 import { redirect } from "./routes/redirect";
 import { user } from "./routes/user";
 import { prices } from "./routes/prices";
-import { league } from "./routes/league";
 import { dbMiddleware } from "./middleware/db";
 import { valkeyMiddleware } from "./middleware/valkey";
 import { s3Middleware } from "./middleware/s3";
@@ -45,7 +44,6 @@ app.route("/status", status);
 app.route("/redirect", redirect);
 app.route("/user", user);
 app.route("/prices", prices);
-app.route("/league", league);
 
 app.get("/health", (c) => c.json({ status: "ok" }));
 

@@ -1,122 +1,84 @@
-import type { Job } from "bullmq";
 import { z } from "zod";
-import type { SyncUserInventoryResponseDto } from "@meepen/poe-accountant-api-schema";
-import {
-  UserJobRedisMetadataTtlSeconds,
-  InventorySyncMessage,
-  InventorySyncMessageQueue,
-} from "@meepen/poe-accountant-api-schema";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { UserInventorySnapshot } from "@meepen/poe-accountant-db-schema";
-import { and, eq } from "drizzle-orm";
 import { QueueWorker } from "./queue-worker.abstract.js";
+import {
+  UserLeagueSyncMessage,
+  UserLeagueSyncMessageQueue,
+} from "@meepen/poe-accountant-api-schema/queues/user-league-sync.message";
+import { UserPoeApi } from "../connections/user-poe-api.js";
 import { db } from "../connections/db.js";
-import { valkey } from "../connections/valkey.js";
-import { bucketName, s3 } from "../connections/s3.js";
-import { priceUserInventory } from "./sync-user-inventory/price-user-inventory.js";
+import { League, UserLeagues } from "@meepen/poe-accountant-db-schema";
+import type { InferSelectModel } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
-async function setUserJobState(
-  redisKey: string,
-  value: z.infer<typeof SyncUserInventoryResponseDto>,
-) {
-  await valkey.set(
-    redisKey,
-    JSON.stringify(value),
-    "EX",
-    UserJobRedisMetadataTtlSeconds,
-  );
-}
+const realms = ["pc", "xbox", "sony"] as const;
 
-export class SyncUserInventoryJob extends QueueWorker<
-  typeof InventorySyncMessage
+export class SyncUserLeaguesJob extends QueueWorker<
+  typeof UserLeagueSyncMessage
 > {
-  protected override readonly schema = InventorySyncMessage;
+  protected override readonly schema = UserLeagueSyncMessage;
   protected override readonly returnSchema = z.void();
-  protected override readonly queueName = InventorySyncMessageQueue;
+  protected override readonly queueName = UserLeagueSyncMessageQueue;
 
   protected override async processJob(
-    data: z.infer<typeof InventorySyncMessage>,
-    job: Job,
+    data: z.infer<typeof UserLeagueSyncMessage>,
   ): Promise<void> {
-    const jobId = job.id ?? InventorySyncMessageQueue;
-
-    await setUserJobState(data.redisKey, {
-      id: jobId,
-      done: false,
-      data: {
-        status: "processing",
-      },
-    });
-
     const user = await db.query.User.findFirst({
       where: (userTable, { eq: equals }) => equals(userTable.id, data.userId),
     });
-
     if (!user) {
-      throw new Error(`User '${data.userId}' not found for inventory sync.`);
+      throw new Error(`User '${data.userId}' not found for league sync.`);
     }
+    const api = UserPoeApi.getOrCreate(user.id, user.accessToken, user.scope);
 
-    const league = await db.query.League.findFirst({
-      where: (leagueTable) =>
-        and(
-          eq(leagueTable.leagueId, data.league.id),
-          eq(leagueTable.realm, data.league.realm),
-        ),
+    const allLeagues = await Promise.all(
+      realms.map((realm) => api.getLeagues({ realm })),
+    );
+    const leagues = allLeagues.flatMap((response) => response.leagues);
+
+    // Insert new leagues into the generic league table, then associate them with the user
+
+    await db.transaction(async (tx) => {
+      console.log(
+        `Syncing leagues for user ${data.userId}. Found ${leagues.length} leagues across all realms.`,
+      );
+      const dbLeagues = await tx
+        .insert(League)
+        .values(
+          leagues.map<InferSelectModel<typeof League>>((league) => ({
+            id: crypto.randomUUID(),
+            leagueId: league.id,
+            realm: league.realm ?? "pc",
+            leagueName: league.name ?? league.id,
+            startDate: league.startAt ? new Date(league.startAt) : null,
+            endDate: league.endAt ? new Date(league.endAt) : null,
+            rules: league.rules?.map((rule) => rule.id) ?? [],
+          })),
+        )
+        .onConflictDoUpdate({
+          set: {
+            leagueName: sql`EXCLUDED.league_name`,
+            startDate: sql`EXCLUDED.start_date`,
+            endDate: sql`EXCLUDED.end_date`,
+            rules: sql`EXCLUDED.rules`,
+          },
+          target: [League.leagueId, League.realm],
+        })
+        .returning();
+
+      console.log(
+        `Inserted/updated ${dbLeagues.length} leagues for user ${data.userId}.`,
+      );
+
+      await tx
+        .insert(UserLeagues)
+        .values(
+          dbLeagues.map((league) => ({
+            id: crypto.randomUUID(),
+            userId: data.userId,
+            leagueId: league.id,
+          })),
+        )
+        .onConflictDoNothing();
     });
-
-    if (!league) {
-      throw new Error(
-        `League '${data.league.id}' in realm '${data.league.realm}' not found.`,
-      );
-    }
-
-    try {
-      const inventoryData = await priceUserInventory(user, league);
-
-      const generatedAt = new Date();
-      const snapshotId = crypto.randomUUID();
-      const r2ObjectKey = `users/${data.userId}/inventory-snapshots/${generatedAt.toISOString()}-${snapshotId}.json`;
-
-      await s3.send(
-        new PutObjectCommand({
-          Bucket: bucketName,
-          Key: r2ObjectKey,
-          ContentType: "application/json",
-          Body: JSON.stringify(inventoryData),
-        }),
-      );
-
-      const totalValue = Object.values(inventoryData)
-        .flat()
-        .reduce((result, entry) => result + entry.value, 0);
-
-      await db.insert(UserInventorySnapshot).values({
-        id: snapshotId,
-        userId: data.userId,
-        realm: league.realm,
-        leagueId: league.leagueId,
-        generatedAt,
-        r2ObjectKey,
-        totalValue: totalValue.toString(),
-        createdAt: new Date(),
-      });
-
-      await setUserJobState(data.redisKey, {
-        id: jobId,
-        done: true,
-        data: inventoryData,
-      });
-    } catch (error: unknown) {
-      await setUserJobState(data.redisKey, {
-        id: jobId,
-        done: false,
-        data: {
-          status: "failed",
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
-      });
-
-      throw error;
-    }
   }
 }

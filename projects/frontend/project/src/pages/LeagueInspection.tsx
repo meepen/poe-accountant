@@ -52,7 +52,7 @@ export default function LeagueInspection() {
 
     async function fetchLeagues() {
       try {
-        const result = await api.request(ApiEndpoint.GetLeagues);
+        const result = await api.request(ApiEndpoint.GetUserLeagues);
         if (!mounted) {
           return;
         }

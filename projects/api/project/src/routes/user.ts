@@ -16,6 +16,7 @@ import {
 } from "@meepen/poe-accountant-api-schema";
 import type { UserInventorySnapshot } from "@meepen/poe-accountant-db-schema";
 import { and, eq } from "drizzle-orm";
+import type { SessionUserEnv } from "../middleware/session-user";
 import { requireSessionUser } from "../middleware/session-user";
 import { requireUserRecord } from "../middleware/user-record";
 import {
@@ -23,8 +24,47 @@ import {
   startUserJob,
 } from "../middleware/user-jobs";
 import type { IndexEnv } from "..";
+import { createMiddleware } from "hono/factory";
+import { UserLeagueSyncMessageQueue } from "@meepen/poe-accountant-api-schema/queues/user-league-sync.message";
 
-export const user = new Hono<IndexEnv>().use("*", requireSessionUser);
+function getUserUpdateKey(userId: string) {
+  return `user-update:${userId}`;
+}
+
+export const user = new Hono<IndexEnv>().use("*", requireSessionUser).use(
+  "*",
+  createMiddleware<SessionUserEnv & IndexEnv>(async (c, next) => {
+    // This middleware submits updates for users every 30 minutes to keep their data fresh when they use the site.
+    const sessionUser = c.get("sessionUser");
+    const redis = c.get("valkey");
+    const result = await redis.set(
+      getUserUpdateKey(sessionUser.id),
+      Date.now().toString(),
+      {
+        ex: 60 * 30, // 30 minutes
+        nx: true, // Only set if not exists to avoid resetting the timer on every request
+      },
+    );
+    if (result) {
+      // If the key was set, it means it's the first update in the last 30 minutes, so we trigger a league sync for the user.
+      await startUserJob({
+        redis,
+        mailboxData: {
+          targetQueue: UserLeagueSyncMessageQueue,
+          message: {
+            userId: sessionUser.id,
+          },
+        },
+        priority: 50, // Higher priority than normal jobs to ensure user data is updated quickly
+      });
+    }
+    await next();
+
+    if (result) {
+      c.res.headers.set("X-User-Update-Triggered", "1");
+    }
+  }),
+);
 
 function toSnapshotResponse(
   snapshot: typeof UserInventorySnapshot.$inferSelect,
@@ -216,3 +256,31 @@ user.post(
     return c.json(job);
   },
 );
+
+ApiEndpoint.GetUserLeagues satisfies "user/leagues";
+ApiEndpointMethods[ApiEndpoint.GetUserLeagues] satisfies "GET";
+user.get("/leagues", async (c) => {
+  const sessionUser = c.get("sessionUser");
+  const db = c.get("db");
+
+  const userLeagues = await db.query.UserLeagues.findMany({
+    where: (userLeague, { eq: equals }) =>
+      equals(userLeague.userId, sessionUser.id),
+    with: {
+      league: true,
+    },
+  });
+
+  return c.json(
+    userLeagues.map<ApiResponse<ApiEndpoint.GetUserLeagues>[number]>(
+      (userLeague) => ({
+        id: userLeague.id,
+        leagueName: userLeague.league.leagueName,
+        leagueId: userLeague.league.leagueId,
+        realm: userLeague.league.realm,
+        startDate: userLeague.league.startDate?.toISOString() ?? null,
+        endDate: userLeague.league.endDate?.toISOString() ?? null,
+      }),
+    ),
+  );
+});

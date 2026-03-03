@@ -72,7 +72,7 @@ tasks:
       - |
           pnpm dlx prettier@3.6.2 --check \
             "projects/*/project/src/**/*.{ts,tsx,js,jsx,mjs,cjs,mts,cts,json,css,scss,md,html}" \
-            "projects/common/project/scrape-src/**/*.{ts,tsx,js,jsx,mjs,cjs,mts,cts,json,css,scss,md,html}"
+            "projects/common/project/scrape-src/**/*.{ts,tsx,js,jsx,mjs,cjs,mts,cts,json,css,scss,md,html}" {{.PRETTIER_ARGS}}
 
   build:
     deps: [install]

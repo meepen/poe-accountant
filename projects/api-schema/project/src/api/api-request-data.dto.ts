@@ -21,10 +21,9 @@ export const ApiResultResponseTypes = {
   [ApiEndpoint.GetExchangeRatesCurrency]: [z.void(), z.void()],
   [ApiEndpoint.GetExchangeRatesCurrencyHistorical]: [z.void(), PriceHistoryDto],
 
-  [ApiEndpoint.GetLeagues]: [z.void(), z.array(LeagueDto)],
-
   [ApiEndpoint.GetUser]: [z.void(), UserDto],
   [ApiEndpoint.GetUserJobs]: [z.void(), z.array(z.string())],
+  [ApiEndpoint.GetUserLeagues]: [z.void(), z.array(LeagueDto)],
   [ApiEndpoint.GetUserJobResult]: [z.void(), UserJobDto],
   [ApiEndpoint.SyncUserInventory]: [z.void(), SyncUserInventoryResponseDto],
   [ApiEndpoint.GetUserInventorySnapshots]: [
