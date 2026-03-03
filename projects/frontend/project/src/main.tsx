@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { Box, CircularProgress } from "@mui/material";
 import App from "./App";
 import { SessionProvider } from "./components/SessionContext";
+import { LeagueProvider } from "./components/LeagueContext";
 import "./utils/i18n";
 import "./index.css";
 
@@ -34,9 +35,11 @@ ReactDOM.createRoot(getRoot()).render(
       }
     >
       <SessionProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <LeagueProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </LeagueProvider>
       </SessionProvider>
     </Suspense>
   </React.StrictMode>,

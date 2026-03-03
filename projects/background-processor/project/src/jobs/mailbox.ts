@@ -15,6 +15,11 @@ export class MailboxProcess implements JobProcess {
     if (!this.queueMap.has(name)) {
       const queue = new Queue(name, {
         connection: valkeyForBullMQ,
+        streams: {
+          events: {
+            maxLen: 50,
+          },
+        },
       });
       this.queueMap.set(name, queue);
     }

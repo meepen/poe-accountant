@@ -11,6 +11,10 @@ import { LineChart } from "@mui/x-charts/LineChart";
 import { useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { ChartData } from "./types";
+import {
+  sharedDropdownMenuProps,
+  sharedDropdownSx,
+} from "../../components/dropdown-styles";
 
 type RelativeCurrencyChartProps = {
   relativeCurrency: string | null;
@@ -80,7 +84,7 @@ export default function RelativeCurrencyChart({
           {t("league_inspection_relative_title")}
           {relativeCurrency ? ` (${relativeCurrency})` : ""}
         </Typography>
-        <FormControl size="small" sx={{ minWidth: 200 }}>
+        <FormControl size="small" sx={{ width: "fit-content", minWidth: 0 }}>
           <InputLabel id="relative-currency-label">
             {t("league_inspection_relative_label")}
           </InputLabel>
@@ -88,12 +92,14 @@ export default function RelativeCurrencyChart({
             labelId="relative-currency-label"
             label={t("league_inspection_relative_label")}
             value={relativeCurrency ?? ""}
+            MenuProps={sharedDropdownMenuProps}
             onChange={(event) => {
               const value = event.target.value;
               onRelativeChange(
                 typeof value === "string" && value.length > 0 ? value : null,
               );
             }}
+            sx={sharedDropdownSx}
           >
             {relativeOptions.map((currency) => (
               <MenuItem key={currency} value={currency}>

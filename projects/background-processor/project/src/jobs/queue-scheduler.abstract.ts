@@ -29,6 +29,11 @@ export abstract class QueueScheduler<
   public override async start(): Promise<void> {
     this.jobScheduler = new Queue(this.queueName, {
       connection: valkeyForBullMQ,
+      streams: {
+        events: {
+          maxLen: 5,
+        },
+      },
     });
 
     await this.jobScheduler.upsertJobScheduler(

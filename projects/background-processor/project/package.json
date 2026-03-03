@@ -7,7 +7,7 @@
   "author": "",
   "type": "module",
   "scripts": {
-    "build": "tsup src/main.ts src/workers/snapshot.worker.ts --tsconfig tsconfig.lib.json --format esm",
+    "build": "tsup --config tsup.config.ts",
     "start": "node dist/main.js",
     "start:dev": "tsx src/main.ts",
     "test": "vitest run",

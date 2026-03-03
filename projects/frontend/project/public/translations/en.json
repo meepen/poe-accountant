@@ -45,6 +45,7 @@
   "league_inspection_currency_empty": "No currencies found.",
   "league_inspection_currency_error": "Failed to load currency list.",
   "league_inspection_history_error": "Failed to load currency history.",
+  "league_inspection_no_data_found": "No data found.",
   "league_inspection_currency": "Currency",
   "league_inspection_value": "Value",
   "league_inspection_relative": "Relative To",

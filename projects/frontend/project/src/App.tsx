@@ -7,6 +7,7 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { useSession } from "./components/session-hooks";
+import { useLeagueSelection } from "./components/session-hooks";
 import { createAppTheme } from "./theme";
 import AppBarNav from "./components/AppBarNav";
 import FooterBar from "./components/FooterBar";
@@ -14,6 +15,8 @@ import MainContent from "./components/MainContent";
 
 export default function App() {
   const { user, logout, login, isLoading } = useSession();
+  const { leagues, leaguesLoading, selectedLeagueKey, setSelectedLeagueKey } =
+    useLeagueSelection();
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const theme = useMemo(
     () => createAppTheme(prefersDarkMode ? "dark" : "light"),
@@ -50,7 +53,15 @@ export default function App() {
           flexDirection: "column",
         }}
       >
-        <AppBarNav user={user} login={login} logout={logout} />
+        <AppBarNav
+          user={user}
+          login={login}
+          logout={logout}
+          leagues={leagues}
+          leagueLoading={leaguesLoading}
+          selectedLeagueKey={selectedLeagueKey}
+          onLeagueChange={setSelectedLeagueKey}
+        />
         <Box
           sx={{
             flex: 1,

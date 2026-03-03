@@ -97,7 +97,7 @@ tasks:
     vars:
       CI: true
       REGISTRY:
-        sh: cd terraform && tofu output -raw registry_endpoint
+        sh: task tf:tofu -- output -raw registry_endpoint
     cmds:
       - doctl auth init -t {{.TF_VAR_do_token}}
       - doctl registry login
@@ -145,7 +145,7 @@ tasks:
     desc: Apply all pending migrations to the remote database
     vars:
       DATABASE_URL:
-        sh: cd terraform && tofu output -raw postgres_url
+        sh: task tf:tofu -- output -raw postgres_url
     env:
       NODE_OPTIONS: "--import tsx"
     cmds:
@@ -162,7 +162,7 @@ tasks:
     desc: Connect to the remote database with psql
     vars:
       DATABASE_URL:
-        sh: cd terraform && tofu output -raw postgres_url
+        sh: task tf:tofu -- output -raw postgres_url
     cmds:
       - psql "{{.DATABASE_URL}}"
 
@@ -194,17 +194,15 @@ tasks:
     desc: Connect to remote Valkey/Redis
     vars:
       VALKEY_URL:
-        sh: cd terraform && tofu output -raw valkey_uri
+        sh: task tf:tofu -- output -raw valkey_uri
     cmds:
       - redis-cli -u "{{.VALKEY_URL}}" {{.CLI_ARGS}}
 
   redis:clear:
     desc: "Clear remote Redis keys by pattern (default: *)"
-    vars:
-      URL: ""
     cmds:
       - |
-          PATTERN={{.CLI_ARGS}};
+          PATTERN={{.ARGS | default .CLI_ARGS}};
           if [ -z "$PATTERN" ]; then
             echo "No pattern provided";
             exit 1;
@@ -215,11 +213,12 @@ tasks:
     desc: "Clear remote Redis keys by pattern (default: *)"
     vars:
       VALKEY_URL:
-        sh: cd terraform && tofu output -raw valkey_uri
+        sh: task tf:tofu -- output -raw valkey_uri
     cmds:
       - task: redis:clear
         vars:
           URL: "{{.VALKEY_URL}}"
+          ARGS: "{{.CLI_ARGS}}"
 
   deploy:
     desc: Deploy infrastructure and applications

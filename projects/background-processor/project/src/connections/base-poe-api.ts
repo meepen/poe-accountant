@@ -19,6 +19,11 @@ export abstract class BasePoeApi extends PoeApi {
     z.infer<typeof PoeApiJobReturnSchema>
   >(PoeApiJobName, {
     connection: valkeyForBullMQ,
+    streams: {
+      events: {
+        maxLen: 50,
+      },
+    },
   });
 
   private readonly queueEvents = new QueueEvents(PoeApiJobName, {

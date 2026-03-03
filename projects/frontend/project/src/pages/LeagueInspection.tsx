@@ -1,28 +1,36 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Container } from "@mui/material";
 import { ApiEndpoint } from "@meepen/poe-accountant-api-schema/api/api-endpoints.enum";
+import { ApiError } from "@meepen/poe-accountant-api-schema/api/api-service";
 import { useTranslation } from "react-i18next";
 import LeagueInspectionContent from "./LeagueInspection/LeagueInspectionContent";
-import LeagueInspectionHeader from "./LeagueInspection/LeagueInspectionHeader";
 import type {
   ChartData,
   HistoryState,
-  League,
   PriceHistoryItem,
   PriceListItem,
 } from "./LeagueInspection/types";
 import { useApi } from "../components/session-hooks";
+import {
+  LeagueContext,
+  type LeagueContextType,
+} from "../components/league-context";
 
 const DEFAULT_CURRENCY_MATCH = /^(divine)$/i;
+
+function isApiNotFoundError(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.status === 404;
+}
 
 export default function LeagueInspection() {
   const api = useApi();
   const { t } = useTranslation();
-  const [leagues, setLeagues] = useState<League[]>([]);
-  const [leagueLoading, setLeagueLoading] = useState(true);
-  const [selectedLeagueKey, setSelectedLeagueKey] = useState<string | null>(
-    null,
-  );
+  const leagueContext: LeagueContextType | undefined = use(LeagueContext);
+  if (leagueContext === undefined) {
+    throw new Error("LeagueInspection must be used within a LeagueProvider");
+  }
+
+  const { leagues, leaguesLoading, selectedLeague } = leagueContext;
   const [currencyList, setCurrencyList] = useState<PriceListItem[] | null>(
     null,
   );
@@ -46,46 +54,6 @@ export default function LeagueInspection() {
   useEffect(() => {
     historyByCurrencyRef.current = historyByCurrency;
   }, [historyByCurrency]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function fetchLeagues() {
-      try {
-        const result = await api.request(ApiEndpoint.GetUserLeagues);
-        if (!mounted) {
-          return;
-        }
-        setLeagues(result);
-        if (result.length > 0) {
-          const latest = result[0];
-          setSelectedLeagueKey(
-            (current) => current ?? `${latest.realm}:${latest.leagueId}`,
-          );
-        }
-      } catch (error) {
-        console.error("Failed to fetch leagues:", error);
-      } finally {
-        if (mounted) {
-          setLeagueLoading(false);
-        }
-      }
-    }
-
-    void fetchLeagues();
-
-    return () => {
-      mounted = false;
-    };
-  }, [api]);
-
-  const selectedLeague = useMemo(
-    () =>
-      leagues.find(
-        (league) => `${league.realm}:${league.leagueId}` === selectedLeagueKey,
-      ) ?? null,
-    [leagues, selectedLeagueKey],
-  );
 
   useEffect(() => {
     if (!selectedLeague) {
@@ -126,7 +94,11 @@ export default function LeagueInspection() {
       } catch (error) {
         console.error("Failed to fetch currency list:", error);
         if (mounted) {
-          setCurrencyError(t("league_inspection_currency_error"));
+          setCurrencyError(
+            isApiNotFoundError(error)
+              ? t("league_inspection_no_data_found")
+              : t("league_inspection_currency_error"),
+          );
           setCurrencyList(null);
         }
       } finally {
@@ -187,7 +159,9 @@ export default function LeagueInspection() {
             [currency]: {
               loading: false,
               data: null,
-              error: t("league_inspection_history_error"),
+              error: isApiNotFoundError(error)
+                ? t("league_inspection_no_data_found")
+                : t("league_inspection_history_error"),
             },
           }));
         }
@@ -317,12 +291,6 @@ export default function LeagueInspection() {
           overflow: "hidden",
         }}
       >
-        <LeagueInspectionHeader
-          leagues={leagues}
-          selectedLeagueKey={selectedLeagueKey}
-          leagueLoading={leagueLoading}
-          onLeagueChange={setSelectedLeagueKey}
-        />
         <Box
           sx={{
             flex: 1,
@@ -333,7 +301,7 @@ export default function LeagueInspection() {
           }}
         >
           <LeagueInspectionContent
-            leagueLoading={leagueLoading}
+            leagueLoading={leaguesLoading}
             hasLeagues={leagues.length > 0}
             currencyLoading={currencyLoading}
             currencyError={currencyError}

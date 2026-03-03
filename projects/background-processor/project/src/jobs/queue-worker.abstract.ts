@@ -46,6 +46,7 @@ export abstract class QueueWorker<
     this.worker.on("failed", (job, err) => {
       if (job) {
         console.error(`Job ${job.id} failed with ${err.message}`);
+        console.error(err);
       }
     });
 
