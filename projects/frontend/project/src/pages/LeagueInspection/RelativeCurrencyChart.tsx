@@ -15,6 +15,8 @@ import {
   sharedDropdownMenuProps,
   sharedDropdownSx,
 } from "../../components/dropdown-styles";
+import { useStaticTradeDataState } from "../../components/session-hooks";
+import CurrencyName from "./CurrencyName";
 
 type RelativeCurrencyChartProps = {
   relativeCurrency: string | null;
@@ -38,11 +40,23 @@ export default function RelativeCurrencyChart({
   onRelativeChange,
 }: RelativeCurrencyChartProps) {
   const { t } = useTranslation();
+  const { currencyNameByKey } = useStaticTradeDataState();
+  const relativeCurrencyLabel = t("league_inspection_relative_label");
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const compactNumberFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat(undefined, {
+        notation: "compact",
+        compactDisplay: "short",
+        maximumFractionDigits: 1,
+      }),
+    [],
+  );
   const seriesWithConfidence = useMemo(
     () =>
       chartData.series.map((series) => ({
         ...series,
+        label: currencyNameByKey.get(series.label) ?? series.label,
         valueFormatter: (
           value: number | null,
           context: { dataIndex?: number },
@@ -50,11 +64,17 @@ export default function RelativeCurrencyChart({
           if (value === null || Number.isNaN(value)) {
             return null;
           }
+          const formattedValue = compactNumberFormatter.format(value);
           const rawConfidence =
             typeof context.dataIndex === "number"
               ? series.confidence.at(context.dataIndex)
               : null;
+          const calculationPath =
+            typeof context.dataIndex === "number"
+              ? series.calculationPath.at(context.dataIndex)
+              : null;
           let confidenceLabel = "n/a";
+          let confidencePercentValue: number | null = null;
           if (
             typeof rawConfidence === "number" &&
             !Number.isNaN(rawConfidence)
@@ -63,11 +83,23 @@ export default function RelativeCurrencyChart({
               rawConfidence > 1 ? rawConfidence : rawConfidence * 100;
             const rounded = percentValue.toFixed(1).replace(/\.0$/, "");
             confidenceLabel = `${rounded}%`;
+            confidencePercentValue = percentValue;
           }
-          return `${value} (conf: ${confidenceLabel})`;
+          const shouldShowPath =
+            confidencePercentValue !== null &&
+            confidencePercentValue < 100 &&
+            Array.isArray(calculationPath) &&
+            calculationPath.length > 0;
+          const translatedPath = calculationPath?.map(
+            (currency) => currencyNameByKey.get(currency) ?? currency,
+          );
+          const pathLabel = shouldShowPath
+            ? ` (path: ${translatedPath?.join(" → ") ?? ""})`
+            : "";
+          return `${formattedValue} (conf: ${confidenceLabel})${pathLabel}`;
         },
       })),
-    [chartData.series],
+    [chartData.series, compactNumberFormatter, currencyNameByKey],
   );
 
   return (
@@ -82,28 +114,46 @@ export default function RelativeCurrencyChart({
       >
         <Typography variant="h6">
           {t("league_inspection_relative_title")}
-          {relativeCurrency ? ` (${relativeCurrency})` : ""}
+          {relativeCurrency ? (
+            <>
+              {" ("}
+              <CurrencyName currencyKey={relativeCurrency} />
+              {")"}
+            </>
+          ) : (
+            ""
+          )}
         </Typography>
-        <FormControl size="small" sx={{ width: "fit-content", minWidth: 0 }}>
+        <FormControl
+          size="small"
+          sx={{
+            width: "fit-content",
+            minWidth: `${Math.max(relativeCurrencyLabel.length + 5, 14)}ch`,
+          }}
+        >
           <InputLabel id="relative-currency-label">
-            {t("league_inspection_relative_label")}
+            {relativeCurrencyLabel}
           </InputLabel>
           <Select
             labelId="relative-currency-label"
-            label={t("league_inspection_relative_label")}
+            label={relativeCurrencyLabel}
             value={relativeCurrency ?? ""}
             MenuProps={sharedDropdownMenuProps}
+            autoWidth
             onChange={(event) => {
               const value = event.target.value;
               onRelativeChange(
                 typeof value === "string" && value.length > 0 ? value : null,
               );
             }}
-            sx={sharedDropdownSx}
+            sx={{
+              ...sharedDropdownSx,
+              width: "100%",
+            }}
           >
             {relativeOptions.map((currency) => (
               <MenuItem key={currency} value={currency}>
-                {currency}
+                <CurrencyName currencyKey={currency} />
               </MenuItem>
             ))}
           </Select>
@@ -113,7 +163,7 @@ export default function RelativeCurrencyChart({
         sx={{
           flex: 1,
           minHeight: 0,
-          height: "100%",
+          display: "flex",
           overflow: "hidden",
         }}
         ref={containerRef}
@@ -141,18 +191,33 @@ export default function RelativeCurrencyChart({
                 data: chartData.x,
                 scaleType: "time",
                 label: t("league_inspection_time_label"),
+                height: 84,
+                valueFormatter: (value: Date) =>
+                  value.toLocaleString([], {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }),
                 tickLabelStyle: {
-                  angle: -45,
+                  angle: -30,
                   textAnchor: "end",
                   fontSize: 11,
-                  // Move labels down manually if needed
-                  transform: "translateY(10px)",
                 },
               },
             ]}
+            yAxis={[
+              {
+                valueFormatter: (value: number | null) =>
+                  typeof value === "number" && !Number.isNaN(value)
+                    ? compactNumberFormatter.format(value)
+                    : "",
+              },
+            ]}
             series={seriesWithConfidence}
-            margin={{ left: 50, right: 20, top: 20, bottom: 20 }}
+            margin={{ left: 72, right: 28, top: 20, bottom: 16 }}
             sx={{
+              flex: 1,
               overflow: "visible",
             }}
           />

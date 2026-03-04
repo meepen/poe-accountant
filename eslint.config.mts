@@ -17,6 +17,7 @@ export default defineConfig([
     "projects/common/project/docs/**",
     "projects/common/project/src/**/*.gen.ts",
   ]),
+  eslintConfigPrettier,
   {
     files: ["projects/*/project/**/*.{ts,mts,cts,tsx}"],
     languageOptions: {
@@ -102,5 +103,4 @@ export default defineConfig([
       "@typescript-eslint/no-non-null-assertion": "off",
     },
   },
-  eslintConfigPrettier,
 ]);

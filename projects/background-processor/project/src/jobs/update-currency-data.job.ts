@@ -4,9 +4,6 @@ import { appApi, realms } from "../connections/application-poe-api.js";
 import { CurrencyDatabaseManager } from "./update-currency-data/currency-database-manager.js";
 import type { DbTransaction } from "../connections/db.js";
 import { db } from "../connections/db.js";
-import { CurrencyExchangeHistory } from "@meepen/poe-accountant-db-schema/currency-exchange";
-import type { InferSelectModel } from "drizzle-orm";
-import { desc, eq } from "drizzle-orm";
 import { valkey } from "../connections/valkey.js";
 import { UpdateCurrencySnapshotsJob } from "./update-currency-snapshots.job.js";
 
@@ -72,15 +69,10 @@ export class UpdateCurrencyDataJob extends QueueScheduler<
     console.log(`[${realm}] Checking for new exchange data...`);
     const latestId = nextTimestamp
       ? null
-      : await tx
-          .select()
-          .from(CurrencyExchangeHistory)
-          .where((league) => eq(league.realm, realm))
-          .orderBy((league) => desc(league.timestamp))
-          .limit(1)
-          .then<InferSelectModel<typeof CurrencyExchangeHistory> | null>(
-            (rows) => rows[0] || null,
-          );
+      : await tx.query.CurrencyExchangeHistory.findFirst({
+          where: (league, { eq }) => eq(league.realm, realm),
+          orderBy: (league, { desc }) => desc(league.timestamp),
+        });
 
     console.log(
       `[${realm}] Latest known exchange data timestamp: ${

@@ -5,6 +5,7 @@ import { UserJobDto } from "./dtos/user/user.job.dto.js";
 import { LeagueDto } from "./dtos/league/league.dto.js";
 import { PriceListDto } from "./dtos/prices/price-list.dto.js";
 import { PriceHistoryDto } from "./dtos/prices/price-history.dto.js";
+import { StaticTradeDataSnapshotDto } from "./dtos/prices/static-trade-data.dto.js";
 import {
   SyncUserInventoryJobDataDto,
   SyncUserInventoryResponseDto,
@@ -20,6 +21,7 @@ export const ApiResultResponseTypes = {
   [ApiEndpoint.GetExchangeRatesCurrencyList]: [z.void(), PriceListDto],
   [ApiEndpoint.GetExchangeRatesCurrency]: [z.void(), z.void()],
   [ApiEndpoint.GetExchangeRatesCurrencyHistorical]: [z.void(), PriceHistoryDto],
+  [ApiEndpoint.GetStaticTradeData]: [z.void(), StaticTradeDataSnapshotDto],
 
   [ApiEndpoint.GetUser]: [z.void(), UserDto],
   [ApiEndpoint.GetUserJobs]: [z.void(), z.array(z.string())],

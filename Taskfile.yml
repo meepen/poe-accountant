@@ -67,12 +67,18 @@ tasks:
     cmds:
       - pnpm -r exec tsc -p tsconfig.json --noEmit
 
-  prettier:check:
+  prettier:
     cmds:
       - |
           pnpm dlx prettier@3.6.2 --check \
             "projects/*/project/src/**/*.{ts,tsx,js,jsx,mjs,cjs,mts,cts,json,css,scss,md,html}" \
             "projects/common/project/scrape-src/**/*.{ts,tsx,js,jsx,mjs,cjs,mts,cts,json,css,scss,md,html}" {{.PRETTIER_ARGS}}
+
+  prettier:write:
+    cmds:
+      - task: prettier
+        vars:
+          PRETTIER_ARGS: "--write"
 
   build:
     deps: [install]
@@ -81,7 +87,7 @@ tasks:
 
   ci:check:
     desc: Run formatter, lint, tests, and builds for CI
-    deps: [install:ci, prettier:check, lint, typecheck, test]
+    deps: [install:ci, prettier, lint, typecheck, test]
     cmds:
       - task: build
 

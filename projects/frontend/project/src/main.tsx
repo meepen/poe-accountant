@@ -5,6 +5,7 @@ import { Box, CircularProgress } from "@mui/material";
 import App from "./App";
 import { SessionProvider } from "./components/SessionContext";
 import { LeagueProvider } from "./components/LeagueContext";
+import { StaticTradeDataProvider } from "./components/StaticTradeDataProvider";
 import "./utils/i18n";
 import "./index.css";
 
@@ -36,9 +37,11 @@ ReactDOM.createRoot(getRoot()).render(
     >
       <SessionProvider>
         <LeagueProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
+          <StaticTradeDataProvider>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </StaticTradeDataProvider>
         </LeagueProvider>
       </SessionProvider>
     </Suspense>

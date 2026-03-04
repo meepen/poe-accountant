@@ -1,5 +1,11 @@
 import type { JobProcess } from "../job-process.interface.js";
 import { TradeApi, type StaticTradeData } from "../connections/trade-api.js";
+import {
+  StaticTradeDataSnapshotRedisKey,
+  StaticTradeDataSnapshotRedisTtlSeconds,
+  type StaticTradeDataSnapshot,
+} from "@meepen/poe-accountant-api-schema";
+import { valkey } from "../connections/valkey.js";
 
 const StaticTradeDataRefreshIntervalMs = 60 * 60 * 1000;
 
@@ -63,7 +69,21 @@ export class StaticTradeDataJob implements JobProcess {
   }
 
   public async processNow(): Promise<void> {
-    StaticTradeDataJob.tradeDataCache = await this.tradeApi.getStaticData();
+    const tradeData = await this.tradeApi.getStaticData();
+    StaticTradeDataJob.tradeData = tradeData;
+
+    const snapshot: StaticTradeDataSnapshot = {
+      refreshedAt: new Date().toISOString(),
+      data: tradeData,
+    };
+
+    await valkey.set(
+      StaticTradeDataSnapshotRedisKey,
+      JSON.stringify(snapshot),
+      "EX",
+      StaticTradeDataSnapshotRedisTtlSeconds,
+    );
+
     console.log("[static-trade-data] Refreshed static trade data cache.");
   }
 

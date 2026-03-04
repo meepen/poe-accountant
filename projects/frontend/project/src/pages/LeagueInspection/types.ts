@@ -27,6 +27,7 @@ export type ChartData = {
   series: {
     data: (number | null)[];
     confidence: (number | null)[];
+    calculationPath: (string[] | null)[];
     label: string;
   }[];
 };

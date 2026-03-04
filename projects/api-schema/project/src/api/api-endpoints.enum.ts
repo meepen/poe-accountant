@@ -7,6 +7,7 @@ export enum ApiEndpoint {
   GetExchangeRatesCurrencyList = "prices/exchange-rates/:realm/:leagueId/currency",
   GetExchangeRatesCurrency = "prices/exchange-rates/:realm/:leagueId/currency/:currency",
   GetExchangeRatesCurrencyHistorical = "prices/exchange-rates/:realm/:leagueId/currency/:currency/historical",
+  GetStaticTradeData = "prices/static-trade-data",
 
   GetUser = "user",
   GetUserJobs = "user/jobs",
@@ -24,6 +25,7 @@ export const ApiEndpointMethods = {
   [ApiEndpoint.GetExchangeRatesCurrencyList]: "GET",
   [ApiEndpoint.GetExchangeRatesCurrency]: "GET",
   [ApiEndpoint.GetExchangeRatesCurrencyHistorical]: "GET",
+  [ApiEndpoint.GetStaticTradeData]: "GET",
 
   [ApiEndpoint.GetUser]: "GET",
   [ApiEndpoint.GetUserJobs]: "GET",

@@ -10,7 +10,7 @@ import type {
   PriceHistoryItem,
   PriceListItem,
 } from "./LeagueInspection/types";
-import { useApi } from "../components/session-hooks";
+import { useApi, useStaticTradeDataActions } from "../components/session-hooks";
 import {
   LeagueContext,
   type LeagueContextType,
@@ -24,6 +24,7 @@ function isApiNotFoundError(error: unknown): error is ApiError {
 
 export default function LeagueInspection() {
   const api = useApi();
+  const { loadStaticTradeData } = useStaticTradeDataActions();
   const { t } = useTranslation();
   const leagueContext: LeagueContextType | undefined = use(LeagueContext);
   if (leagueContext === undefined) {
@@ -54,6 +55,10 @@ export default function LeagueInspection() {
   useEffect(() => {
     historyByCurrencyRef.current = historyByCurrency;
   }, [historyByCurrency]);
+
+  useEffect(() => {
+    void loadStaticTradeData();
+  }, [loadStaticTradeData]);
 
   useEffect(() => {
     if (!selectedLeague) {
@@ -209,6 +214,7 @@ export default function LeagueInspection() {
       const entries = historyByCurrency[currency]?.data ?? [];
       const valueByTime = new Map<number, number>();
       const confidenceByTime = new Map<number, number>();
+      const calculationPathByTime = new Map<number, string[]>();
       entries
         .filter((entry) => entry.stableCurrency === relativeCurrency)
         .forEach((entry) => {
@@ -223,6 +229,12 @@ export default function LeagueInspection() {
             if (confidence !== null && !Number.isNaN(confidence)) {
               confidenceByTime.set(time, confidence);
             }
+            if (
+              Array.isArray(entry.calculationPath) &&
+              entry.calculationPath.length > 0
+            ) {
+              calculationPathByTime.set(time, entry.calculationPath);
+            }
           }
         });
 
@@ -230,9 +242,13 @@ export default function LeagueInspection() {
       const confidence = x.map(
         (time) => confidenceByTime.get(time.getTime()) ?? null,
       );
+      const calculationPath = x.map(
+        (time) => calculationPathByTime.get(time.getTime()) ?? null,
+      );
       return {
         data,
         confidence,
+        calculationPath,
         label: currency,
       };
     });

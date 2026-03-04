@@ -12,6 +12,7 @@ import {
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { PriceListItem } from "./types";
+import CurrencyName from "./CurrencyName";
 
 type CurrencyTableProps = {
   currencyList: PriceListItem[];
@@ -19,81 +20,15 @@ type CurrencyTableProps = {
   onToggleCurrency: (currency: string) => void;
 };
 
-const MAX_FRACTION_DENOMINATOR = 256;
-
-const gcd = (a: number, b: number) => {
-  let x = Math.abs(a);
-  let y = Math.abs(b);
-  while (y !== 0) {
-    const temp = y;
-    y = x % y;
-    x = temp;
-  }
-  return x;
-};
-
-const approximateFraction = (value: number, maxDenominator: number) => {
-  let x = Math.abs(value);
-  if (x === 0) {
-    return { numerator: 0, denominator: 1, error: 0 };
-  }
-
-  let a = Math.floor(x);
-  let h1 = 1;
-  let k1 = 0;
-  let h = a;
-  let k = 1;
-
-  let iter = 0;
-  while (k <= maxDenominator && iter < 32) {
-    const fractional = x - a;
-    if (fractional < 1e-12) {
-      break;
-    }
-    x = 1 / fractional;
-    a = Math.floor(x);
-    const h2 = h1 + a * h;
-    const k2 = k1 + a * k;
-    if (k2 > maxDenominator) {
-      break;
-    }
-    h1 = h;
-    k1 = k;
-    h = h2;
-    k = k2;
-    iter += 1;
-  }
-
-  const divisor = gcd(h, k);
-  const numerator = h / divisor;
-  const denominator = k / divisor;
-  const approximation = numerator / denominator;
-  const error = Math.abs(Math.abs(value) - approximation);
-  return { numerator, denominator, error };
-};
-
-const formatValue = (rawValue: string | number) => {
+const formatValue = (
+  rawValue: string | number,
+  formatter: Intl.NumberFormat,
+) => {
   const value = Number(rawValue);
   if (!Number.isFinite(value)) {
     return String(rawValue);
   }
-  if (value === 0) {
-    return "0";
-  }
-
-  const isNegative = value < 0;
-  const absoluteValue = Math.abs(value);
-  const { numerator, denominator, error } = approximateFraction(
-    absoluteValue,
-    MAX_FRACTION_DENOMINATOR,
-  );
-
-  const formatted =
-    denominator === 1 ? `${numerator}` : `${numerator}/${denominator}`;
-  const isApproximate = error > Math.max(1e-6, absoluteValue * 0.0025);
-  const withApprox = isApproximate ? `~${formatted}` : formatted;
-
-  return isNegative ? `-${withApprox}` : withApprox;
+  return formatter.format(value);
 };
 
 const toNumericValue = (rawValue: string | number) => {
@@ -113,6 +48,13 @@ export default function CurrencyTable({
   const { t } = useTranslation();
   const [orderBy, setOrderBy] = useState<"currency" | "value">("value");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
+  const valueFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat(undefined, {
+        maximumFractionDigits: 2,
+      }),
+    [],
+  );
 
   const sortedCurrencyList = useMemo(() => {
     const sorted = [...currencyList].sort((a, b) => {
@@ -206,8 +148,12 @@ export default function CurrencyTable({
                   }}
                 />
               </TableCell>
-              <TableCell>{item.currency}</TableCell>
-              <TableCell>{formatValue(item.value.amount)}</TableCell>
+              <TableCell>
+                <CurrencyName currencyKey={item.currency} />
+              </TableCell>
+              <TableCell>
+                {formatValue(item.value.amount, valueFormatter)}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

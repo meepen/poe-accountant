@@ -14,7 +14,7 @@ export abstract class QueueWorker<
   protected abstract readonly schema: T;
   protected abstract readonly returnSchema: ReturnType;
   protected abstract readonly queueName: string;
-  protected readonly concurrency = 5;
+  protected readonly concurrency: number = 5;
 
   protected worker?: Worker<z.infer<T>, z.infer<ReturnType>>;
 

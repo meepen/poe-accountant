@@ -5,6 +5,10 @@ import {
   ApiEndpointMethods,
 } from "@meepen/poe-accountant-api-schema/api/api-endpoints.enum";
 import {
+  StaticTradeDataSnapshotRedisKey,
+  StaticTradeDataSnapshotDto,
+} from "@meepen/poe-accountant-api-schema";
+import {
   CurrencyExchangeHistory,
   CurrencyExchangeLeagueSnapshotData,
 } from "@meepen/poe-accountant-db-schema";
@@ -160,5 +164,30 @@ prices.get(
         }),
       ),
     );
+  },
+);
+
+ApiEndpoint.GetStaticTradeData satisfies "prices/static-trade-data";
+ApiEndpointMethods[ApiEndpoint.GetStaticTradeData] satisfies "GET";
+prices.get(
+  "/static-trade-data",
+  valkeyCache({
+    ttl: 60 * 10,
+    keyPrefix: "static-trade-data",
+  }),
+  async (c) => {
+    const snapshotRaw = await c
+      .get("valkey")
+      .get<string>(StaticTradeDataSnapshotRedisKey);
+
+    if (!snapshotRaw) {
+      return c.notFound();
+    }
+
+    const snapshot = StaticTradeDataSnapshotDto.parse(
+      typeof snapshotRaw === "string" ? JSON.parse(snapshotRaw) : snapshotRaw,
+    ) satisfies ApiResponse<ApiEndpoint.GetStaticTradeData>;
+
+    return c.json(snapshot);
   },
 );
