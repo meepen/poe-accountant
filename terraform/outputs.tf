@@ -104,7 +104,17 @@ output "registry_endpoint" {
 }
 output "api_domain_name" { value = local.full_api_domain_name }
 
-output "assets_domain_name" { value = local.full_assets_domain_name }
+output "cdn_domain_name" { value = local.full_cdn_domain_name }
+
+output "cdn_s3_access_key_id" {
+  value = module.r2_cdn.access_key_id
+  sensitive = true
+}
+
+output "cdn_s3_secret_access_key" {
+  value = module.r2_cdn.secret_access_key
+  sensitive = true
+}
 
 output "cdn_public_base_url" {
   value = "https://${module.r2_cdn.public_custom_domain}"

@@ -13,10 +13,11 @@ export enum ApiEndpoint {
   GetUserJobs = "user/jobs",
   GetUserLeagues = "user/leagues",
   GetUserJobResult = "user/job/:jobId",
-  SyncUserInventory = "user/sync-inventory",
-  GetUserInventorySnapshots = "user/inventory-snapshots",
-  GetUserInventorySnapshot = "user/inventory-snapshots/:snapshotId",
-  GetUserInventorySnapshotData = "user/inventory-snapshots/:snapshotId/data",
+  SyncUserInventory = "user/:realm/:leagueId/sync-inventory",
+  GetUserInventorySnapshots = "user/:realm/:leagueId/inventory-snapshots",
+  GetUserInventorySnapshot = "user/:realm/:leagueId/inventory-snapshots/:snapshotId",
+  GetUserInventorySnapshotData = "user/:realm/:leagueId/inventory-snapshots/:snapshotId/data",
+  GetUserInventorySnapshotCurrencyList = "user/:realm/:leagueId/inventory-snapshots/:snapshotId/currency-list",
 }
 
 export const ApiEndpointMethods = {
@@ -35,4 +36,5 @@ export const ApiEndpointMethods = {
   [ApiEndpoint.GetUserInventorySnapshots]: "GET",
   [ApiEndpoint.GetUserInventorySnapshot]: "GET",
   [ApiEndpoint.GetUserInventorySnapshotData]: "GET",
+  [ApiEndpoint.GetUserInventorySnapshotCurrencyList]: "GET",
 } as const;

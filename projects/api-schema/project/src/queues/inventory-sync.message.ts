@@ -4,6 +4,7 @@ export const InventorySyncMessageQueue = "inventory_sync_queue";
 
 export const InventorySyncMessage = z.object({
   userId: z.uuid(),
+  jobId: z.string().min(1),
   redisKey: z.string().min(1),
   league: z.object({
     id: z.string(),

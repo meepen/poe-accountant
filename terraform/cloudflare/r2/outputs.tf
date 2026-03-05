@@ -11,7 +11,7 @@ output "access_key_id" {
 }
 
 output "secret_access_key" {
-  value     = cloudflare_api_token.r2.value
+  value     = sha256(cloudflare_api_token.r2.value)
   sensitive = true
 }
 

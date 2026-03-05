@@ -20,6 +20,29 @@ type CreateCachedUserJobOptions = {
   priority?: number;
 };
 
+export type CachedJobMiddlewareEnv = {
+  Variables: {
+    cachedJobCacheKey: string;
+    cachedJobRedisKey: string;
+  };
+};
+
+function normalizeRouteParams(params: unknown): Record<string, string> {
+  if (!params || typeof params !== "object") {
+    return {};
+  }
+
+  return Object.entries(params).reduce<Record<string, string>>(
+    (result, [key, value]) => {
+      if (typeof value === "string") {
+        result[key] = value;
+      }
+      return result;
+    },
+    {},
+  );
+}
+
 export async function startUserJob({
   redis,
   mailboxData,
@@ -36,13 +59,21 @@ export async function startUserJob({
 }
 
 export const createCachedJobMiddleware = (
-  cacheKey: string,
+  cacheKey: string | ((params: Record<string, string>) => string),
   ttl = UserJobRedisMetadataTtlSeconds,
 ) =>
-  createMiddleware<AppEnv & ValkeyEnv & SessionUserEnv>(async (c, next) => {
+  createMiddleware<
+    AppEnv & ValkeyEnv & SessionUserEnv & CachedJobMiddlewareEnv
+  >(async (c, next) => {
     const redis = c.get("valkey");
     const sessionUser = c.get("sessionUser");
-    const key = getUserJobCacheKey(sessionUser.id, cacheKey);
+    const routeParams = normalizeRouteParams(c.req.param());
+    const resolvedCacheKey =
+      typeof cacheKey === "function" ? cacheKey(routeParams) : cacheKey;
+    const key = getUserJobCacheKey(sessionUser.id, resolvedCacheKey);
+
+    c.set("cachedJobCacheKey", resolvedCacheKey);
+    c.set("cachedJobRedisKey", key);
 
     const previousJob = await redis.get<object>(key);
 

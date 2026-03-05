@@ -17,15 +17,8 @@ variable "public_custom_domain" {
   default     = null
 }
 
-variable "cloudflare_api_key" {
-  description = "Cloudflare Global API key for R2 domain management"
-  type        = string
-  sensitive   = true
-  default     = null
-}
-
-variable "cloudflare_api_email" {
-  description = "Cloudflare account email for R2 domain management"
+variable "zone_id" {
+  description = "Cloudflare Zone ID for the custom domain (required if public_custom_domain is set)"
   type        = string
   default     = null
 }

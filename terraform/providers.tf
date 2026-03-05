@@ -7,8 +7,8 @@ terraform {
       version = "~> 2.0"
     }
     cloudflare = {
-      source  = "cloudflare/cloudflare"
-      version = "~> 4.0"
+      source  = "registry.terraform.io/cloudflare/cloudflare"
+      version = "~> 5.0"
     }
     http = {
       source  = "hashicorp/http"

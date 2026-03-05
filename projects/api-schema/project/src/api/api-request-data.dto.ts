@@ -10,12 +10,12 @@ import {
 } from "./dtos/prices/price-history.dto.js";
 import { StaticTradeDataSnapshotDto } from "./dtos/prices/static-trade-data.dto.js";
 import {
-  SyncUserInventoryJobDataDto,
+  SyncUserInventorySnapshotDataEnvelopeDto,
   SyncUserInventoryResponseDto,
 } from "./dtos/user/sync-user-inventory.dto.js";
 import {
   UserInventorySnapshotDetailDto,
-  UserInventorySnapshotDto,
+  UserInventorySnapshotsPageDto,
 } from "./dtos/user/user-inventory-snapshot.dto.js";
 
 export const ApiResultResponseTypes = {
@@ -33,7 +33,7 @@ export const ApiResultResponseTypes = {
   [ApiEndpoint.SyncUserInventory]: [z.void(), SyncUserInventoryResponseDto],
   [ApiEndpoint.GetUserInventorySnapshots]: [
     z.void(),
-    z.array(UserInventorySnapshotDto),
+    UserInventorySnapshotsPageDto,
   ],
   [ApiEndpoint.GetUserInventorySnapshot]: [
     z.void(),
@@ -41,8 +41,9 @@ export const ApiResultResponseTypes = {
   ],
   [ApiEndpoint.GetUserInventorySnapshotData]: [
     z.void(),
-    SyncUserInventoryJobDataDto,
+    SyncUserInventorySnapshotDataEnvelopeDto,
   ],
+  [ApiEndpoint.GetUserInventorySnapshotCurrencyList]: [z.void(), PriceListDto],
 } as const;
 
 export type ApiResultResponseData<T extends ApiEndpoint> = [

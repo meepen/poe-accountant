@@ -229,7 +229,7 @@ export class UpdateCurrencySnapshotsJob extends QueueScheduler<
         console.warn(
           `[${realm}] [${leagueId}] No currency rates calculated, skipping database snapshot.`,
         );
-        return;
+        continue;
       }
 
       console.log(

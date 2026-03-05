@@ -17,3 +17,14 @@ export const UserInventorySnapshotDetailDto = UserInventorySnapshotDto.extend({
 export type UserInventorySnapshotDetailDto = z.infer<
   typeof UserInventorySnapshotDetailDto
 >;
+
+export const UserInventorySnapshotsPageDto = z.object({
+  page: z.int().min(0),
+  beginningTime: z.iso.datetime(),
+  endTime: z.iso.datetime(),
+  snapshots: z.array(UserInventorySnapshotDto),
+});
+
+export type UserInventorySnapshotsPageDto = z.infer<
+  typeof UserInventorySnapshotsPageDto
+>;

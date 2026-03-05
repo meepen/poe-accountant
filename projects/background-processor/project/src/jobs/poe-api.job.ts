@@ -30,7 +30,7 @@ export class PoeApiJob extends QueueWorker<
   protected override readonly queueName = PoeApiJobName;
   protected override readonly schema = PoeApiJobSchema;
   protected override readonly returnSchema = PoeApiJobReturnSchema;
-  protected override readonly concurrency = 5;
+  protected override readonly concurrency = 35;
 
   private readonly limiter = new PoeRateLimiter({
     hitCountBuffer: 2,

@@ -128,7 +128,7 @@ variable "api_subdomain" {
   type        = string
 }
 
-variable "assets_subdomain" {
+variable "cdn_subdomain" {
   description = "Subdomain for public static trade images bucket"
   type        = string
   default     = "assets"

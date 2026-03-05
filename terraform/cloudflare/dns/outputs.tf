@@ -1,16 +1,16 @@
 output "records" {
   description = "The created DNS records"
   value = {
-    for key, record in cloudflare_record.records : key => {
+    for key, record in cloudflare_dns_record.records : key => {
       id       = record.id
       name     = record.name
       type     = record.type
-      value    = record.value
+      value    = try(record.content, record.value)
       ttl      = record.ttl
       proxied  = record.proxied
       priority = record.priority
       comment  = record.comment
-      fqdn     = record.hostname
+      fqdn     = try(record.hostname, record.name)
     }
   }
 }
@@ -22,5 +22,5 @@ output "zone_id" {
 
 output "record_count" {
   description = "Number of DNS records created"
-  value       = length(cloudflare_record.records)
+  value       = length(cloudflare_dns_record.records)
 }

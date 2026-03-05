@@ -3,8 +3,8 @@ import { LeagueCollectorJob } from "./jobs/league-collector.job.js";
 import { MailboxProcess } from "./jobs/mailbox.js";
 import { PoeApiJob } from "./jobs/poe-api.job.js";
 import { StaticTradeDataJob } from "./jobs/static-trade-data.job.js";
-import { SyncUserLeaguesJob } from "./jobs/sync-user-inventory.job.js";
-import { SyncUserInventoryJob } from "./jobs/sync-user-leagues.job.js";
+import { SyncUserLeaguesJob } from "./jobs/sync-user-leagues.job.js";
+import { SyncUserInventoryJob } from "./jobs/sync-user-inventory.job.js";
 import { UpdateCurrencyDataJob } from "./jobs/update-currency-data.job.js";
 import { UpdateCurrencySnapshotsJob } from "./jobs/update-currency-snapshots.job.js";
 

@@ -1,6 +1,6 @@
 import { createContext } from "react";
 import type { z } from "zod";
-import { LeagueDto } from "@meepen/poe-accountant-api-schema/api/dtos/league/league.dto";
+import type { LeagueDto } from "@meepen/poe-accountant-api-schema/api/dtos/league/league.dto";
 
 export type League = z.infer<typeof LeagueDto>;
 

@@ -8,14 +8,17 @@ import type { z } from "zod";
 import type { SyncUserInventoryResponseDto } from "@meepen/poe-accountant-api-schema";
 import {
   InventorySyncMessageQueue,
-  SyncUserInventoryJobDataDto,
   UserInventorySnapshotDetailDto,
-  UserInventorySnapshotDto,
+  UserInventorySnapshotsPageDto,
   getUserJobCachePattern,
   getUserJobCacheKey,
 } from "@meepen/poe-accountant-api-schema";
-import type { UserInventorySnapshot } from "@meepen/poe-accountant-db-schema";
-import { and, eq } from "drizzle-orm";
+import {
+  CurrencyExchangeHistory,
+  CurrencyExchangeLeagueSnapshotData,
+  type UserInventorySnapshot,
+} from "@meepen/poe-accountant-db-schema";
+import { and, desc, eq, gte, lte, lt } from "drizzle-orm";
 import type { SessionUserEnv } from "../middleware/session-user";
 import { requireSessionUser } from "../middleware/session-user";
 import { requireUserRecord } from "../middleware/user-record";
@@ -68,7 +71,7 @@ export const user = new Hono<IndexEnv>().use("*", requireSessionUser).use(
 
 function toSnapshotResponse(
   snapshot: typeof UserInventorySnapshot.$inferSelect,
-): ApiResponse<ApiEndpoint.GetUserInventorySnapshots>[number] {
+) {
   return {
     id: snapshot.id,
     realm: snapshot.realm,
@@ -116,40 +119,58 @@ user.get("/job/:jobId", async (c) => {
   );
 });
 
-ApiEndpoint.GetUserInventorySnapshots satisfies "user/inventory-snapshots";
 ApiEndpointMethods[ApiEndpoint.GetUserInventorySnapshots] satisfies "GET";
-user.get("/inventory-snapshots", async (c) => {
+ApiEndpoint.GetUserInventorySnapshots satisfies "user/:realm/:leagueId/inventory-snapshots";
+user.get("/:realm/:leagueId/inventory-snapshots", async (c) => {
+  const twoWeekPeriodMs = 14 * 24 * 60 * 60 * 1000;
   const sessionUser = c.get("sessionUser");
   const db = c.get("db");
+  const { realm, leagueId } = c.req.param();
+  const pageParam = c.req.query("page");
+  const parsedPage = Number.parseInt(pageParam ?? "0", 10);
+  const page = Number.isNaN(parsedPage) || parsedPage < 0 ? 0 : parsedPage;
+  const periodEnd = new Date(Date.now() - page * twoWeekPeriodMs);
+  const periodBeginning = new Date(periodEnd.getTime() - twoWeekPeriodMs);
 
   const snapshots = await db.query.UserInventorySnapshot.findMany({
-    where: (snapshot, { eq: equals }) =>
-      equals(snapshot.userId, sessionUser.id),
+    where: (snapshot, { eq: equals, and }) =>
+      and(
+        equals(snapshot.userId, sessionUser.id),
+        equals(snapshot.realm, realm),
+        equals(snapshot.leagueId, leagueId),
+        gte(snapshot.generatedAt, periodBeginning),
+        lt(snapshot.generatedAt, periodEnd),
+      ),
     orderBy: (snapshotTable, { desc: orderDesc }) => [
       orderDesc(snapshotTable.generatedAt),
     ],
-    limit: 50,
   });
 
-  const response = snapshots.map(
-    toSnapshotResponse,
-  ) satisfies ApiResponse<ApiEndpoint.GetUserInventorySnapshots>;
+  const response = {
+    page,
+    beginningTime: periodBeginning.toISOString(),
+    endTime: periodEnd.toISOString(),
+    snapshots: snapshots.map(toSnapshotResponse),
+  } satisfies ApiResponse<ApiEndpoint.GetUserInventorySnapshots>;
 
-  return c.json(UserInventorySnapshotDto.array().parse(response));
+  return c.json(UserInventorySnapshotsPageDto.parse(response));
 });
 
-ApiEndpoint.GetUserInventorySnapshot satisfies "user/inventory-snapshots/:snapshotId";
+ApiEndpoint.GetUserInventorySnapshot satisfies "user/:realm/:leagueId/inventory-snapshots/:snapshotId";
 ApiEndpointMethods[ApiEndpoint.GetUserInventorySnapshot] satisfies "GET";
-user.get("/inventory-snapshots/:snapshotId", async (c) => {
+user.get("/:realm/:leagueId/inventory-snapshots/:snapshotId", async (c) => {
   const sessionUser = c.get("sessionUser");
   const db = c.get("db");
   const snapshotId = c.req.param("snapshotId");
+  const { realm, leagueId } = c.req.param();
 
   const snapshot = await db.query.UserInventorySnapshot.findFirst({
     where: (snapshotTable) =>
       and(
         eq(snapshotTable.id, snapshotId),
         eq(snapshotTable.userId, sessionUser.id),
+        eq(snapshotTable.realm, realm),
+        eq(snapshotTable.leagueId, leagueId),
       ),
   });
 
@@ -165,87 +186,146 @@ user.get("/inventory-snapshots/:snapshotId", async (c) => {
   return c.json(UserInventorySnapshotDetailDto.parse(response));
 });
 
-ApiEndpoint.GetUserInventorySnapshotData satisfies "user/inventory-snapshots/:snapshotId/data";
+ApiEndpoint.GetUserInventorySnapshotData satisfies "user/:realm/:leagueId/inventory-snapshots/:snapshotId/data";
 ApiEndpointMethods[ApiEndpoint.GetUserInventorySnapshotData] satisfies "GET";
-user.get("/inventory-snapshots/:snapshotId/data", async (c) => {
-  const sessionUser = c.get("sessionUser");
-  const db = c.get("db");
-  const snapshotId = c.req.param("snapshotId");
+user.get(
+  "/:realm/:leagueId/inventory-snapshots/:snapshotId/data",
+  async (c) => {
+    const sessionUser = c.get("sessionUser");
+    const db = c.get("db");
+    const snapshotId = c.req.param("snapshotId");
+    const { realm, leagueId } = c.req.param();
 
-  const snapshot = await db.query.UserInventorySnapshot.findFirst({
-    where: (snapshotTable) =>
-      and(
-        eq(snapshotTable.id, snapshotId),
-        eq(snapshotTable.userId, sessionUser.id),
-      ),
-  });
+    const snapshot = await db.query.UserInventorySnapshot.findFirst({
+      where: (snapshotTable) =>
+        and(
+          eq(snapshotTable.id, snapshotId),
+          eq(snapshotTable.userId, sessionUser.id),
+          eq(snapshotTable.realm, realm),
+          eq(snapshotTable.leagueId, leagueId),
+        ),
+    });
 
-  if (!snapshot) {
-    return c.notFound();
-  }
+    if (!snapshot) {
+      return c.notFound();
+    }
 
-  const s3 = c.get("s3");
+    const s3 = c.get("s3");
 
-  const response = await s3.get(snapshot.r2ObjectKey);
-  if (!response.ok) {
-    return c.json({ error: "Failed to fetch snapshot data" }, 502);
-  }
+    const response = await s3.get(snapshot.r2ObjectKey);
+    if (!response.ok) {
+      return c.json({ error: "Failed to fetch snapshot data" }, 502);
+    }
 
-  const responseData = SyncUserInventoryJobDataDto.parse(
-    await response.json(),
-  ) satisfies ApiResponse<ApiEndpoint.GetUserInventorySnapshotData>;
+    const responseData =
+      (await response.json()) satisfies ApiResponse<ApiEndpoint.GetUserInventorySnapshotData>;
 
-  return c.json(responseData);
-});
+    return c.json(responseData);
+  },
+);
 
-ApiEndpoint.SyncUserInventory satisfies "user/sync-inventory";
+ApiEndpoint.GetUserInventorySnapshotCurrencyList satisfies "user/:realm/:leagueId/inventory-snapshots/:snapshotId/currency-list";
+ApiEndpointMethods[
+  ApiEndpoint.GetUserInventorySnapshotCurrencyList
+] satisfies "GET";
+user.get(
+  "/:realm/:leagueId/inventory-snapshots/:snapshotId/currency-list",
+  async (c) => {
+    const sessionUser = c.get("sessionUser");
+    const db = c.get("db");
+    const snapshotId = c.req.param("snapshotId");
+    const { realm, leagueId } = c.req.param();
+
+    const snapshot = await db.query.UserInventorySnapshot.findFirst({
+      where: (snapshotTable) =>
+        and(
+          eq(snapshotTable.id, snapshotId),
+          eq(snapshotTable.userId, sessionUser.id),
+          eq(snapshotTable.realm, realm),
+          eq(snapshotTable.leagueId, leagueId),
+        ),
+    });
+
+    if (!snapshot) {
+      return c.notFound();
+    }
+
+    const rates = await db
+      .selectDistinctOn([CurrencyExchangeLeagueSnapshotData.currency], {
+        currency: CurrencyExchangeLeagueSnapshotData.currency,
+        value: CurrencyExchangeLeagueSnapshotData.valuedAt,
+        stableCurrency: CurrencyExchangeLeagueSnapshotData.stableCurrency,
+        confidenceScore: CurrencyExchangeLeagueSnapshotData.confidenceScore,
+      })
+      .from(CurrencyExchangeLeagueSnapshotData)
+      .innerJoin(
+        CurrencyExchangeHistory,
+        eq(
+          CurrencyExchangeLeagueSnapshotData.historyId,
+          CurrencyExchangeHistory.id,
+        ),
+      )
+      .where(() =>
+        and(
+          eq(CurrencyExchangeHistory.realm, realm),
+          eq(CurrencyExchangeHistory.leagueId, leagueId),
+          lte(CurrencyExchangeHistory.timestamp, snapshot.generatedAt),
+        ),
+      )
+      .orderBy(
+        CurrencyExchangeLeagueSnapshotData.currency,
+        desc(CurrencyExchangeHistory.timestamp),
+      );
+
+    return c.json(
+      rates.map((rate) => ({
+        currency: rate.currency,
+        confidenceScore: rate.confidenceScore,
+        value: {
+          currency: rate.stableCurrency,
+          amount: rate.value,
+        },
+      })),
+    );
+  },
+);
+
+ApiEndpoint.SyncUserInventory satisfies "user/:realm/:leagueId/sync-inventory";
 ApiEndpointMethods[ApiEndpoint.SyncUserInventory] satisfies "POST";
 user.post(
-  "/sync-inventory",
+  "/:realm/:leagueId/sync-inventory",
   requireUserRecord,
-  createCachedJobMiddleware(ApiEndpoint.SyncUserInventory),
+  createCachedJobMiddleware((params: Record<string, string>) => {
+    const realm = params.realm;
+    const leagueId = params.leagueId;
+    return `${ApiEndpoint.SyncUserInventory}:${realm}:${leagueId}`;
+  }),
   async (c) => {
     const sessionUser = c.get("sessionUser");
     const redis = c.get("valkey");
-    const db = c.get("db");
-
-    const activeLeague = await db.query.League.findFirst({
-      where: (league, { isNotNull, and, gte, lte, or }) =>
-        and(
-          isNotNull(league.startDate),
-          lte(league.startDate, new Date()),
-          or(isNotNull(league.endDate), gte(league.endDate, new Date())),
-        ),
-      orderBy: (league, { desc: orderDesc }) => [orderDesc(league.startDate)],
-    });
-
-    if (!activeLeague) {
-      return c.json({ error: "No active league available" }, 503);
-    }
-
-    const redisKey = getUserJobCacheKey(
-      sessionUser.id,
-      ApiEndpoint.SyncUserInventory,
-    );
+    const { realm, leagueId } = c.req.param();
+    const redisKey = c.get("cachedJobRedisKey");
+    const cachedJobCacheKey = c.get("cachedJobCacheKey");
 
     await startUserJob({
       redis,
-      cacheKey: ApiEndpoint.SyncUserInventory,
+      cacheKey: cachedJobCacheKey,
       mailboxData: {
         targetQueue: InventorySyncMessageQueue,
         message: {
+          jobId: cachedJobCacheKey,
           userId: sessionUser.id,
           redisKey,
           league: {
-            id: activeLeague.leagueId,
-            realm: activeLeague.realm,
+            id: leagueId,
+            realm,
           },
         },
       },
     });
 
     const job = {
-      id: ApiEndpoint.SyncUserInventory,
+      id: cachedJobCacheKey,
       done: false,
       data: null,
     } satisfies z.infer<SyncUserInventoryResponseDto>;
