@@ -14,14 +14,14 @@ variable "project_id" {
 }
 
 variable "postgres_cluster_name" {
-    description = "Name of the Postgres cluster to attach"
-    type = string
+  description = "Name of the Postgres cluster to attach"
+  type        = string
 }
 
 variable "domain_name" {
-    description = "Domain name for the app"
-    type = string
-    default = ""
+  description = "Domain name for the app"
+  type        = string
+  default     = ""
 }
 
 

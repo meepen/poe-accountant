@@ -11,7 +11,7 @@ variable "region" {
 variable "postgres_name" {
   description = "Name of the PostgreSQL database cluster"
   type        = string
-  default     = null  # Will use cluster_name-postgres if not set
+  default     = null # Will use cluster_name-postgres if not set
 }
 
 variable "postgres_version" {

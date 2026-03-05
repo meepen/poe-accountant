@@ -70,14 +70,32 @@ export function StaticTradeDataProvider({ children }: { children: ReactNode }) {
     return names;
   }, [snapshot]);
 
+  const currencyImageByKey = useMemo(() => {
+    const images = new Map<string, string>();
+    if (!snapshot) {
+      return images;
+    }
+
+    for (const category of snapshot.data.result) {
+      for (const entry of category.entries) {
+        if (typeof entry.image === "string" && entry.image.length > 0) {
+          images.set(entry.id, entry.image);
+        }
+      }
+    }
+
+    return images;
+  }, [snapshot]);
+
   const stateContextValue = useMemo<StaticTradeDataStateContextType>(
     () => ({
       snapshot,
       currencyNameByKey,
+      currencyImageByKey,
       isLoading,
       error,
     }),
-    [snapshot, currencyNameByKey, isLoading, error],
+    [snapshot, currencyNameByKey, currencyImageByKey, isLoading, error],
   );
 
   const actionsContextValue = useMemo<StaticTradeDataActionsContextType>(

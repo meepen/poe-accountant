@@ -20,7 +20,7 @@ resource "digitalocean_app" "poe_accountant" {
 
         image {
           registry_type = worker.value.registry_type
-          registry       = var.registry_name
+          registry      = var.registry_name
           repository    = worker.value.image_repository
           tag           = worker.value.image_tag
           deploy_on_push {
@@ -48,7 +48,7 @@ resource "digitalocean_app" "poe_accountant" {
 
         image {
           registry_type = service.value.registry_type
-          registry       = var.registry_name
+          registry      = var.registry_name
           repository    = service.value.image_repository
           tag           = service.value.image_tag
           deploy_on_push {
@@ -65,22 +65,22 @@ resource "digitalocean_app" "poe_accountant" {
         }
       }
     }
-    
+
     # Database attachment (Postgres)
     database {
-        name = "db"
-        cluster_name = var.postgres_cluster_name
-        engine = "PG"
-        production = true
+      name         = "db"
+      cluster_name = var.postgres_cluster_name
+      engine       = "PG"
+      production   = true
     }
-    
+
     # Domain
     dynamic "domain" {
-        for_each = var.domain_name != "" ? [1] : []
-        content {
-            name = var.domain_name
-            type = "PRIMARY"
-        }
+      for_each = var.domain_name != "" ? [1] : []
+      content {
+        name = var.domain_name
+        type = "PRIMARY"
+      }
     }
 
     dynamic "ingress" {
@@ -102,6 +102,6 @@ resource "digitalocean_app" "poe_accountant" {
       }
     }
   }
-    
+
   project_id = var.project_id
 }

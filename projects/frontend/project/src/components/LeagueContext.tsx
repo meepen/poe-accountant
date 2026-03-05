@@ -7,12 +7,18 @@ import {
   LeagueContext,
   type League,
   type LeagueContextType,
+  type SharedCurrencyItem,
 } from "./league-context";
 
 export function LeagueProvider({ children }: { children: ReactNode }) {
   const { user, api, isLoading } = useSession();
   const [leagues, setLeagues] = useState<League[]>([]);
   const [leaguesLoading, setLeaguesLoading] = useState(false);
+  const [sharedCurrencyList, setSharedCurrencyList] = useState<
+    SharedCurrencyItem[]
+  >([]);
+  const [sharedCurrencyListLoading, setSharedCurrencyListLoading] =
+    useState(false);
   const [selectedLeagueKey, setSelectedLeagueKey] = useState<string | null>(
     null,
   );
@@ -67,22 +73,54 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
     [leagues, selectedLeagueKey],
   );
 
+  const refreshSharedCurrencyList = useCallback(async () => {
+    if (!user || !selectedLeague) {
+      setSharedCurrencyList([]);
+      setSharedCurrencyListLoading(false);
+      return;
+    }
+
+    setSharedCurrencyListLoading(true);
+    try {
+      const result = await api.request(ApiEndpoint.GetExchangeRatesCurrencyList, {
+        realm: selectedLeague.realm,
+        leagueId: selectedLeague.leagueId,
+      });
+      setSharedCurrencyList(result);
+    } catch (error) {
+      console.error("Failed to fetch shared currency list:", error);
+      setSharedCurrencyList([]);
+    } finally {
+      setSharedCurrencyListLoading(false);
+    }
+  }, [api, selectedLeague, user]);
+
+  useEffect(() => {
+    void refreshSharedCurrencyList();
+  }, [refreshSharedCurrencyList]);
+
   const contextValue = useMemo<LeagueContextType>(
     () => ({
       leagues,
       leaguesLoading,
       selectedLeagueKey,
       selectedLeague,
+      sharedCurrencyList,
+      sharedCurrencyListLoading,
       setSelectedLeagueKey,
       refreshLeagues,
+      refreshSharedCurrencyList,
     }),
     [
       leagues,
       leaguesLoading,
       selectedLeagueKey,
       selectedLeague,
+      sharedCurrencyList,
+      sharedCurrencyListLoading,
       setSelectedLeagueKey,
       refreshLeagues,
+      refreshSharedCurrencyList,
     ],
   );
 

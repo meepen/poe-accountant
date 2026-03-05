@@ -52,6 +52,10 @@ output "r2_bucket_name" {
   value = module.r2.bucket_name
 }
 
+output "r2_cdn_bucket_name" {
+  value = module.r2_cdn.bucket_name
+}
+
 output "r2_access_key_id" {
   value = module.r2.access_key_id
 }
@@ -99,6 +103,12 @@ output "registry_endpoint" {
   value       = module.registry.registry_endpoint
 }
 output "api_domain_name" { value = local.full_api_domain_name }
+
+output "assets_domain_name" { value = local.full_assets_domain_name }
+
+output "cdn_public_base_url" {
+  value = "https://${module.r2_cdn.public_custom_domain}"
+}
 
 output "valkey_proxy_url" {
   description = "URL of the Valkey Proxy on DigitalOcean App Platform"

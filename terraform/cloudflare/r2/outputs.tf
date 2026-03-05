@@ -14,3 +14,7 @@ output "secret_access_key" {
   value     = cloudflare_api_token.r2.value
   sensitive = true
 }
+
+output "public_custom_domain" {
+  value = var.public_custom_domain
+}

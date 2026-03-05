@@ -24,11 +24,11 @@ resource "cloudflare_record" "records" {
   allow_overwrite = true
   name            = each.value.name
   type            = each.value.type
-  content  = each.value.value
-  ttl      = each.value.ttl
-  proxied  = each.value.type == "CNAME" || each.value.type == "A" ? each.value.proxied : false
-  priority = each.value.priority
-  comment  = each.value.comment
+  content         = each.value.value
+  ttl             = each.value.ttl
+  proxied         = each.value.type == "CNAME" || each.value.type == "A" ? each.value.proxied : false
+  priority        = each.value.priority
+  comment         = each.value.comment
 
   lifecycle {
     precondition {

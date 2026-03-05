@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Typography,
   Box,
   Paper,
-  Button,
   Table,
   TableBody,
   TableCell,
@@ -14,21 +13,38 @@ import {
   Modal,
   FormControlLabel,
   Checkbox,
-  Alert,
 } from "@mui/material";
-import { useApi, useSession } from "../components/session-hooks";
+import {
+  useApi,
+  useSession,
+  useStaticTradeData,
+} from "../components/session-hooks";
 import { useTranslation } from "react-i18next";
 import ViewHistoryTabs from "./Dashboard/ViewHistoryTabs";
 import { ApiEndpoint } from "@meepen/poe-accountant-api-schema";
+import CurrencyValueDisplay from "../components/CurrencyValueDisplay";
 
-// Placeholder data
-const ITEMS = [
-  { name: "Divine Orb", price: "245 c" },
-  { name: "Mirror of Kalandra", price: "740 d" },
-  { name: "Mageblood", price: "320 d" },
-  { name: "Headhunter", price: "45 d" },
-  { name: "Tabula Rasa", price: "12 c" },
-];
+interface DashboardItem {
+  name: string;
+  imageUrl: string;
+  quantity: number;
+  unitValue: number;
+  currencyId: string;
+}
+
+const POE_IMAGE_BASE_URL = "https://pathofexile.com";
+
+function resolvePoeImageUrl(image: string | undefined): string {
+  if (!image) {
+    return "/vite.svg";
+  }
+
+  if (image.startsWith("http")) {
+    return image;
+  }
+
+  return `${POE_IMAGE_BASE_URL}${image}`;
+}
 
 function MoneyChart() {
   const theme = useTheme();
@@ -51,7 +67,12 @@ function MoneyChart() {
   );
 }
 
-function ItemTable() {
+interface ItemTableProps {
+  items: DashboardItem[];
+  onRowChaosValueChange: (itemName: string, value: number | null) => void;
+}
+
+function ItemTable({ items, onRowChaosValueChange }: ItemTableProps) {
   const { t } = useTranslation();
   return (
     <TableContainer sx={{ height: "100%" }}>
@@ -63,12 +84,32 @@ function ItemTable() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {ITEMS.map((row) => (
+          {items.map((row) => (
             <TableRow key={row.name}>
               <TableCell component="th" scope="row">
-                {row.name}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Typography component="span" variant="body2" color="text.secondary">
+                    {`${row.quantity}x`}
+                  </Typography>
+                  <img
+                    src={row.imageUrl}
+                    alt={row.name}
+                    width={24}
+                    height={24}
+                  />
+                  {row.name}
+                </Box>
               </TableCell>
-              <TableCell align="right">{row.price}</TableCell>
+              <TableCell align="right">
+                <CurrencyValueDisplay
+                  value={row.unitValue}
+                  quantity={row.quantity}
+                  inputCurrency={row.currencyId}
+                  onChaosValueChange={(value) => {
+                    onRowChaosValueChange(row.name, value);
+                  }}
+                />
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -79,13 +120,72 @@ function ItemTable() {
 
 export default function Dashboard() {
   const { user } = useSession();
+
   const api = useApi();
   const { t } = useTranslation();
+  const { snapshot, loadStaticTradeData } = useStaticTradeData();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<
+  const [rowChaosValues, setRowChaosValues] = useState<Record<string, number>>({});
+  const [_syncStatus, setSyncStatus] = useState<
     { severity: "success" | "error"; message: string } | undefined
   >(undefined);
+
+  const items = useMemo<DashboardItem[]>(() => {
+    if (!snapshot) {
+      return [];
+    }
+
+    const entries = snapshot.data.result.flatMap((category) => category.entries);
+    return entries.slice(0, 5).map((entry) => {
+      const placeholderQuantity =
+        (entry.id
+          .split("")
+          .reduce((sum, character) => sum + character.charCodeAt(0), 0) % 50000) +
+        1;
+      return {
+        name: entry.text,
+        imageUrl: resolvePoeImageUrl(entry.image),
+        quantity: placeholderQuantity,
+        unitValue: 1,
+        currencyId: entry.id,
+      };
+    });
+  }, [snapshot]);
+
+  const totalNetWorthChaos = useMemo(
+    () =>
+      items.reduce(
+        (total, item) => total + (rowChaosValues[item.name] ?? 0),
+        0,
+      ),
+    [items, rowChaosValues],
+  );
+
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) => {
+      const valueA = rowChaosValues[a.name] ?? 0;
+      const valueB = rowChaosValues[b.name] ?? 0;
+      return valueB - valueA;
+    });
+  }, [items, rowChaosValues]);
+
+  const handleRowChaosValueChange = (itemName: string, value: number | null) => {
+    setRowChaosValues((current) => {
+      const numericValue = value ?? 0;
+      if (current[itemName] === numericValue) {
+        return current;
+      }
+      return {
+        ...current,
+        [itemName]: numericValue,
+      };
+    });
+  };
+
+  useEffect(() => {
+    void loadStaticTradeData();
+  }, [loadStaticTradeData]);
 
   if (!user) {
     return null;
@@ -140,28 +240,12 @@ export default function Dashboard() {
           minWidth: 0,
         }}
       >
-        <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-          <Button
-            variant="contained"
-            onClick={() => {
-              void handleSync();
-            }}
-            disabled={isSyncing}
-          >
-            {isSyncing
-              ? t("dashboard_sync_in_progress")
-              : t("dashboard_sync_button")}
-          </Button>
-        </Box>
-        {syncStatus ? (
-          <Alert severity={syncStatus.severity}>{syncStatus.message}</Alert>
-        ) : null}
 
         {/* Top Chart */}
         <MoneyChart />
 
         {/* Bottom Section */}
-        <ViewHistoryTabs onOpenSettings={handleOpenSettings} />
+        <ViewHistoryTabs onOpenSettings={handleOpenSettings} isSyncing={isSyncing} handleSync={handleSync} />
       </Box>
 
       {/* Right Side */}
@@ -181,11 +265,41 @@ export default function Dashboard() {
             flexDirection: "column",
           }}
         >
-          <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
+          <Box
+            sx={{
+              p: 2,
+              borderBottom: 1,
+              borderColor: "divider",
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
             <Typography variant="h6">{t("section_items")}</Typography>
+            <Box sx={{ flexGrow: 1 }} />
+            <Box sx={{ textAlign: "right" }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                component="div"
+                sx={{ mb: 0.5 }}
+              >
+                Total Net Worth
+              </Typography>
+              <CurrencyValueDisplay
+                value={items.length > 0 ? totalNetWorthChaos : null}
+                inputCurrency="chaos"
+                variant="h5"
+                color="success.main"
+                fontWeight={700}
+              />
+            </Box>
           </Box>
           <Box sx={{ flex: 1, overflow: "hidden" }}>
-            <ItemTable />
+            <ItemTable
+              items={sortedItems}
+              onRowChaosValueChange={handleRowChaosValueChange}
+            />
           </Box>
         </Paper>
       </Box>

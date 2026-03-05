@@ -8,7 +8,9 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
+  Tooltip,
 } from "@mui/material";
+import WarningIcon from "@mui/icons-material/Warning";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { PriceListItem } from "./types";
@@ -152,7 +154,18 @@ export default function CurrencyTable({
                 <CurrencyName currencyKey={item.currency} />
               </TableCell>
               <TableCell>
-                {formatValue(item.value.amount, valueFormatter)}
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  {formatValue(item.value.amount, valueFormatter)}
+                  {(item.confidenceScore) < 50 && (
+                    <Tooltip title={t("league_inspection_low_reliability", "Low Reliability (< 50%)")}>
+                      <WarningIcon
+                        color="warning"
+                        fontSize="small"
+                        sx={{ ml: 1 }}
+                      />
+                    </Tooltip>
+                  )}
+                </div>
               </TableCell>
             </TableRow>
           ))}

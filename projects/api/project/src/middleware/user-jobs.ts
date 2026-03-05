@@ -1,8 +1,6 @@
-import type {
-  UserJobDto,
-  MailboxQueue,
-} from "@meepen/poe-accountant-api-schema";
+import type { MailboxQueue } from "@meepen/poe-accountant-api-schema";
 import {
+  getUserJobCacheKey,
   MailboxQueueName,
   UserJobRedisMetadataTtlSeconds,
 } from "@meepen/poe-accountant-api-schema";
@@ -11,10 +9,6 @@ import type { z } from "zod";
 import type { AppEnv } from "../bindings";
 import type { Valkey, ValkeyEnv } from "./valkey";
 import type { SessionUserEnv } from "./session-user";
-
-export function getUserJobCacheKey(userId: string, cacheKey: string): string {
-  return `user:${userId}:job-cache:${cacheKey}`;
-}
 
 type CreateCachedUserJobOptions = {
   redis: Valkey;
@@ -42,7 +36,6 @@ export async function startUserJob({
 }
 
 export const createCachedJobMiddleware = (
-  schema: z.ZodType<UserJobDto>,
   cacheKey: string,
   ttl = UserJobRedisMetadataTtlSeconds,
 ) =>
@@ -51,17 +44,17 @@ export const createCachedJobMiddleware = (
     const sessionUser = c.get("sessionUser");
     const key = getUserJobCacheKey(sessionUser.id, cacheKey);
 
-    const previousJob = await redis.get<string>(key);
+    const previousJob = await redis.get<object>(key);
 
     if (previousJob) {
-      return c.json(JSON.parse(previousJob));
+      return c.json(previousJob);
     }
 
     await next();
 
     if (c.res.status >= 200 && c.res.status < 300) {
-      const responseBody = await c.res.clone().text();
-      await redis.set(key, JSON.stringify(responseBody), {
+      const responseBody = await c.res.clone().json();
+      await redis.set(key, responseBody, {
         ex: ttl,
       });
     }

@@ -1,8 +1,10 @@
 locals {
-  cluster_name         = var.cluster_name != null ? var.cluster_name : "${var.project_name}-cluster"
-  database_name        = var.database_name != null ? var.database_name : replace(var.project_name, "-", "_")
-  tags                 = var.tags != null ? var.tags : [var.project_name, "terraform"]
-  full_api_domain_name = "${var.api_subdomain}.${var.cloudflare_zone_name}"
+  cluster_name                    = var.cluster_name != null ? var.cluster_name : "${var.project_name}-cluster"
+  database_name                   = var.database_name != null ? var.database_name : replace(var.project_name, "-", "_")
+  tags                            = var.tags != null ? var.tags : [var.project_name, "terraform"]
+  full_api_domain_name            = "${var.api_subdomain}.${var.cloudflare_zone_name}"
+  full_assets_domain_name         = "${var.assets_subdomain}.${var.cloudflare_zone_name}"
+  cdn_bucket_name                 = var.r2_cdn_bucket_name != null ? var.r2_cdn_bucket_name : "${var.project_name}-cdn"
 }
 
 module "project" {
@@ -32,14 +34,14 @@ module "valkey" {
 module "postgres" {
   source = "./digitalocean/postgres"
 
-  cluster_name         = local.cluster_name
-  region               = var.region
-  postgres_name        = var.postgres_name
-  postgres_version     = var.postgres_version
-  postgres_size        = var.postgres_size
-  postgres_node_count  = var.postgres_node_count
-  database_name        = local.database_name
-  tags                 = local.tags
+  cluster_name        = local.cluster_name
+  region              = var.region
+  postgres_name       = var.postgres_name
+  postgres_version    = var.postgres_version
+  postgres_size       = var.postgres_size
+  postgres_node_count = var.postgres_node_count
+  database_name       = local.database_name
+  tags                = local.tags
 }
 
 module "registry" {
@@ -54,32 +56,37 @@ module "registry" {
 module "apps" {
   source = "./digitalocean/app"
 
-  app_name = "${var.project_name}-ninja"
-  region   = var.region
+  app_name   = "${var.project_name}-ninja"
+  region     = var.region
   project_id = module.project.project_id
 
   registry_name = module.registry.registry_name
-  
+
   postgres_cluster_name = module.postgres.postgres_name
 
   domain_name = ""
-  
+
   workers = {
     "background-processor" = {
-      image_repository = "background-processor" 
+      image_repository = "background-processor"
       image_tag        = "latest"
       registry_type    = "DOCR"
       env = {
-        "VALKEY_URL"           = module.valkey.valkey_uri
-        "DATABASE_URL"         = module.postgres.postgres_uri
-        "S3_BUCKET_NAME"       = module.r2.bucket_name
-        "S3_ENDPOINT"          = "https://${var.cloudflare_account_id}.r2.cloudflarestorage.com"
-        "S3_ACCESS_KEY_ID"     = module.r2.access_key_id
-        "S3_SECRET_ACCESS_KEY" = module.r2.secret_access_key
-        "PATHOFEXILE_CLIENT_ID"     = var.pathofexile_client_id
-        "PATHOFEXILE_CLIENT_SECRET" = var.pathofexile_client_secret
-        "PATHOFEXILE_CONTACT_EMAIL" = var.pathofexile_contact_email
-        "PATHOFEXILE_APP_VERSION"   = var.pathofexile_app_version
+        "VALKEY_URL"                              = module.valkey.valkey_uri
+        "DATABASE_URL"                            = module.postgres.postgres_uri
+        "ASSETS_S3_BUCKET_NAME"       = module.r2.bucket_name
+        "ASSETS_S3_ENDPOINT"          = "https://${var.cloudflare_account_id}.r2.cloudflarestorage.com"
+        "ASSETS_S3_ACCESS_KEY_ID"     = module.r2.access_key_id
+        "ASSETS_S3_SECRET_ACCESS_KEY" = module.r2.secret_access_key
+        "CDN_S3_BUCKET_NAME"          = module.r2_cdn.bucket_name
+        "CDN_S3_ENDPOINT"             = "https://${var.cloudflare_account_id}.r2.cloudflarestorage.com"
+        "CDN_S3_ACCESS_KEY_ID"        = module.r2_cdn.access_key_id
+        "CDN_S3_SECRET_ACCESS_KEY"    = module.r2_cdn.secret_access_key
+        "CDN_BASE_URL"                = "https://${local.full_assets_domain_name}"
+        "PATHOFEXILE_CLIENT_ID"                   = var.pathofexile_client_id
+        "PATHOFEXILE_CLIENT_SECRET"               = var.pathofexile_client_secret
+        "PATHOFEXILE_CONTACT_EMAIL"               = var.pathofexile_contact_email
+        "PATHOFEXILE_APP_VERSION"                 = var.pathofexile_app_version
       }
     }
   }
@@ -112,7 +119,7 @@ module "frontend" {
 
   account_id   = var.cloudflare_account_id
   project_name = "${var.project_name}-frontend"
-  
+
   github_owner = var.github_owner
   github_repo  = var.github_repo
 
@@ -121,9 +128,10 @@ module "frontend" {
     "www.${var.cloudflare_zone_name}"
   ]
   production_branch = var.production_branch
-  
+
   environment_variables = {
     VITE_API_BASE_URL = "https://${var.api_subdomain}.${var.cloudflare_zone_name}"
+    VITE_CDN_BASE_URL = "https://${local.full_assets_domain_name}"
   }
 }
 
@@ -133,20 +141,20 @@ module "api" {
   account_id   = var.cloudflare_account_id
   zone_id      = var.cloudflare_zone_id
   project_name = "${var.project_name}-api"
-  
-  
+
+
   custom_domains = [local.full_api_domain_name]
-  
+
   environment_variables = {
-    VALKEY_PROXY_URL   = module.apps.live_url
-    CORS_ORIGIN  = "https://${var.cloudflare_zone_name}"
-    FRONTEND_URL = "https://${var.cloudflare_zone_name}"
+    VALKEY_PROXY_URL = module.apps.live_url
+    CORS_ORIGIN      = "https://${var.cloudflare_zone_name}"
+    FRONTEND_URL     = "https://${var.cloudflare_zone_name}"
 
-    PATHOFEXILE_CLIENT_ID     = var.pathofexile_client_id
-    PATHOFEXILE_REDIRECT_URL  = var.pathofexile_redirect_url
+    PATHOFEXILE_CLIENT_ID    = var.pathofexile_client_id
+    PATHOFEXILE_REDIRECT_URL = var.pathofexile_redirect_url
 
-    S3_ENDPOINT         = "https://${var.cloudflare_account_id}.r2.cloudflarestorage.com"
-    S3_BUCKET_NAME      = module.r2.bucket_name
+    ASSETS_S3_ENDPOINT    = "https://${var.cloudflare_account_id}.r2.cloudflarestorage.com"
+    ASSETS_S3_BUCKET_NAME = module.r2.bucket_name
   }
 
   secrets = {
@@ -154,9 +162,9 @@ module "api" {
     VALKEY_TOKEN = module.valkey.valkey_password
 
     PATHOFEXILE_CLIENT_SECRET = var.pathofexile_client_secret
-    
-    S3_ACCESS_KEY_ID     = module.r2.access_key_id
-    S3_SECRET_ACCESS_KEY = sha256(module.r2.secret_access_key)
+
+    ASSETS_S3_ACCESS_KEY_ID     = module.r2.access_key_id
+    ASSETS_S3_SECRET_ACCESS_KEY = sha256(module.r2.secret_access_key)
   }
 
   hyperdrive_configs = {
@@ -183,6 +191,17 @@ module "r2" {
 
   account_id  = var.cloudflare_account_id
   bucket_name = var.r2_bucket_name
+}
+
+module "r2_cdn" {
+  source = "./cloudflare/r2"
+
+  account_id  = var.cloudflare_account_id
+  bucket_name = local.cdn_bucket_name
+
+  public_custom_domain = local.full_assets_domain_name
+  cloudflare_api_key   = var.cloudflare_api_key
+  cloudflare_api_email = var.cloudflare_api_email
 }
 
 # Cloudflare DNS
@@ -229,9 +248,9 @@ resource "cloudflare_api_token" "wrangler_deploy" {
       data.cloudflare_api_token_permission_groups.all.zone["DNS Write"]
     ]
     resources = {
-      "com.cloudflare.api.account.${var.cloudflare_account_id}" = "*"
+      "com.cloudflare.api.account.${var.cloudflare_account_id}"   = "*"
       "com.cloudflare.api.account.zone.${var.cloudflare_zone_id}" = "*"
-      "com.cloudflare.api.user.${data.cloudflare_user.me.id}" = "*"
+      "com.cloudflare.api.user.${data.cloudflare_user.me.id}"     = "*"
     }
   }
 }

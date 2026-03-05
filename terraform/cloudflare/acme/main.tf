@@ -16,8 +16,8 @@ resource "acme_registration" "me" {
 
 # Issue a cert via Cloudflare DNS-01 (reads CF_API_TOKEN from env)
 resource "acme_certificate" "site" {
-  account_key_pem = acme_registration.me.account_key_pem
-  common_name     = var.domain_names[0]
+  account_key_pem           = acme_registration.me.account_key_pem
+  common_name               = var.domain_names[0]
   subject_alternative_names = var.domain_names
 
   dns_challenge {

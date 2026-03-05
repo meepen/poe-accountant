@@ -13,7 +13,7 @@ variable "project_description" {
 variable "cluster_name" {
   description = "Name of the Kubernetes cluster"
   type        = string
-  default     = null  # Will use project_name-cluster if not set
+  default     = null # Will use project_name-cluster if not set
 }
 
 variable "region" {
@@ -31,13 +31,13 @@ variable "kubernetes_version" {
 variable "tags" {
   description = "Tags to apply to resources"
   type        = list(string)
-  default     = null  # Will use [project_name, "terraform"] if not set
+  default     = null # Will use [project_name, "terraform"] if not set
 }
 
 variable "valkey_name" {
   description = "Name of the Valkey database cluster"
   type        = string
-  default     = null  # Will use cluster_name-valkey if not set
+  default     = null # Will use cluster_name-valkey if not set
 }
 
 variable "valkey_version" {
@@ -60,7 +60,7 @@ variable "valkey_node_count" {
 variable "postgres_name" {
   description = "Name of the PostgreSQL database cluster"
   type        = string
-  default     = null  # Will use cluster_name-postgres if not set
+  default     = null # Will use cluster_name-postgres if not set
 }
 
 variable "postgres_version" {
@@ -84,14 +84,14 @@ variable "postgres_node_count" {
 variable "database_name" {
   description = "Name of the application database"
   type        = string
-  default     = null  # Will use project_name with underscores if not set
+  default     = null # Will use project_name with underscores if not set
 }
 
 # Container Registry variables
 variable "registry_name" {
   description = "Name of the container registry"
   type        = string
-  default     = null  # Will use project_name-registry if not set
+  default     = null # Will use project_name-registry if not set
 }
 
 variable "r2_bucket_name" {
@@ -99,10 +99,16 @@ variable "r2_bucket_name" {
   type        = string
 }
 
+variable "r2_cdn_bucket_name" {
+  description = "Name of the public R2 bucket used for CDN assets"
+  type        = string
+  default     = null
+}
+
 variable "registry_subscription_tier" {
   description = "Subscription tier for the container registry"
   type        = string
-  default     = "basic"  # Basic tier is $5/month
+  default     = "basic" # Basic tier is $5/month
 }
 
 # Cloudflare DNS variables
@@ -120,6 +126,12 @@ variable "cloudflare_zone_name" {
 variable "api_subdomain" {
   description = "Subdomain for the Application API"
   type        = string
+}
+
+variable "assets_subdomain" {
+  description = "Subdomain for public static trade images bucket"
+  type        = string
+  default     = "assets"
 }
 
 variable "do_token" {

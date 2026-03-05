@@ -4,7 +4,10 @@ import { UserDto } from "./dtos/user/user.dto.js";
 import { UserJobDto } from "./dtos/user/user.job.dto.js";
 import { LeagueDto } from "./dtos/league/league.dto.js";
 import { PriceListDto } from "./dtos/prices/price-list.dto.js";
-import { PriceHistoryDto } from "./dtos/prices/price-history.dto.js";
+import {
+  PriceHistoryDto,
+  PriceHistoryEntryDto,
+} from "./dtos/prices/price-history.dto.js";
 import { StaticTradeDataSnapshotDto } from "./dtos/prices/static-trade-data.dto.js";
 import {
   SyncUserInventoryJobDataDto,
@@ -19,7 +22,7 @@ export const ApiResultResponseTypes = {
   [ApiEndpoint.UserLogin]: [z.never(), z.never()],
 
   [ApiEndpoint.GetExchangeRatesCurrencyList]: [z.void(), PriceListDto],
-  [ApiEndpoint.GetExchangeRatesCurrency]: [z.void(), z.void()],
+  [ApiEndpoint.GetExchangeRatesCurrency]: [z.void(), PriceHistoryEntryDto],
   [ApiEndpoint.GetExchangeRatesCurrencyHistorical]: [z.void(), PriceHistoryDto],
   [ApiEndpoint.GetStaticTradeData]: [z.void(), StaticTradeDataSnapshotDto],
 

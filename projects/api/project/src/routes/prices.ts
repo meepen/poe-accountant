@@ -128,6 +128,7 @@ prices.get(
         currency: CurrencyExchangeLeagueSnapshotData.currency,
         value: CurrencyExchangeLeagueSnapshotData.valuedAt,
         stableCurrency: CurrencyExchangeLeagueSnapshotData.stableCurrency,
+        confidenceScore: CurrencyExchangeLeagueSnapshotData.confidenceScore,
         timestamp: CurrencyExchangeHistory.timestamp,
       })
       .from(CurrencyExchangeLeagueSnapshotData)
@@ -157,6 +158,7 @@ prices.get(
       results.map<ApiResponse<ApiEndpoint.GetExchangeRatesCurrencyList>[0]>(
         (data) => ({
           currency: data.currency,
+          confidenceScore: data.confidenceScore,
           value: {
             currency: data.stableCurrency,
             amount: data.value,

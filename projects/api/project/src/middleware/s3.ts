@@ -4,20 +4,20 @@ import { createMiddleware } from "hono/factory";
 
 function getS3(env: AppBindings) {
   const client = new AwsClient({
-    accessKeyId: env.S3_ACCESS_KEY_ID,
-    secretAccessKey: env.S3_SECRET_ACCESS_KEY,
+    accessKeyId: env.ASSETS_S3_ACCESS_KEY_ID,
+    secretAccessKey: env.ASSETS_S3_SECRET_ACCESS_KEY,
     service: "s3",
     region: "auto",
   });
 
   return {
     async get(key: string) {
-      const url = new URL(env.S3_ENDPOINT);
+      const url = new URL(env.ASSETS_S3_ENDPOINT);
 
       const normalizedKey = key.startsWith("/") ? key.substring(1) : key;
       const encodedKey = encodeURIComponent(normalizedKey);
 
-      url.pathname = `/${env.S3_BUCKET_NAME}/${encodedKey}`;
+      url.pathname = `/${env.ASSETS_S3_BUCKET_NAME}/${encodedKey}`;
 
       return client.fetch(url.toString(), {
         method: "GET",
@@ -28,12 +28,12 @@ function getS3(env: AppBindings) {
     },
 
     async put(key: string, body: BodyInit, contentType = "application/json") {
-      const url = new URL(env.S3_ENDPOINT);
+      const url = new URL(env.ASSETS_S3_ENDPOINT);
 
       const normalizedKey = key.startsWith("/") ? key.substring(1) : key;
       const encodedKey = encodeURIComponent(normalizedKey);
 
-      url.pathname = `/${env.S3_BUCKET_NAME}/${encodedKey}`;
+      url.pathname = `/${env.ASSETS_S3_BUCKET_NAME}/${encodedKey}`;
 
       return client.fetch(url.toString(), {
         method: "PUT",
@@ -45,9 +45,9 @@ function getS3(env: AppBindings) {
     },
 
     async list(limit: number = 10, cursor?: string) {
-      const url = new URL(env.S3_ENDPOINT);
+      const url = new URL(env.ASSETS_S3_ENDPOINT);
 
-      url.pathname = `/${env.S3_BUCKET_NAME}`;
+      url.pathname = `/${env.ASSETS_S3_BUCKET_NAME}`;
 
       url.searchParams.set("list-type", "2");
       url.searchParams.set("max-keys", limit.toString());

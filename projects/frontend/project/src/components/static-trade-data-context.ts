@@ -4,6 +4,7 @@ import type { StaticTradeDataSnapshot } from "@meepen/poe-accountant-api-schema/
 export interface StaticTradeDataStateContextType {
   snapshot: StaticTradeDataSnapshot | null;
   currencyNameByKey: ReadonlyMap<string, string>;
+  currencyImageByKey: ReadonlyMap<string, string>;
   isLoading: boolean;
   error: string | null;
 }

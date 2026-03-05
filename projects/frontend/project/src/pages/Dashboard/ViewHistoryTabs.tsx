@@ -6,6 +6,7 @@ import {
   Tabs,
   Tab,
   IconButton,
+  Tooltip,
   CircularProgress,
   Button,
   Table,
@@ -15,6 +16,7 @@ import {
   TableRow,
 } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import { useTranslation } from "react-i18next";
 import {
   ApiEndpoint,
@@ -25,10 +27,14 @@ import { useApi } from "../../components/session-hooks";
 
 interface ViewHistoryTabsProps {
   onOpenSettings: () => void;
+  handleSync: () => Promise<void>;
+  isSyncing: boolean;
 }
 
 export default function ViewHistoryTabs({
   onOpenSettings,
+  handleSync,
+  isSyncing,
 }: ViewHistoryTabsProps) {
   const { t } = useTranslation();
   const api = useApi();
@@ -129,12 +135,32 @@ export default function ViewHistoryTabs({
           <Tab label={t("tab_history")} />
         </Tabs>
         <Box sx={{ flexGrow: 1 }} />
-        <IconButton
-          aria-label={t("settings_aria_label")}
-          onClick={onOpenSettings}
+        <Tooltip title={t("settings_aria_label")}>
+          <IconButton
+            onClick={onOpenSettings}
+          >
+            <SettingsIcon />
+          </IconButton>
+        </Tooltip>
+        <Tooltip
+          title={
+            isSyncing
+              ? t("dashboard_sync_in_progress")
+              : t("dashboard_sync_button")
+          }
         >
-          <SettingsIcon />
-        </IconButton>
+          <span>
+            <IconButton
+              aria-label={t("dashboard_sync_button")}
+              onClick={() => {
+                void handleSync();
+              }}
+              disabled={isSyncing}
+            >
+              <RefreshIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
       </Box>
 
       <Box sx={{ p: 2, flex: 1, overflow: "auto" }}>

@@ -39,7 +39,7 @@ variable "custom_domains" {
 
 variable "hyperdrive_configs" {
   description = "Hyperdrive configuration for the worker"
-  type        = map(object({
+  type = map(object({
     scheme   = string
     database = string
     host     = string
@@ -47,7 +47,7 @@ variable "hyperdrive_configs" {
     user     = string
     password = string
   }))
-  default     = {}
+  default = {}
 }
 
 variable "worker_script_path" {

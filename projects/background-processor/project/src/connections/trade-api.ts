@@ -54,4 +54,23 @@ export class TradeApi {
 
     return StaticTradeDataSchema.parse(await response.json());
   }
+
+  public async downloadImage(imageUrl: string): Promise<{
+    content: Buffer;
+    contentType: string;
+  }> {
+    const response = await this.fetch(imageUrl);
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to download image from '${imageUrl}' with status ${response.status}.`,
+      );
+    }
+
+    return {
+      content: Buffer.from(await response.arrayBuffer()),
+      contentType:
+        response.headers.get("content-type") || "application/octet-stream",
+    };
+  }
 }

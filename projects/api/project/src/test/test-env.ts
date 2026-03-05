@@ -9,8 +9,8 @@ export const testEnv = {
   HYPERDRIVE: {
     connectionString: "postgres://postgres:postgres@localhost:5432/postgres",
   },
-  S3_ENDPOINT: "https://example.com/s3",
-  S3_BUCKET_NAME: "test-bucket",
-  S3_ACCESS_KEY_ID: "test-access-key",
-  S3_SECRET_ACCESS_KEY: "test-secret-key",
+  ASSETS_S3_ENDPOINT: "https://example.com/s3",
+  ASSETS_S3_BUCKET_NAME: "test-bucket",
+  ASSETS_S3_ACCESS_KEY_ID: "test-access-key",
+  ASSETS_S3_SECRET_ACCESS_KEY: "test-secret-key",
 } as never;

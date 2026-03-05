@@ -79,7 +79,7 @@ type SPFAQueueNode = {
 
 const DirectRateDeviationClamp = 3;
 const ReliabilityThreshold = 0.6;
-const MAX_PATH_LENGTH = 4;
+const MAX_PATH_LENGTH = 5;
 const MAX_GRAPH_ITERATIONS = 50_000;
 
 // --- Main Class ---

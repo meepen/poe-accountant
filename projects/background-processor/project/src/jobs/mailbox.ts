@@ -37,7 +37,9 @@ export class MailboxProcess implements JobProcess {
     await this.getJobQueue(targetQueue).add(messageId, message, {
       priority,
     });
-    console.log(`Resubmitted job '${targetQueue}' to BullMQ queue'`);
+    console.log(
+      `Resubmitted job '${targetQueue}' to BullMQ queue' (${messageId}).`,
+    );
   }
 
   protected async worker() {

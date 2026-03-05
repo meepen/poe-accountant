@@ -14,7 +14,7 @@ resource "digitalocean_container_registry" "main" {
 
 # Request Docker credentials for the registry you just created
 resource "digitalocean_container_registry_docker_credentials" "creds" {
-  depends_on = [resource.digitalocean_container_registry.main]
-  registry_name  = digitalocean_container_registry.main.name
-  write          = false          # true = push & pull; false = pull only
+  depends_on    = [resource.digitalocean_container_registry.main]
+  registry_name = digitalocean_container_registry.main.name
+  write         = false # true = push & pull; false = pull only
 }

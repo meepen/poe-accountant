@@ -14,6 +14,6 @@ resource "digitalocean_project" "main" {
 
 # Assign resources to the project
 resource "digitalocean_project_resources" "main" {
-  project = digitalocean_project.main.id
+  project   = digitalocean_project.main.id
   resources = var.resource_urns
 }

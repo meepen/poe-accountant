@@ -11,7 +11,7 @@ variable "region" {
 variable "valkey_name" {
   description = "Name of the Valkey database cluster"
   type        = string
-  default     = null  # Will use cluster_name-valkey if not set
+  default     = null # Will use cluster_name-valkey if not set
 }
 
 variable "valkey_version" {

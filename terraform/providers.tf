@@ -15,7 +15,7 @@ terraform {
       version = "~> 3.4"
     }
     external = {
-      source = "hashicorp/external"
+      source  = "hashicorp/external"
       version = "~> 2.3"
     }
     acme = {

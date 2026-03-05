@@ -4,8 +4,8 @@ output "valkey_id" {
 }
 
 output "cluster_urn" {
-    description = "URN of the Valkey database cluster"
-    value = digitalocean_database_cluster.valkey.urn
+  description = "URN of the Valkey database cluster"
+  value       = digitalocean_database_cluster.valkey.urn
 }
 
 output "valkey_host" {

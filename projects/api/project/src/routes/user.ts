@@ -5,10 +5,10 @@ import {
 import type { ApiResponse } from "@meepen/poe-accountant-api-schema/api/api-request-data.dto";
 import { Hono } from "hono";
 import type { z } from "zod";
+import type { SyncUserInventoryResponseDto } from "@meepen/poe-accountant-api-schema";
 import {
   InventorySyncMessageQueue,
   SyncUserInventoryJobDataDto,
-  SyncUserInventoryResponseDto,
   UserInventorySnapshotDetailDto,
   UserInventorySnapshotDto,
   getUserJobCachePattern,
@@ -203,10 +203,7 @@ ApiEndpointMethods[ApiEndpoint.SyncUserInventory] satisfies "POST";
 user.post(
   "/sync-inventory",
   requireUserRecord,
-  createCachedJobMiddleware(
-    SyncUserInventoryResponseDto,
-    ApiEndpoint.SyncUserInventory,
-  ),
+  createCachedJobMiddleware(ApiEndpoint.SyncUserInventory),
   async (c) => {
     const sessionUser = c.get("sessionUser");
     const redis = c.get("valkey");

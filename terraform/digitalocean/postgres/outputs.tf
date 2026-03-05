@@ -14,8 +14,8 @@ output "cluster_urn" {
 }
 
 output "postgres_name" {
-    description = "Name of the Postgres cluster"
-    value = digitalocean_database_cluster.postgres.name
+  description = "Name of the Postgres cluster"
+  value       = digitalocean_database_cluster.postgres.name
 }
 
 output "postgres_host" {

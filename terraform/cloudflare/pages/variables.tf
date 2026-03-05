@@ -21,16 +21,16 @@ variable "environment_variables" {
 }
 
 variable "github_owner" {
-    description = "GitHub owner/organization"
-    type = string
+  description = "GitHub owner/organization"
+  type        = string
 }
 
 variable "github_repo" {
-    description = "GitHub repository name"
-    type = string
+  description = "GitHub repository name"
+  type        = string
 }
 
 variable "domain_names" {
-    description = "Custom domain names for the Pages project"
-    type = list(string)
+  description = "Custom domain names for the Pages project"
+  type        = list(string)
 }

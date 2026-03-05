@@ -5,5 +5,6 @@ export const PriceListDto = z.array(
   z.object({
     currency: z.string(),
     value: PriceRelativeToDto,
+    confidenceScore: z.number(),
   }),
 );
