@@ -88,7 +88,11 @@ function ItemTable({ items, onRowChaosValueChange }: ItemTableProps) {
             <TableRow key={row.name}>
               <TableCell component="th" scope="row">
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Typography component="span" variant="body2" color="text.secondary">
+                  <Typography
+                    component="span"
+                    variant="body2"
+                    color="text.secondary"
+                  >
                     {`${row.quantity}x`}
                   </Typography>
                   <img
@@ -126,7 +130,9 @@ export default function Dashboard() {
   const { snapshot, loadStaticTradeData } = useStaticTradeData();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [rowChaosValues, setRowChaosValues] = useState<Record<string, number>>({});
+  const [rowChaosValues, setRowChaosValues] = useState<Record<string, number>>(
+    {},
+  );
   const [_syncStatus, setSyncStatus] = useState<
     { severity: "success" | "error"; message: string } | undefined
   >(undefined);
@@ -136,12 +142,15 @@ export default function Dashboard() {
       return [];
     }
 
-    const entries = snapshot.data.result.flatMap((category) => category.entries);
+    const entries = snapshot.data.result.flatMap(
+      (category) => category.entries,
+    );
     return entries.slice(0, 5).map((entry) => {
       const placeholderQuantity =
         (entry.id
           .split("")
-          .reduce((sum, character) => sum + character.charCodeAt(0), 0) % 50000) +
+          .reduce((sum, character) => sum + character.charCodeAt(0), 0) %
+          50000) +
         1;
       return {
         name: entry.text,
@@ -170,7 +179,10 @@ export default function Dashboard() {
     });
   }, [items, rowChaosValues]);
 
-  const handleRowChaosValueChange = (itemName: string, value: number | null) => {
+  const handleRowChaosValueChange = (
+    itemName: string,
+    value: number | null,
+  ) => {
     setRowChaosValues((current) => {
       const numericValue = value ?? 0;
       if (current[itemName] === numericValue) {
@@ -240,12 +252,15 @@ export default function Dashboard() {
           minWidth: 0,
         }}
       >
-
         {/* Top Chart */}
         <MoneyChart />
 
         {/* Bottom Section */}
-        <ViewHistoryTabs onOpenSettings={handleOpenSettings} isSyncing={isSyncing} handleSync={handleSync} />
+        <ViewHistoryTabs
+          onOpenSettings={handleOpenSettings}
+          isSyncing={isSyncing}
+          handleSync={handleSync}
+        />
       </Box>
 
       {/* Right Side */}

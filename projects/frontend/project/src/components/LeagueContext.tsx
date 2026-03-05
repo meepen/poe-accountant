@@ -82,10 +82,13 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
 
     setSharedCurrencyListLoading(true);
     try {
-      const result = await api.request(ApiEndpoint.GetExchangeRatesCurrencyList, {
-        realm: selectedLeague.realm,
-        leagueId: selectedLeague.leagueId,
-      });
+      const result = await api.request(
+        ApiEndpoint.GetExchangeRatesCurrencyList,
+        {
+          realm: selectedLeague.realm,
+          leagueId: selectedLeague.leagueId,
+        },
+      );
       setSharedCurrencyList(result);
     } catch (error) {
       console.error("Failed to fetch shared currency list:", error);

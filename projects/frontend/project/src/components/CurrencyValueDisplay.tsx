@@ -119,7 +119,9 @@ export default function CurrencyValueDisplay({
     );
 
     if (direct) {
-      const normalizedRate = normalizeChaosPerDivine(Number(direct.value.amount));
+      const normalizedRate = normalizeChaosPerDivine(
+        Number(direct.value.amount),
+      );
       if (normalizedRate !== null) {
         return normalizedRate;
       }
@@ -152,14 +154,16 @@ export default function CurrencyValueDisplay({
     }
 
     const direct = normalizedSharedCurrencyList.find(
-      (item) => item.currency === inputCurrency && item.value.currency === "chaos",
+      (item) =>
+        item.currency === inputCurrency && item.value.currency === "chaos",
     );
     if (direct) {
       return parsePositiveNumber(direct.value.amount);
     }
 
     const inverse = normalizedSharedCurrencyList.find(
-      (item) => item.currency === "chaos" && item.value.currency === inputCurrency,
+      (item) =>
+        item.currency === "chaos" && item.value.currency === inputCurrency,
     );
     if (inverse) {
       const inverseAmount = parsePositiveNumber(inverse.value.amount);
@@ -200,7 +204,11 @@ export default function CurrencyValueDisplay({
       return displayCurrency;
     }
 
-    if (valueInChaos !== null && chaosPerDivine && valueInChaos >= chaosPerDivine) {
+    if (
+      valueInChaos !== null &&
+      chaosPerDivine &&
+      valueInChaos >= chaosPerDivine
+    ) {
       return "divine";
     }
 
@@ -244,27 +252,30 @@ export default function CurrencyValueDisplay({
     };
   }, [formatOptions]);
 
-  const { chaosOrbImageUrl, divineOrbImageUrl, chaosName, divineName } = useMemo(() => {
-    if (!snapshot) {
+  const { chaosOrbImageUrl, divineOrbImageUrl, chaosName, divineName } =
+    useMemo(() => {
+      if (!snapshot) {
+        return {
+          chaosOrbImageUrl: "/vite.svg",
+          divineOrbImageUrl: "/vite.svg",
+          chaosName: "Chaos",
+          divineName: "Divine",
+        };
+      }
+
+      const entries = snapshot.data.result.flatMap(
+        (category) => category.entries,
+      );
+      const chaosEntry = entries.find((entry) => entry.id === "chaos");
+      const divineEntry = entries.find((entry) => entry.id === "divine");
+
       return {
-        chaosOrbImageUrl: "/vite.svg",
-        divineOrbImageUrl: "/vite.svg",
-        chaosName: "Chaos",
-        divineName: "Divine",
+        chaosOrbImageUrl: resolvePoeImageUrl(chaosEntry?.image),
+        divineOrbImageUrl: resolvePoeImageUrl(divineEntry?.image),
+        chaosName: chaosEntry?.text ?? "Chaos",
+        divineName: divineEntry?.text ?? "Divine",
       };
-    }
-
-    const entries = snapshot.data.result.flatMap((category) => category.entries);
-    const chaosEntry = entries.find((entry) => entry.id === "chaos");
-    const divineEntry = entries.find((entry) => entry.id === "divine");
-
-    return {
-      chaosOrbImageUrl: resolvePoeImageUrl(chaosEntry?.image),
-      divineOrbImageUrl: resolvePoeImageUrl(divineEntry?.image),
-      chaosName: chaosEntry?.text ?? "Chaos",
-      divineName: divineEntry?.text ?? "Divine",
-    };
-  }, [snapshot]);
+    }, [snapshot]);
 
   const imageUrl =
     resolvedDisplayCurrency === "divine" ? divineOrbImageUrl : chaosOrbImageUrl;

@@ -156,8 +156,13 @@ export default function CurrencyTable({
               <TableCell>
                 <div style={{ display: "flex", alignItems: "center" }}>
                   {formatValue(item.value.amount, valueFormatter)}
-                  {(item.confidenceScore) < 50 && (
-                    <Tooltip title={t("league_inspection_low_reliability", "Low Reliability (< 50%)")}>
+                  {item.confidenceScore < 50 && (
+                    <Tooltip
+                      title={t(
+                        "league_inspection_low_reliability",
+                        "Low Reliability (< 50%)",
+                      )}
+                    >
                       <WarningIcon
                         color="warning"
                         fontSize="small"

@@ -136,9 +136,7 @@ export default function ViewHistoryTabs({
         </Tabs>
         <Box sx={{ flexGrow: 1 }} />
         <Tooltip title={t("settings_aria_label")}>
-          <IconButton
-            onClick={onOpenSettings}
-          >
+          <IconButton onClick={onOpenSettings}>
             <SettingsIcon />
           </IconButton>
         </Tooltip>
