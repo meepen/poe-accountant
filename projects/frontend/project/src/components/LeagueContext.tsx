@@ -36,10 +36,9 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
     setLeaguesLoading(true);
     try {
       const result = await api.request(ApiEndpoint.GetUserLeagues);
-      const preferredLeagueId =
-        !hasInitializedFromUserSettingsRef.current
-          ? userSettings?.currentLeagueId ?? null
-          : null;
+      const preferredLeagueId = !hasInitializedFromUserSettingsRef.current
+        ? (userSettings?.currentLeagueId ?? null)
+        : null;
       const preferredLeague = preferredLeagueId
         ? result.find((league) => league.id === preferredLeagueId)
         : null;
