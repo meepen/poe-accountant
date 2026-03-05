@@ -8,6 +8,7 @@ import {
   StaticTradeDataActionsContext,
   StaticTradeDataStateContext,
   type StaticTradeDataActionsContextType,
+  type StaticTradeDataEntry,
   type StaticTradeDataStateContextType,
 } from "./static-trade-data-context";
 
@@ -20,6 +21,19 @@ export function StaticTradeDataProvider({ children }: { children: ReactNode }) {
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const entries = useMemo<StaticTradeDataEntry[]>(() => {
+    if (!snapshot) {
+      return [];
+    }
+
+    return snapshot.data.result.flatMap((category) =>
+      category.entries.map((entry) => ({
+        entry,
+        category,
+      })),
+    );
+  }, [snapshot]);
 
   const loadStaticTradeData = useCallback(
     async (options?: { force?: boolean }) => {
@@ -55,47 +69,33 @@ export function StaticTradeDataProvider({ children }: { children: ReactNode }) {
     setError(null);
   }, []);
 
-  const currencyNameByKey = useMemo(() => {
-    const names = new Map<string, string>();
-    if (!snapshot) {
-      return names;
-    }
+  const entryById = useMemo(
+    () =>
+      entries.reduce(
+        (map, entry) => map.set(entry.entry.id, entry),
+        new Map<string, StaticTradeDataEntry>(),
+      ),
+    [entries],
+  );
 
-    for (const category of snapshot.data.result) {
-      for (const entry of category.entries) {
-        names.set(entry.id, entry.text);
-      }
-    }
-
-    return names;
-  }, [snapshot]);
-
-  const currencyImageByKey = useMemo(() => {
-    const images = new Map<string, string>();
-    if (!snapshot) {
-      return images;
-    }
-
-    for (const category of snapshot.data.result) {
-      for (const entry of category.entries) {
-        if (typeof entry.image === "string" && entry.image.length > 0) {
-          images.set(entry.id, entry.image);
-        }
-      }
-    }
-
-    return images;
-  }, [snapshot]);
+  const entryByName = useMemo(
+    () =>
+      entries.reduce(
+        (map, entry) => map.set(entry.entry.text, entry),
+        new Map<string, StaticTradeDataEntry>(),
+      ),
+    [entries],
+  );
 
   const stateContextValue = useMemo<StaticTradeDataStateContextType>(
     () => ({
-      snapshot,
-      currencyNameByKey,
-      currencyImageByKey,
+      entries,
+      entryById,
+      entryByName,
       isLoading,
       error,
     }),
-    [snapshot, currencyNameByKey, currencyImageByKey, isLoading, error],
+    [entries, entryById, entryByName, isLoading, error],
   );
 
   const actionsContextValue = useMemo<StaticTradeDataActionsContextType>(

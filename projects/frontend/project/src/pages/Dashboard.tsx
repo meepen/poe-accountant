@@ -25,11 +25,17 @@ import { useTranslation } from "react-i18next";
 import ViewHistoryTabs from "./Dashboard/ViewHistoryTabs";
 import {
   ApiEndpoint,
+  SyncUserInventoryJobDataDto as SyncUserInventoryJobDataSchema,
+  SyncUserInventoryJobDataSchemaVersion,
+  SyncUserInventorySnapshotDataEnvelopeDto as SyncUserInventorySnapshotDataEnvelopeSchema,
+  type SyncUserInventoryJobDataDto,
   type UserInventorySnapshotDto,
 } from "@meepen/poe-accountant-api-schema";
-import CurrencyValueDisplay from "../components/common/CurrencyValueDisplay";
+import CurrencyConversionValueDisplay from "../components/common/CurrencyConversionValueDisplay";
+import type { SharedCurrencyItem } from "../components/league-context";
 
 interface DashboardItem {
+  id: string;
   name: string;
   imageUrl: string;
   quantity: number;
@@ -40,6 +46,11 @@ interface DashboardItem {
 const POE_IMAGE_BASE_URL = "https://pathofexile.com";
 const SYNC_POLL_INTERVAL_MS = 2500;
 const SYNC_POLL_MAX_ATTEMPTS = 120;
+
+type ParseSnapshotPayloadResult = {
+  data: SyncUserInventoryJobDataDto | null;
+  isOutOfDate: boolean;
+};
 
 function waitFor(ms: number): Promise<void> {
   return new Promise((resolve) => {
@@ -59,13 +70,45 @@ function resolvePoeImageUrl(image: string | undefined): string {
   return `${POE_IMAGE_BASE_URL}${image}`;
 }
 
+function parseSnapshotPayload(payload: unknown): ParseSnapshotPayloadResult {
+  const parsed = SyncUserInventoryJobDataSchema.safeParse(payload);
+  if (parsed.success) {
+    return {
+      data: parsed.data,
+      isOutOfDate: false,
+    };
+  }
+
+  const envelope =
+    SyncUserInventorySnapshotDataEnvelopeSchema.safeParse(payload);
+  if (envelope.success) {
+    const version = envelope.data.schemaVersion ?? null;
+    return {
+      data: null,
+      isOutOfDate:
+        version !== null && version !== SyncUserInventoryJobDataSchemaVersion,
+    };
+  }
+
+  return {
+    data: null,
+    isOutOfDate: false,
+  };
+}
+
 interface MoneyChartProps {
   snapshots: UserInventorySnapshotDto[];
   loading: boolean;
   error: string | null;
+  onSnapshotClick: (snapshotId: string) => void;
 }
 
-function MoneyChart({ snapshots, loading, error }: MoneyChartProps) {
+function MoneyChart({
+  snapshots,
+  loading,
+  error,
+  onSnapshotClick,
+}: MoneyChartProps) {
   const { t } = useTranslation();
   const compactNumberFormatter = useMemo(
     () =>
@@ -89,12 +132,14 @@ function MoneyChart({ snapshots, loading, error }: MoneyChartProps) {
           }
 
           return {
+            id: snapshot.id,
             timestamp,
             value,
           };
         })
-        .filter((entry): entry is { timestamp: Date; value: number } =>
-          Boolean(entry),
+        .filter(
+          (entry): entry is { id: string; timestamp: Date; value: number } =>
+            Boolean(entry),
         )
         .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime()),
     [snapshots],
@@ -122,7 +167,9 @@ function MoneyChart({ snapshots, loading, error }: MoneyChartProps) {
         }}
       >
         {loading && !hasData ? (
-          <Box sx={{ display: "flex", justifyContent: "center", p: 4, flex: 1 }}>
+          <Box
+            sx={{ display: "flex", justifyContent: "center", p: 4, flex: 1 }}
+          >
             <CircularProgress />
           </Box>
         ) : error && !hasData ? (
@@ -166,8 +213,21 @@ function MoneyChart({ snapshots, loading, error }: MoneyChartProps) {
             series={[
               {
                 data: chartData.map((entry) => entry.value),
+                showMark: true,
               },
             ]}
+            onAxisClick={(_event, data) => {
+              if (!data) {
+                return;
+              }
+
+              const selected = chartData.at(data.dataIndex);
+              if (!selected) {
+                return;
+              }
+
+              onSnapshotClick(selected.id);
+            }}
             margin={{ left: 72, right: 28, top: 20, bottom: 16 }}
             sx={{
               flex: 1,
@@ -182,14 +242,19 @@ function MoneyChart({ snapshots, loading, error }: MoneyChartProps) {
 
 interface ItemTableProps {
   items: DashboardItem[];
-  onRowChaosValueChange: (itemName: string, value: number | null) => void;
+  snapshotCurrencyList: SharedCurrencyItem[];
+  onRowBaseValueChange: (itemId: string, value: number) => void;
 }
 
-function ItemTable({ items, onRowChaosValueChange }: ItemTableProps) {
+function ItemTable({
+  items,
+  snapshotCurrencyList,
+  onRowBaseValueChange,
+}: ItemTableProps) {
   const { t } = useTranslation();
   return (
     <TableContainer sx={{ height: "100%" }}>
-      <Table stickyHeader aria-label="items table">
+      <Table stickyHeader aria-label={t("dashboard_items_table_aria")}>
         <TableHead>
           <TableRow>
             <TableCell>{t("table_header_item")}</TableCell>
@@ -198,7 +263,7 @@ function ItemTable({ items, onRowChaosValueChange }: ItemTableProps) {
         </TableHead>
         <TableBody>
           {items.map((row) => (
-            <TableRow key={row.name}>
+            <TableRow key={row.id}>
               <TableCell component="th" scope="row">
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Typography
@@ -218,12 +283,12 @@ function ItemTable({ items, onRowChaosValueChange }: ItemTableProps) {
                 </Box>
               </TableCell>
               <TableCell align="right">
-                <CurrencyValueDisplay
-                  value={row.unitValue}
+                <CurrencyConversionValueDisplay
                   quantity={row.quantity}
-                  inputCurrency={row.currencyId}
-                  onChaosValueChange={(value) => {
-                    onRowChaosValueChange(row.name, value);
+                  currency={row.currencyId}
+                  currencyPriceList={snapshotCurrencyList}
+                  onBaseCurrencyValueChange={(value) => {
+                    onRowBaseValueChange(row.id, value);
                   }}
                 />
               </TableCell>
@@ -236,27 +301,38 @@ function ItemTable({ items, onRowChaosValueChange }: ItemTableProps) {
 }
 
 export default function Dashboard() {
+  const staticTradeData = useStaticTradeData();
   const { user } = useSession();
   const { selectedLeague } = useLeagueSelection();
-
   const api = useApi();
   const { t } = useTranslation();
-  const { snapshot, loadStaticTradeData } = useStaticTradeData();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [rowChaosValues, setRowChaosValues] = useState<Record<string, number>>(
-    {},
-  );
-  const [inventorySnapshots, setInventorySnapshots] =
-    useState<UserInventorySnapshotDto[]>([]);
+  const [rowValues, setRowValues] = useState<Record<string, number>>({});
+  const [loadedSnapshotData, setLoadedSnapshotData] =
+    useState<SyncUserInventoryJobDataDto | null>(null);
+  const [loadedSnapshotCurrencyList, setLoadedSnapshotCurrencyList] = useState<
+    SharedCurrencyItem[]
+  >([]);
+  const [inventorySnapshots, setInventorySnapshots] = useState<
+    UserInventorySnapshotDto[]
+  >([]);
   const [loadingInventorySnapshots, setLoadingInventorySnapshots] =
     useState(false);
   const [inventorySnapshotsError, setInventorySnapshotsError] = useState<
     string | null
   >(null);
+  const [requestedSnapshotId, setRequestedSnapshotId] = useState<string | null>(
+    null,
+  );
   const [_syncStatus, setSyncStatus] = useState<
     { severity: "success" | "error"; message: string } | undefined
   >(undefined);
+
+  const resetRightPaneData = useCallback(() => {
+    setLoadedSnapshotData(null);
+    setLoadedSnapshotCurrencyList([]);
+  }, []);
 
   const fetchInventorySnapshots = useCallback(async () => {
     if (!selectedLeague) {
@@ -280,67 +356,138 @@ export default function Dashboard() {
     }
   }, [api, selectedLeague, t]);
 
+  const fetchLatestSnapshotForRightPane = useCallback(async () => {
+    if (!selectedLeague) {
+      resetRightPaneData();
+      return;
+    }
+
+    try {
+      const latestSnapshotsPage = await api.request(
+        ApiEndpoint.GetUserInventorySnapshots,
+        {
+          realm: selectedLeague.realm,
+          leagueId: selectedLeague.leagueId,
+        },
+      );
+
+      if (latestSnapshotsPage.snapshots.length === 0) {
+        resetRightPaneData();
+        return;
+      }
+      const latestSnapshot = latestSnapshotsPage.snapshots[0];
+
+      const [snapshotCurrencyList, payload] = await Promise.all([
+        api.request(ApiEndpoint.GetUserInventorySnapshotCurrencyList, {
+          realm: selectedLeague.realm,
+          leagueId: selectedLeague.leagueId,
+          snapshotId: latestSnapshot.id,
+        }),
+        api.request(ApiEndpoint.GetUserInventorySnapshotData, {
+          realm: selectedLeague.realm,
+          leagueId: selectedLeague.leagueId,
+          snapshotId: latestSnapshot.id,
+        }),
+      ]);
+
+      const parsedPayload = parseSnapshotPayload(payload);
+      if (!parsedPayload.data || parsedPayload.isOutOfDate) {
+        resetRightPaneData();
+        return;
+      }
+
+      setLoadedSnapshotData(parsedPayload.data);
+      setLoadedSnapshotCurrencyList(snapshotCurrencyList);
+    } catch (error: unknown) {
+      console.error("Failed to load latest right-pane snapshot data", error);
+      resetRightPaneData();
+    }
+  }, [api, resetRightPaneData, selectedLeague]);
+
   const items = useMemo<DashboardItem[]>(() => {
-    if (!snapshot) {
+    if (!loadedSnapshotData) {
       return [];
     }
 
-    const entries = snapshot.data.result.flatMap(
-      (category) => category.entries,
-    );
-    return entries.slice(0, 5).map((entry) => {
-      const placeholderQuantity =
-        (entry.id
-          .split("")
-          .reduce((sum, character) => sum + character.charCodeAt(0), 0) %
-          50000) +
-        1;
-      return {
-        name: entry.text,
-        imageUrl: resolvePoeImageUrl(entry.image),
-        quantity: placeholderQuantity,
-        unitValue: 1,
-        currencyId: entry.id,
-      };
-    });
-  }, [snapshot]);
+    const grouped = Object.values(loadedSnapshotData.items)
+      .flat()
+      .reduce<
+        Map<
+          string,
+          {
+            id: string;
+            name: string;
+            imageUrl: string;
+            quantity: number;
+            totalValue: number;
+            currencyId: string;
+          }
+        >
+      >((result, entry) => {
+        const currencyId =
+          staticTradeData.entryByName.get(entry.itemName)?.entry.id ??
+          entry.itemName;
+        const key = `${entry.itemId}:${currencyId}`;
+        const existing = result.get(key);
+
+        if (existing) {
+          result.set(key, {
+            ...existing,
+            quantity: existing.quantity + entry.count,
+            totalValue: existing.totalValue + entry.value,
+          });
+        } else {
+          result.set(key, {
+            id: key,
+            name: entry.itemName,
+            imageUrl: resolvePoeImageUrl(entry.icon ?? undefined),
+            quantity: entry.count,
+            totalValue: entry.value,
+            currencyId,
+          });
+        }
+
+        return result;
+      }, new Map());
+
+    return Array.from(grouped.values())
+      .map((entry) => ({
+        id: entry.id,
+        name: entry.name,
+        imageUrl: entry.imageUrl,
+        quantity: entry.quantity,
+        unitValue: entry.quantity > 0 ? entry.totalValue / entry.quantity : 0,
+        currencyId: entry.currencyId,
+      }))
+      .sort((a, b) => b.unitValue * b.quantity - a.unitValue * a.quantity)
+      .slice(0, 100);
+  }, [loadedSnapshotData, staticTradeData.entryByName]);
 
   const totalNetWorthChaos = useMemo(
-    () =>
-      items.reduce(
-        (total, item) => total + (rowChaosValues[item.name] ?? 0),
-        0,
-      ),
-    [items, rowChaosValues],
+    () => items.reduce((total, item) => total + (rowValues[item.id] ?? 0), 0),
+    [items, rowValues],
   );
 
   const sortedItems = useMemo(() => {
     return [...items].sort((a, b) => {
-      const valueA = rowChaosValues[a.name] ?? 0;
-      const valueB = rowChaosValues[b.name] ?? 0;
+      const valueA = rowValues[a.id] ?? 0;
+      const valueB = rowValues[b.id] ?? 0;
       return valueB - valueA;
     });
-  }, [items, rowChaosValues]);
+  }, [items, rowValues]);
 
-  const handleRowChaosValueChange = (
-    itemName: string,
-    value: number | null,
-  ) => {
-    setRowChaosValues((current) => {
-      const numericValue = value ?? 0;
-      if (current[itemName] === numericValue) {
+  const handleRowValues = (itemId: string, value: number) => {
+    setRowValues((current) => {
+      const numericValue = value;
+      if (current[itemId] === numericValue) {
         return current;
       }
       return {
         ...current,
-        [itemName]: numericValue,
+        [itemId]: numericValue,
       };
     });
   };
-
-  useEffect(() => {
-    void loadStaticTradeData();
-  }, [loadStaticTradeData]);
 
   useEffect(() => {
     if (!user || !selectedLeague) {
@@ -348,7 +495,13 @@ export default function Dashboard() {
     }
 
     void fetchInventorySnapshots();
-  }, [fetchInventorySnapshots, selectedLeague, user]);
+    void fetchLatestSnapshotForRightPane();
+  }, [
+    fetchInventorySnapshots,
+    fetchLatestSnapshotForRightPane,
+    selectedLeague,
+    user,
+  ]);
 
   if (!user) {
     return null;
@@ -400,6 +553,7 @@ export default function Dashboard() {
       }
 
       await fetchInventorySnapshots();
+      await fetchLatestSnapshotForRightPane();
 
       setSyncStatus({
         severity: "success",
@@ -442,6 +596,9 @@ export default function Dashboard() {
           snapshots={inventorySnapshots}
           loading={loadingInventorySnapshots}
           error={inventorySnapshotsError}
+          onSnapshotClick={(snapshotId) => {
+            setRequestedSnapshotId(snapshotId);
+          }}
         />
 
         {/* Bottom Section */}
@@ -449,6 +606,10 @@ export default function Dashboard() {
           onOpenSettings={handleOpenSettings}
           isSyncing={isSyncing}
           handleSync={handleSync}
+          requestedSnapshotId={requestedSnapshotId}
+          onRequestedSnapshotHandled={() => {
+            setRequestedSnapshotId(null);
+          }}
         />
       </Box>
 
@@ -479,7 +640,7 @@ export default function Dashboard() {
               gap: 1,
             }}
           >
-            <Typography variant="h6">{t("section_items")}</Typography>
+            <Typography variant="h6">{t("dashboard_latest_data")}</Typography>
             <Box sx={{ flexGrow: 1 }} />
             <Box sx={{ textAlign: "right" }}>
               <Typography
@@ -488,11 +649,12 @@ export default function Dashboard() {
                 component="div"
                 sx={{ mb: 0.5 }}
               >
-                Total Net Worth
+                {t("dashboard_total_net_worth")}
               </Typography>
-              <CurrencyValueDisplay
-                value={items.length > 0 ? totalNetWorthChaos : null}
-                inputCurrency="chaos"
+              <CurrencyConversionValueDisplay
+                quantity={totalNetWorthChaos}
+                currency="chaos"
+                currencyPriceList={loadedSnapshotCurrencyList}
                 variant="h5"
                 color="success.main"
                 fontWeight={700}
@@ -502,7 +664,8 @@ export default function Dashboard() {
           <Box sx={{ flex: 1, overflow: "hidden" }}>
             <ItemTable
               items={sortedItems}
-              onRowChaosValueChange={handleRowChaosValueChange}
+              snapshotCurrencyList={loadedSnapshotCurrencyList}
+              onRowBaseValueChange={handleRowValues}
             />
           </Box>
         </Paper>

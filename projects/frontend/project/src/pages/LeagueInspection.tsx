@@ -10,7 +10,7 @@ import type {
   PriceHistoryItem,
   PriceListItem,
 } from "./LeagueInspection/types";
-import { useApi, useStaticTradeDataActions } from "../components/session-hooks";
+import { useApi } from "../components/session-hooks";
 import {
   LeagueContext,
   type LeagueContextType,
@@ -24,7 +24,6 @@ function isApiNotFoundError(error: unknown): error is ApiError {
 
 export default function LeagueInspection() {
   const api = useApi();
-  const { loadStaticTradeData } = useStaticTradeDataActions();
   const { t } = useTranslation();
   const leagueContext: LeagueContextType | undefined = use(LeagueContext);
   if (leagueContext === undefined) {
@@ -55,10 +54,6 @@ export default function LeagueInspection() {
   useEffect(() => {
     historyByCurrencyRef.current = historyByCurrency;
   }, [historyByCurrency]);
-
-  useEffect(() => {
-    void loadStaticTradeData();
-  }, [loadStaticTradeData]);
 
   useEffect(() => {
     if (!selectedLeague) {

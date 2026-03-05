@@ -1,15 +1,16 @@
 import { memo } from "react";
 import { Box } from "@mui/material";
-import { useStaticTradeDataState } from "../../components/session-hooks";
+import { useStaticTradeData } from "../../components/session-hooks";
 
 type CurrencyNameProps = {
   currencyKey: string;
 };
 
 function CurrencyNameBase({ currencyKey }: CurrencyNameProps) {
-  const { currencyNameByKey, currencyImageByKey } = useStaticTradeDataState();
-  const currencyName = currencyNameByKey.get(currencyKey) ?? currencyKey;
-  const currencyImage = currencyImageByKey.get(currencyKey);
+  const staticTradeData = useStaticTradeData();
+  const currencyName =
+    staticTradeData.entryById.get(currencyKey)?.entry.text ?? currencyKey;
+  const currencyImage = staticTradeData.entryById.get(currencyKey)?.entry.image;
 
   if (!currencyImage) {
     return <>{currencyName}</>;

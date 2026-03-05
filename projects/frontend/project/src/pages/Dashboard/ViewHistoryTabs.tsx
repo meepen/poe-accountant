@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Typography,
   Box,
@@ -29,14 +29,24 @@ import {
   SyncUserInventorySnapshotDataEnvelopeDto,
   type UserInventorySnapshotDto,
 } from "@meepen/poe-accountant-api-schema";
-import { useApi, useLeagueSelection } from "../../components/session-hooks";
-import CurrencyValueDisplay from "../../components/common/CurrencyValueDisplay";
+import {
+  useApi,
+  useLeagueSelection,
+  useStaticTradeData,
+} from "../../components/session-hooks";
+import CurrencyConversionValueDisplay from "../../components/common/CurrencyConversionValueDisplay";
 import type { SharedCurrencyItem } from "../../components/league-context";
 
 interface ViewHistoryTabsProps {
   onOpenSettings: () => void;
   handleSync: () => Promise<void>;
   isSyncing: boolean;
+  requestedSnapshotId?: string | null;
+  onRequestedSnapshotHandled?: () => void;
+  onSnapshotDataChange?: (
+    data: SyncUserInventoryJobDataDto | null,
+    currencyList: SharedCurrencyItem[],
+  ) => void;
 }
 
 type ViewTabItem = {
@@ -60,11 +70,35 @@ type ParseSnapshotPayloadResult = {
   version: number | null;
 };
 
-const allTabsOption = {
-  id: "all",
-  name: "All Tabs",
-  backgroundColor: "#455a64",
-} as const;
+const allTabsId = "all";
+
+function parseSnapshotPayload(payload: unknown): ParseSnapshotPayloadResult {
+  const parsed = SyncUserInventoryJobDataDto.safeParse(payload);
+  if (parsed.success) {
+    return {
+      data: parsed.data,
+      isOutOfDate: false,
+      version: parsed.data.schemaVersion,
+    };
+  }
+
+  const envelope = SyncUserInventorySnapshotDataEnvelopeDto.safeParse(payload);
+  if (envelope.success) {
+    const version = envelope.data.schemaVersion ?? null;
+    return {
+      data: null,
+      isOutOfDate:
+        version !== null && version !== SyncUserInventoryJobDataSchemaVersion,
+      version,
+    };
+  }
+
+  return {
+    data: null,
+    isOutOfDate: false,
+    version: null,
+  };
+}
 
 function normalizeTabColor(color: string | undefined): string {
   if (!color) {
@@ -90,9 +124,13 @@ export default function ViewHistoryTabs({
   onOpenSettings,
   handleSync,
   isSyncing,
+  requestedSnapshotId,
+  onRequestedSnapshotHandled,
+  onSnapshotDataChange,
 }: ViewHistoryTabsProps) {
   const { t } = useTranslation();
   const api = useApi();
+  const staticTradeData = useStaticTradeData();
   const { selectedLeague } = useLeagueSelection();
   const [tabIndex, setTabIndex] = useState(0);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -108,9 +146,7 @@ export default function ViewHistoryTabs({
     null,
   );
   const [loadingSnapshotData, setLoadingSnapshotData] = useState(false);
-  const [selectedViewTabId, setSelectedViewTabId] = useState<string>(
-    allTabsOption.id,
-  );
+  const [selectedViewTabId, setSelectedViewTabId] = useState<string>(allTabsId);
   const [snapshotCurrencyList, setSnapshotCurrencyList] = useState<
     SharedCurrencyItem[]
   >([]);
@@ -138,70 +174,120 @@ export default function ViewHistoryTabs({
 
   const effectiveSelectedViewTabId = useMemo(() => {
     if (
-      selectedViewTabId !== allTabsOption.id &&
+      selectedViewTabId !== allTabsId &&
       !viewStashTabs.some((tab) => tab.id === selectedViewTabId)
     ) {
-      return allTabsOption.id;
+      return allTabsId;
     }
 
     return selectedViewTabId;
   }, [selectedViewTabId, viewStashTabs]);
 
-  const parseSnapshotPayload = (
-    payload: unknown,
-  ): ParseSnapshotPayloadResult => {
-    const parsed = SyncUserInventoryJobDataDto.safeParse(payload);
-    if (parsed.success) {
-      return {
-        data: parsed.data,
-        isOutOfDate: false,
-        version: parsed.data.schemaVersion,
-      };
-    }
+  const loadSnapshotCurrencyList = useCallback(
+    async (snapshotId: string) => {
+      if (!selectedLeague) {
+        return;
+      }
 
-    const envelope =
-      SyncUserInventorySnapshotDataEnvelopeDto.safeParse(payload);
-    if (envelope.success) {
-      const version = envelope.data.schemaVersion ?? null;
-      return {
-        data: null,
-        isOutOfDate:
-          version !== null && version !== SyncUserInventoryJobDataSchemaVersion,
-        version,
-      };
-    }
+      try {
+        const result = await api.request(
+          ApiEndpoint.GetUserInventorySnapshotCurrencyList,
+          {
+            realm: selectedLeague.realm,
+            leagueId: selectedLeague.leagueId,
+            snapshotId,
+          },
+        );
+        setSnapshotCurrencyList(result);
+      } catch (error: unknown) {
+        console.error("Failed to load snapshot currency list", error);
+        setSnapshotCurrencyList([]);
+      }
+    },
+    [api, selectedLeague],
+  );
 
-    return {
-      data: null,
-      isOutOfDate: false,
-      version: null,
-    };
-  };
-
-  const loadSnapshotCurrencyList = async (snapshotId: string) => {
+  const loadLatestSnapshotForView = useCallback(async () => {
     if (!selectedLeague) {
       return;
     }
 
+    setLoadingSnapshotData(true);
+    setHistoryError(null);
+
     try {
-      const result = await api.request(
-        ApiEndpoint.GetUserInventorySnapshotCurrencyList,
+      const latestSnapshotsPage = await api.request(
+        ApiEndpoint.GetUserInventorySnapshots,
         {
           realm: selectedLeague.realm,
           leagueId: selectedLeague.leagueId,
-          snapshotId,
         },
       );
-      setSnapshotCurrencyList(result);
+
+      if (latestSnapshotsPage.snapshots.length === 0) {
+        setSnapshotData(null);
+        setSelectedSnapshotId(null);
+        setSnapshotDataOutOfDate(false);
+        setSnapshotDataVersion(null);
+        setSnapshotCurrencyList([]);
+        return;
+      }
+
+      const latestSnapshot = latestSnapshotsPage.snapshots[0];
+
+      setSelectedSnapshotId(latestSnapshot.id);
+
+      await api.request(ApiEndpoint.GetUserInventorySnapshot, {
+        realm: selectedLeague.realm,
+        leagueId: selectedLeague.leagueId,
+        snapshotId: latestSnapshot.id,
+      });
+
+      await loadSnapshotCurrencyList(latestSnapshot.id);
+
+      const payload = await api.request(
+        ApiEndpoint.GetUserInventorySnapshotData,
+        {
+          realm: selectedLeague.realm,
+          leagueId: selectedLeague.leagueId,
+          snapshotId: latestSnapshot.id,
+        },
+      );
+
+      const parsedPayload = parseSnapshotPayload(payload);
+      setSnapshotDataVersion(parsedPayload.version);
+      setSnapshotDataOutOfDate(parsedPayload.isOutOfDate);
+
+      if (parsedPayload.data) {
+        setSnapshotData(parsedPayload.data);
+      } else {
+        setSnapshotData(null);
+        setHistoryError(
+          parsedPayload.isOutOfDate
+            ? t("dashboard_snapshot_outdated")
+            : t("dashboard_error_parse_snapshot_data"),
+        );
+      }
     } catch (error: unknown) {
-      console.error("Failed to load snapshot currency list", error);
-      setSnapshotCurrencyList([]);
+      console.error("Failed to load latest inventory snapshot for view", error);
+      setSnapshotData(null);
+      setHistoryError(t("dashboard_error_load_latest_snapshot"));
+    } finally {
+      setLoadingSnapshotData(false);
     }
-  };
+  }, [api, loadSnapshotCurrencyList, selectedLeague, t]);
+
+  const handleSyncAndReloadLatest = useCallback(async () => {
+    try {
+      await handleSync();
+    } finally {
+      await loadLatestSnapshotForView();
+    }
+  }, [handleSync, loadLatestSnapshotForView]);
 
   const viewListItems = useMemo(() => {
     const sourceEntries =
-      effectiveSelectedViewTabId === allTabsOption.id
+      effectiveSelectedViewTabId === allTabsId
         ? allEntries
         : allEntries.filter(
             (entry) => entry.stashTabId === effectiveSelectedViewTabId,
@@ -209,7 +295,10 @@ export default function ViewHistoryTabs({
 
     const grouped = sourceEntries.reduce<Map<string, ViewTabItem>>(
       (result, entry) => {
-        const key = `${entry.itemId}:${entry.valueCurrency}`;
+        const valueCurrency =
+          staticTradeData.entryById.get(entry.valueCurrency)?.entry.id ??
+          entry.valueCurrency;
+        const key = `${entry.itemId}:${valueCurrency}`;
         const existing = result.get(key);
         if (existing) {
           result.set(key, {
@@ -224,7 +313,7 @@ export default function ViewHistoryTabs({
             icon: entry.icon,
             quantity: entry.count,
             totalValue: entry.value,
-            valueCurrency: entry.valueCurrency,
+            valueCurrency,
           });
         }
         return result;
@@ -235,7 +324,7 @@ export default function ViewHistoryTabs({
     return Array.from(grouped.values()).sort(
       (a, b) => b.totalValue - a.totalValue,
     );
-  }, [allEntries, effectiveSelectedViewTabId]);
+  }, [allEntries, effectiveSelectedViewTabId, staticTradeData.entryById]);
 
   const viewListTotal = useMemo(
     () => viewListItems.reduce((sum, item) => sum + item.totalValue, 0),
@@ -279,7 +368,7 @@ export default function ViewHistoryTabs({
         if (!mounted) {
           return;
         }
-        setHistoryError("Failed to load inventory history.");
+        setHistoryError(t("dashboard_error_load_inventory_history"));
       } finally {
         if (mounted) {
           setLoadingHistory(false);
@@ -292,151 +381,82 @@ export default function ViewHistoryTabs({
     return () => {
       mounted = false;
     };
-  }, [api, selectedLeague, tabIndex]);
+  }, [api, loadSnapshotCurrencyList, selectedLeague, t, tabIndex]);
 
   useEffect(() => {
     if (tabIndex !== 0 || !selectedLeague) {
       return;
     }
-    const league = selectedLeague;
 
-    let mounted = true;
+    void loadLatestSnapshotForView();
+  }, [loadLatestSnapshotForView, selectedLeague, tabIndex]);
 
-    async function fetchLatestSnapshotForView() {
+  const loadSnapshotData = useCallback(
+    async (snapshotId: string) => {
+      if (!selectedLeague) {
+        return;
+      }
+      const league = selectedLeague;
+
+      setSelectedSnapshotId(snapshotId);
       setLoadingSnapshotData(true);
       setHistoryError(null);
 
       try {
-        const latestSnapshotsPage = await api.request(
-          ApiEndpoint.GetUserInventorySnapshots,
-          {
-            realm: league.realm,
-            leagueId: league.leagueId,
-          },
-        );
-
-        if (!mounted) {
-          return;
-        }
-
-        if (latestSnapshotsPage.snapshots.length === 0) {
-          setSnapshotData(null);
-          setSelectedSnapshotId(null);
-          setSnapshotDataOutOfDate(false);
-          setSnapshotDataVersion(null);
-          setSnapshotCurrencyList([]);
-          return;
-        }
-
-        const latestSnapshot = latestSnapshotsPage.snapshots[0];
-
-        setSelectedSnapshotId(latestSnapshot.id);
-
         await api.request(ApiEndpoint.GetUserInventorySnapshot, {
           realm: league.realm,
           leagueId: league.leagueId,
-          snapshotId: latestSnapshot.id,
+          snapshotId,
         });
 
-        await loadSnapshotCurrencyList(latestSnapshot.id);
+        await loadSnapshotCurrencyList(snapshotId);
 
-        const payload = await api.request(
+        const result = await api.request(
           ApiEndpoint.GetUserInventorySnapshotData,
           {
             realm: league.realm,
             leagueId: league.leagueId,
-            snapshotId: latestSnapshot.id,
+            snapshotId,
           },
         );
-
-        const parsedPayload = parseSnapshotPayload(payload);
+        const parsedPayload = parseSnapshotPayload(result);
         setSnapshotDataVersion(parsedPayload.version);
         setSnapshotDataOutOfDate(parsedPayload.isOutOfDate);
 
-        if (parsedPayload.data) {
-          setSnapshotData(parsedPayload.data);
-        } else {
+        if (!parsedPayload.data) {
           setSnapshotData(null);
           setHistoryError(
             parsedPayload.isOutOfDate
-              ? "Snapshot data is out of date. Please sync inventory again."
-              : "Failed to parse snapshot data.",
+              ? t("dashboard_snapshot_outdated")
+              : t("dashboard_error_parse_snapshot_data"),
           );
-        }
-      } catch (error: unknown) {
-        console.error(
-          "Failed to load latest inventory snapshot for view",
-          error,
-        );
-        if (!mounted) {
           return;
         }
+
+        setSnapshotData(parsedPayload.data);
+      } catch (error: unknown) {
+        console.error("Failed to load inventory snapshot data", error);
+        setHistoryError(t("dashboard_error_load_selected_snapshot"));
         setSnapshotData(null);
-        setHistoryError("Failed to load latest inventory snapshot.");
       } finally {
-        if (mounted) {
-          setLoadingSnapshotData(false);
-        }
+        setLoadingSnapshotData(false);
       }
-    }
+    },
+    [api, loadSnapshotCurrencyList, selectedLeague, t],
+  );
 
-    void fetchLatestSnapshotForView();
-
-    return () => {
-      mounted = false;
-    };
-  }, [api, selectedLeague, tabIndex]);
-
-  const loadSnapshotData = async (snapshotId: string) => {
-    if (!selectedLeague) {
+  useEffect(() => {
+    if (!requestedSnapshotId) {
       return;
     }
-    const league = selectedLeague;
 
-    setSelectedSnapshotId(snapshotId);
-    setLoadingSnapshotData(true);
-    setHistoryError(null);
+    void loadSnapshotData(requestedSnapshotId);
+    onRequestedSnapshotHandled?.();
+  }, [loadSnapshotData, onRequestedSnapshotHandled, requestedSnapshotId]);
 
-    try {
-      await api.request(ApiEndpoint.GetUserInventorySnapshot, {
-        realm: league.realm,
-        leagueId: league.leagueId,
-        snapshotId,
-      });
-
-      await loadSnapshotCurrencyList(snapshotId);
-
-      const result = await api.request(
-        ApiEndpoint.GetUserInventorySnapshotData,
-        {
-          realm: league.realm,
-          leagueId: league.leagueId,
-          snapshotId,
-        },
-      );
-      const parsedPayload = parseSnapshotPayload(result);
-      setSnapshotDataVersion(parsedPayload.version);
-      setSnapshotDataOutOfDate(parsedPayload.isOutOfDate);
-
-      if (!parsedPayload.data) {
-        setSnapshotData(null);
-        setHistoryError(
-          parsedPayload.isOutOfDate
-            ? "Snapshot data is out of date. Please sync inventory again."
-            : "Failed to parse snapshot data.",
-        );
-        return;
-      }
-
-      setSnapshotData(parsedPayload.data);
-    } catch (error: unknown) {
-      console.error("Failed to load inventory snapshot data", error);
-      setHistoryError("Failed to load selected snapshot data.");
-      setSnapshotData(null);
-    } finally {
-      setLoadingSnapshotData(false);
-    }
-  };
+  useEffect(() => {
+    onSnapshotDataChange?.(snapshotData, snapshotCurrencyList);
+  }, [onSnapshotDataChange, snapshotCurrencyList, snapshotData]);
 
   return (
     <Paper
@@ -477,7 +497,7 @@ export default function ViewHistoryTabs({
             <IconButton
               aria-label={t("dashboard_sync_button")}
               onClick={() => {
-                void handleSync();
+                void handleSyncAndReloadLatest();
               }}
               disabled={isSyncing}
             >
@@ -513,7 +533,9 @@ export default function ViewHistoryTabs({
                   justifyContent: "flex-start",
                 }}
               >
-                <Typography variant="subtitle2">Stash Tabs</Typography>
+                <Typography variant="subtitle2">
+                  {t("dashboard_view_stash_tabs")}
+                </Typography>
               </Box>
               <Divider />
               <Box
@@ -526,7 +548,14 @@ export default function ViewHistoryTabs({
                 }}
               >
                 <List disablePadding>
-                  {[allTabsOption, ...viewStashTabs].map((stashTab) => {
+                  {[
+                    {
+                      id: allTabsId,
+                      name: t("dashboard_view_all_tabs"),
+                      backgroundColor: "#455a64",
+                    },
+                    ...viewStashTabs,
+                  ].map((stashTab) => {
                     const isSelected =
                       effectiveSelectedViewTabId === stashTab.id;
 
@@ -593,8 +622,8 @@ export default function ViewHistoryTabs({
                 }}
               >
                 <Typography variant="subtitle1">
-                  {effectiveSelectedViewTabId === allTabsOption.id
-                    ? allTabsOption.name
+                  {effectiveSelectedViewTabId === allTabsId
+                    ? t("dashboard_view_all_tabs")
                     : viewStashTabs.find(
                         (tab) => tab.id === effectiveSelectedViewTabId,
                       )?.name}
@@ -607,13 +636,14 @@ export default function ViewHistoryTabs({
                   }}
                 >
                   <Typography variant="body2" color="text.secondary">
-                    Total Value:
+                    {t("dashboard_view_total_value")}:
                   </Typography>
-                  <CurrencyValueDisplay
-                    value={viewListTotal}
-                    inputCurrency="chaos"
-                    sharedCurrencyListOverride={snapshotCurrencyList}
+                  <CurrencyConversionValueDisplay
+                    quantity={viewListTotal}
+                    currency="chaos"
+                    currencyPriceList={snapshotCurrencyList}
                     variant="body2"
+                    showRawValueTooltip
                   />
                 </Box>
               </Box>
@@ -624,16 +654,16 @@ export default function ViewHistoryTabs({
                 </Box>
               ) : snapshotDataOutOfDate ? (
                 <Typography sx={{ p: 2 }} color="warning.main" variant="body2">
-                  Snapshot data is out of date
-                  {snapshotDataVersion !== null
-                    ? ` (schema v${snapshotDataVersion})`
-                    : ""}
-                  . Please sync inventory again.
+                  {t("dashboard_snapshot_outdated", {
+                    versionText:
+                      snapshotDataVersion !== null
+                        ? ` (schema v${snapshotDataVersion})`
+                        : "",
+                  })}
                 </Typography>
               ) : !snapshotData ? (
                 <Typography sx={{ p: 2 }} variant="body2">
-                  No snapshot data available yet. Run a sync to populate this
-                  view.
+                  {t("dashboard_view_no_snapshot_data")}
                 </Typography>
               ) : (
                 <Box
@@ -712,12 +742,16 @@ export default function ViewHistoryTabs({
                               )}
                             </Box>
                           </Box>
-                          <CurrencyValueDisplay
-                            value={item.totalValue}
-                            inputCurrency={item.valueCurrency}
-                            sharedCurrencyListOverride={snapshotCurrencyList}
+                          <CurrencyConversionValueDisplay
+                            quantity={item.quantity}
+                            currency={
+                              staticTradeData.entryByName.get(item.name)?.entry
+                                .id ?? item.name
+                            }
+                            currencyPriceList={snapshotCurrencyList}
                             variant="body2"
                             fontWeight={700}
+                            showRawValueTooltip
                             formatOptions={{
                               minimumFractionDigits: 0,
                               maximumFractionDigits: 1,
@@ -740,16 +774,22 @@ export default function ViewHistoryTabs({
               </Box>
             ) : snapshots.length === 0 ? (
               <Typography variant="body2">
-                No inventory snapshots yet.
+                {t("dashboard_history_no_snapshots")}
               </Typography>
             ) : (
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Generated</TableCell>
-                    <TableCell>League</TableCell>
-                    <TableCell align="right">Total Value</TableCell>
-                    <TableCell align="right">Action</TableCell>
+                    <TableCell>
+                      {t("dashboard_history_col_generated")}
+                    </TableCell>
+                    <TableCell>{t("dashboard_history_col_league")}</TableCell>
+                    <TableCell align="right">
+                      {t("dashboard_history_col_total_value")}
+                    </TableCell>
+                    <TableCell align="right">
+                      {t("dashboard_history_col_action")}
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -767,7 +807,7 @@ export default function ViewHistoryTabs({
                             void loadSnapshotData(snapshot.id);
                           }}
                         >
-                          Load
+                          {t("dashboard_history_action_load")}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -783,7 +823,9 @@ export default function ViewHistoryTabs({
             ) : null}
 
             {loadingSnapshotData ? (
-              <Typography variant="body2">Loading snapshot data...</Typography>
+              <Typography variant="body2">
+                {t("dashboard_history_loading_snapshot_data")}
+              </Typography>
             ) : snapshotData && selectedSnapshotId ? (
               <Box
                 component="pre"

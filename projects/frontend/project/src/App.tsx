@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import {
   ThemeProvider,
   CssBaseline,
@@ -6,8 +6,11 @@ import {
   CircularProgress,
   useMediaQuery,
 } from "@mui/material";
-import { useSession } from "./components/session-hooks";
-import { useLeagueSelection } from "./components/session-hooks";
+import {
+  useSession,
+  useLeagueSelection,
+  useStaticTradeDataActions,
+} from "./components/session-hooks";
 import { createAppTheme } from "./theme";
 import AppBarNav from "./components/AppBarNav";
 import FooterBar from "./components/FooterBar";
@@ -15,6 +18,7 @@ import MainContent from "./components/MainContent";
 
 export default function App() {
   const { user, logout, login, isLoading } = useSession();
+  const { loadStaticTradeData } = useStaticTradeDataActions();
   const { leagues, leaguesLoading, selectedLeagueKey, setSelectedLeagueKey } =
     useLeagueSelection();
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
@@ -22,6 +26,14 @@ export default function App() {
     () => createAppTheme(prefersDarkMode ? "dark" : "light"),
     [prefersDarkMode],
   );
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    void loadStaticTradeData();
+  }, [user, loadStaticTradeData]);
 
   if (isLoading) {
     return (

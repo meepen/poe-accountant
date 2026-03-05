@@ -15,7 +15,7 @@ import {
   sharedDropdownMenuProps,
   sharedDropdownSx,
 } from "../../components/dropdown-styles";
-import { useStaticTradeDataState } from "../../components/session-hooks";
+import { useStaticTradeData } from "../../components/session-hooks";
 import CurrencyName from "./CurrencyName";
 
 type RelativeCurrencyChartProps = {
@@ -40,7 +40,7 @@ export default function RelativeCurrencyChart({
   onRelativeChange,
 }: RelativeCurrencyChartProps) {
   const { t } = useTranslation();
-  const { currencyNameByKey } = useStaticTradeDataState();
+  const staticTradeData = useStaticTradeData();
   const relativeCurrencyLabel = t("league_inspection_relative_label");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const compactNumberFormatter = useMemo(
@@ -56,7 +56,9 @@ export default function RelativeCurrencyChart({
     () =>
       chartData.series.map((series) => ({
         ...series,
-        label: currencyNameByKey.get(series.label) ?? series.label,
+        label:
+          staticTradeData.entryById.get(series.label)?.entry.text ??
+          series.label,
         valueFormatter: (
           value: number | null,
           context: { dataIndex?: number },
@@ -91,7 +93,8 @@ export default function RelativeCurrencyChart({
             Array.isArray(calculationPath) &&
             calculationPath.length > 0;
           const translatedPath = calculationPath?.map(
-            (currency) => currencyNameByKey.get(currency) ?? currency,
+            (currency) =>
+              staticTradeData.entryByName.get(currency)?.entry.id ?? currency,
           );
           const pathLabel = shouldShowPath
             ? ` (path: ${translatedPath?.join(" → ") ?? ""})`
@@ -99,7 +102,7 @@ export default function RelativeCurrencyChart({
           return `${formattedValue} (conf: ${confidenceLabel})${pathLabel}`;
         },
       })),
-    [chartData.series, compactNumberFormatter, currencyNameByKey],
+    [chartData.series, compactNumberFormatter, staticTradeData],
   );
 
   return (
@@ -112,18 +115,6 @@ export default function RelativeCurrencyChart({
           gap: 2,
         }}
       >
-        <Typography variant="h6">
-          {t("league_inspection_relative_title")}
-          {relativeCurrency ? (
-            <>
-              {" ("}
-              <CurrencyName currencyKey={relativeCurrency} />
-              {")"}
-            </>
-          ) : (
-            ""
-          )}
-        </Typography>
         <FormControl
           size="small"
           sx={{
