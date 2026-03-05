@@ -1,17 +1,18 @@
 import type { ReactNode } from "react";
 import { useReducer, useEffect, useMemo, useCallback } from "react";
-import { ApiEndpoint } from "@meepen/poe-accountant-api-schema/api/api-endpoints.enum";
+import { ApiEndpoint } from "@meepen/poe-accountant-api-schema/api/api-endpoints";
 import { ApiService } from "@meepen/poe-accountant-api-schema/api/api-service";
-import type { SessionContextType, User } from "./session-context";
+import type { SessionContextType, User, UserSettings } from "./session-context";
 import { SessionContext } from "./session-context";
 
 type SessionState = {
   user: User | null;
+  userSettings: UserSettings | null;
   isLoading: boolean;
 };
 
 type SessionAction =
-  | { type: "loaded"; user: User }
+  | { type: "loaded"; user: User; userSettings: UserSettings }
   | { type: "unauthorized" }
   | { type: "logout" };
 
@@ -21,19 +22,27 @@ function sessionReducer(
 ): SessionState {
   switch (action.type) {
     case "loaded":
-      return { user: action.user, isLoading: false };
+      return {
+        user: action.user,
+        userSettings: action.userSettings,
+        isLoading: false,
+      };
     case "unauthorized":
       return { ...state, isLoading: false };
     case "logout":
-      return { ...state, user: null };
+      return { ...state, user: null, userSettings: null };
   }
 }
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [{ user, isLoading }, dispatch] = useReducer(sessionReducer, {
-    user: null,
-    isLoading: true,
-  });
+  const [{ user, userSettings, isLoading }, dispatch] = useReducer(
+    sessionReducer,
+    {
+      user: null,
+      userSettings: null,
+      isLoading: true,
+    },
+  );
   const api = useMemo(
     () =>
       new ApiService(
@@ -44,10 +53,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    api
-      .request(ApiEndpoint.GetUser)
-      .then((cachedUser) => {
-        dispatch({ type: "loaded", user: cachedUser });
+    Promise.all([
+      api.request(ApiEndpoint.GetUser),
+      api.request(ApiEndpoint.GetUserSettings),
+    ])
+      .then(([cachedUser, loadedUserSettings]) => {
+        dispatch({
+          type: "loaded",
+          user: cachedUser,
+          userSettings: loadedUserSettings,
+        });
       })
       .catch((error: unknown) => {
         console.error("Error retrieving user:", error);
@@ -56,7 +71,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [api]);
 
   const login = useCallback(() => {
-    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/${ApiEndpoint.UserLogin}?redirect_to=${encodeURIComponent(
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/${ApiEndpoint.UserLogin.path}?redirect_to=${encodeURIComponent(
       window.location.href,
     )}`;
   }, []);
@@ -97,8 +112,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [user, logout]);
 
   const contextValue = useMemo<SessionContextType>(
-    () => ({ user, login, logout, isLoading, api }),
-    [user, login, logout, isLoading, api],
+    () => ({ user, userSettings, login, logout, isLoading, api }),
+    [user, userSettings, login, logout, isLoading, api],
   );
 
   return <SessionContext value={contextValue}>{children}</SessionContext>;

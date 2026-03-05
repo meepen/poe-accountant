@@ -1,0 +1,2 @@
+ALTER TABLE "user_settings" ADD COLUMN "current_league_id" uuid;--> statement-breakpoint
+ALTER TABLE "user_settings" ADD CONSTRAINT "user_settings_current_league_id_user_leagues_id_fk" FOREIGN KEY ("current_league_id") REFERENCES "public"."user_leagues"("id") ON DELETE set null ON UPDATE no action;

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { ApiEndpoint } from "@meepen/poe-accountant-api-schema/api/api-endpoints.enum";
+import { ApiEndpoint } from "@meepen/poe-accountant-api-schema/api/api-endpoints";
 import { ApiError } from "@meepen/poe-accountant-api-schema/api/api-service";
 import type { StaticTradeDataSnapshot } from "@meepen/poe-accountant-api-schema/api/dtos/prices/static-trade-data.dto";
 import { useSession } from "./session-hooks";

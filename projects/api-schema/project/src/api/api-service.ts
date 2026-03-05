@@ -1,7 +1,5 @@
-import type { ApiEndpoint } from "./api-endpoints.enum.js";
-import { ApiEndpointMethods } from "./api-endpoints.enum.js";
-import type { ApiResultResponseData } from "./api-request-data.dto.js";
-import { ApiResultResponseTypes } from "./api-request-data.dto.js";
+import type z from "zod";
+import type { ApiEndpoint } from "./api-endpoints.js";
 
 export class ApiError extends Error {
   public readonly name = "ApiError";
@@ -27,15 +25,17 @@ type ApiRouteParamData<T extends string> = {
   [K in ApiRouteParamKey<T>]: string;
 };
 
-type ArgumentsForEndpoint<T extends ApiEndpoint> = [
-  ...(ApiRouteParamData<T> extends infer ParamData
+type ArgumentsForEndpoint<
+  T extends (typeof ApiEndpoint)[keyof typeof ApiEndpoint],
+> = [
+  ...(ApiRouteParamData<T["path"]> extends infer ParamData
     ? keyof ParamData extends never
       ? []
       : [params: ParamData]
     : []),
-  ...(ApiResultResponseData<T>[0] extends object
-    ? [data: ApiResultResponseData<T>[0]]
-    : []),
+  ...(T["inputSchema"] extends z.ZodNever
+    ? []
+    : [data: z.infer<T["inputSchema"]>]),
 ];
 
 export class ApiService {
@@ -44,11 +44,11 @@ export class ApiService {
     private readonly fetcher = fetch,
   ) {}
 
-  async request<T extends ApiEndpoint>(
+  async request<T extends (typeof ApiEndpoint)[keyof typeof ApiEndpoint]>(
     endpoint: T,
     ...data: ArgumentsForEndpoint<T>
-  ): Promise<ApiResultResponseData<T>[1]> {
-    const split = endpoint.split("/");
+  ): Promise<z.infer<T["outputSchema"]>> {
+    const split = endpoint.path.split("/");
     const hasParams = split.some((part) => part.startsWith(":"));
 
     const params = split
@@ -56,8 +56,8 @@ export class ApiService {
         if (!part.startsWith(":")) {
           return part;
         }
-        const paramName = part.slice(1) as keyof ApiRouteParamData<T>;
-        const paramValue = (data[0] as Partial<ApiRouteParamData<T>>)[
+        const paramName = part.slice(1) as keyof ApiRouteParamData<T["path"]>;
+        const paramValue = (data[0] as Partial<ApiRouteParamData<T["path"]>>)[
           paramName
         ];
         if (paramValue == null) {
@@ -68,9 +68,10 @@ export class ApiService {
       .join("/");
 
     const dataContent = hasParams ? data.slice(1) : data;
+    const method = endpoint.method;
 
     const response = await this.fetcher(new URL(params, this.baseUrl), {
-      method: ApiEndpointMethods[endpoint],
+      method,
       credentials: "include",
       ...(dataContent.length > 0
         ? {
@@ -89,8 +90,8 @@ export class ApiService {
       );
     }
 
-    return (await ApiResultResponseTypes[endpoint][1].parseAsync(
+    return (await endpoint.outputSchema.parseAsync(
       await response.json(),
-    )) as ApiResultResponseData<T>[1];
+    )) as z.infer<T["outputSchema"]>;
   }
 }

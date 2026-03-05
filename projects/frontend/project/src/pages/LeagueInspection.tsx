@@ -1,6 +1,6 @@
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Container } from "@mui/material";
-import { ApiEndpoint } from "@meepen/poe-accountant-api-schema/api/api-endpoints.enum";
+import { ApiEndpoint } from "@meepen/poe-accountant-api-schema/api/api-endpoints";
 import { ApiError } from "@meepen/poe-accountant-api-schema/api/api-service";
 import { useTranslation } from "react-i18next";
 import LeagueInspectionContent from "./LeagueInspection/LeagueInspectionContent";

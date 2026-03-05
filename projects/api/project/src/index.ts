@@ -26,7 +26,7 @@ const app = new Hono<AppEnv>()
         }
         return "";
       },
-      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
       allowHeaders: [
         "Content-Type",
         "Authorization",

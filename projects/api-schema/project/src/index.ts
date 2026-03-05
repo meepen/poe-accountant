@@ -1,5 +1,4 @@
-export * from "./api/api-endpoints.enum.js";
-export * from "./api/api-request-data.dto.js";
+export * from "./api/api-endpoints.js";
 export * from "./api/api-service.js";
 export * from "./api/price-history.dto.js";
 export * from "./api/dtos/league/league.dto.js";
@@ -9,6 +8,7 @@ export * from "./api/dtos/prices/price-relative-to.dto.js";
 export * from "./api/dtos/prices/static-trade-data.dto.js";
 export * from "./api/static-trade-data.redis.js";
 export * from "./api/dtos/user/user.dto.js";
+export * from "./api/dtos/user/user-settings.dto.js";
 export * from "./api/dtos/user/user.job.dto.js";
 export * from "./api/dtos/user/sync-user-inventory.dto.js";
 export * from "./api/dtos/user/user-inventory-snapshot.dto.js";

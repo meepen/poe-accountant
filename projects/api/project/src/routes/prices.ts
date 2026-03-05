@@ -1,9 +1,6 @@
 import { Hono } from "hono";
 import { valkeyCache } from "../utils/cache";
-import {
-  ApiEndpoint,
-  ApiEndpointMethods,
-} from "@meepen/poe-accountant-api-schema/api/api-endpoints.enum";
+import { ApiEndpoint } from "@meepen/poe-accountant-api-schema/api/api-endpoints";
 import {
   StaticTradeDataSnapshotRedisKey,
   StaticTradeDataSnapshotDto,
@@ -13,13 +10,15 @@ import {
   CurrencyExchangeLeagueSnapshotData,
 } from "@meepen/poe-accountant-db-schema";
 import { and, desc, eq } from "drizzle-orm";
-import type { ApiResponse } from "@meepen/poe-accountant-api-schema/api/api-request-data.dto";
 import type { IndexEnv } from "..";
+import type z from "zod";
 
 export const prices = new Hono<IndexEnv>();
 
-ApiEndpoint.GetExchangeRatesCurrency satisfies "prices/exchange-rates/:realm/:leagueId/currency/:currency";
-ApiEndpointMethods[ApiEndpoint.GetExchangeRatesCurrency] satisfies "GET";
+ApiEndpoint.GetExchangeRatesCurrency satisfies {
+  path: "prices/exchange-rates/:realm/:leagueId/currency/:currency";
+  method: "GET";
+};
 
 prices.get(
   "/exchange-rates/:realm/:leagueId/currency/:currency",
@@ -60,10 +59,10 @@ prices.get(
   },
 );
 
-ApiEndpoint.GetExchangeRatesCurrencyHistorical satisfies "prices/exchange-rates/:realm/:leagueId/currency/:currency/historical";
-ApiEndpointMethods[
-  ApiEndpoint.GetExchangeRatesCurrencyHistorical
-] satisfies "GET";
+ApiEndpoint.GetExchangeRatesCurrencyHistorical satisfies {
+  path: "prices/exchange-rates/:realm/:leagueId/currency/:currency/historical";
+  method: "GET";
+};
 prices.get(
   "/exchange-rates/:realm/:leagueId/currency/:currency/historical",
   async (c) => {
@@ -94,19 +93,23 @@ prices.get(
     return c.json(
       results
         .flatMap((result) => result.snapshotData)
-        .map<ApiResponse<ApiEndpoint.GetExchangeRatesCurrencyHistorical>[0]>(
-          (data) => ({
-            ...data,
-            dataStaleness: data.dataStaleness.toISOString(),
-            liquidity: data.liquidity.toString(),
-          }),
-        ),
+        .map<
+          z.infer<
+            (typeof ApiEndpoint.GetExchangeRatesCurrencyHistorical)["outputSchema"]
+          >[0]
+        >((data) => ({
+          ...data,
+          dataStaleness: data.dataStaleness.toISOString(),
+          liquidity: data.liquidity.toString(),
+        })),
     );
   },
 );
 
-ApiEndpoint.GetExchangeRatesCurrencyList satisfies "prices/exchange-rates/:realm/:leagueId/currency";
-ApiEndpointMethods[ApiEndpoint.GetExchangeRatesCurrencyList] satisfies "GET";
+ApiEndpoint.GetExchangeRatesCurrencyList satisfies {
+  path: "prices/exchange-rates/:realm/:leagueId/currency";
+  method: "GET";
+};
 prices.get(
   "/exchange-rates/:realm/:leagueId/currency",
   valkeyCache({
@@ -155,22 +158,26 @@ prices.get(
     }
 
     return c.json(
-      results.map<ApiResponse<ApiEndpoint.GetExchangeRatesCurrencyList>[0]>(
-        (data) => ({
-          currency: data.currency,
-          confidenceScore: data.confidenceScore,
-          value: {
-            currency: data.stableCurrency,
-            amount: data.value,
-          },
-        }),
-      ),
+      results.map<
+        z.infer<
+          (typeof ApiEndpoint.GetExchangeRatesCurrencyList)["outputSchema"]
+        >[0]
+      >((data) => ({
+        currency: data.currency,
+        confidenceScore: data.confidenceScore,
+        value: {
+          currency: data.stableCurrency,
+          amount: data.value,
+        },
+      })),
     );
   },
 );
 
-ApiEndpoint.GetStaticTradeData satisfies "prices/static-trade-data";
-ApiEndpointMethods[ApiEndpoint.GetStaticTradeData] satisfies "GET";
+ApiEndpoint.GetStaticTradeData satisfies {
+  path: "prices/static-trade-data";
+  method: "GET";
+};
 prices.get(
   "/static-trade-data",
   valkeyCache({
@@ -188,7 +195,9 @@ prices.get(
 
     const snapshot = StaticTradeDataSnapshotDto.parse(
       typeof snapshotRaw === "string" ? JSON.parse(snapshotRaw) : snapshotRaw,
-    ) satisfies ApiResponse<ApiEndpoint.GetStaticTradeData>;
+    ) satisfies z.infer<
+      (typeof ApiEndpoint.GetStaticTradeData)["outputSchema"]
+    >;
 
     return c.json(snapshot);
   },

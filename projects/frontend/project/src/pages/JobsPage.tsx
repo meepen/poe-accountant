@@ -15,12 +15,14 @@ import {
   Button,
   Collapse,
 } from "@mui/material";
-import { ApiEndpoint } from "@meepen/poe-accountant-api-schema/api/api-endpoints.enum";
-import type { ApiResponse } from "@meepen/poe-accountant-api-schema/api/api-request-data.dto";
+import {
+  ApiEndpoint,
+  type ApiResponse,
+} from "@meepen/poe-accountant-api-schema/api/api-endpoints";
 import { useTranslation } from "react-i18next";
 import { useApi } from "../components/session-hooks";
 
-type UserJobId = ApiResponse<ApiEndpoint.GetUserJobs>[number];
+type UserJobId = ApiResponse<typeof ApiEndpoint.GetUserJobs>[number];
 
 export default function JobsPage() {
   const api = useApi();
@@ -30,7 +32,9 @@ export default function JobsPage() {
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(
     () => new Set(),
   );
-  const [jobData, setJobData] = useState<Record<string, unknown>>({});
+  const [jobData, setJobData] = useState<
+    Record<string, ApiResponse<typeof ApiEndpoint.GetUserJobResult>>
+  >({});
   const [jobDataLoading, setJobDataLoading] = useState<Record<string, boolean>>(
     {},
   );
@@ -78,7 +82,7 @@ export default function JobsPage() {
     nextExpanded.add(jobId);
     setExpandedJobs(nextExpanded);
 
-    if (jobData[jobId] !== undefined || jobDataLoading[jobId]) {
+    if (jobDataLoading[jobId]) {
       return;
     }
 
