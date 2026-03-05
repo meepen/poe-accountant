@@ -151,18 +151,24 @@ function MoneyChart({
     <Paper
       sx={{
         p: 2,
-        height: "35rem",
+        width: "100%",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         gap: 2,
+        minWidth: 0,
+        minHeight: 0,
         overflow: "hidden",
       }}
     >
       <Box
         sx={{
           flex: 1,
+          minWidth: 0,
           minHeight: 0,
-          display: "flex",
+          width: "100%",
+          height: "100%",
+          position: "relative",
           overflow: "hidden",
         }}
       >
@@ -179,61 +185,67 @@ function MoneyChart({
             {t("league_inspection_history_empty")}
           </Typography>
         ) : (
-          <LineChart
-            grid={{ vertical: true, horizontal: true }}
-            axisHighlight={{ x: "line" }}
-            xAxis={[
-              {
-                data: chartData.map((entry) => entry.timestamp),
-                scaleType: "time",
-                label: t("league_inspection_time_label"),
-                height: 84,
-                valueFormatter: (value: Date) =>
-                  value.toLocaleString([], {
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }),
-                tickLabelStyle: {
-                  angle: -30,
-                  textAnchor: "end",
-                  fontSize: 11,
-                },
-              },
-            ]}
-            yAxis={[
-              {
-                valueFormatter: (value: number | null) =>
-                  typeof value === "number" && !Number.isNaN(value)
-                    ? compactNumberFormatter.format(value)
-                    : "",
-              },
-            ]}
-            series={[
-              {
-                data: chartData.map((entry) => entry.value),
-                showMark: true,
-              },
-            ]}
-            onAxisClick={(_event, data) => {
-              if (!data) {
-                return;
-              }
-
-              const selected = chartData.at(data.dataIndex);
-              if (!selected) {
-                return;
-              }
-
-              onSnapshotClick(selected.id);
-            }}
-            margin={{ left: 72, right: 28, top: 20, bottom: 16 }}
+          <Box
             sx={{
-              flex: 1,
-              overflow: "visible",
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
             }}
-          />
+          >
+            <LineChart
+              grid={{ vertical: true, horizontal: true }}
+              axisHighlight={{ x: "line" }}
+              xAxis={[
+                {
+                  data: chartData.map((entry) => entry.timestamp),
+                  scaleType: "time",
+                  label: t("league_inspection_time_label"),
+                  height: 84,
+                  valueFormatter: (value: Date) =>
+                    value.toLocaleString([], {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }),
+                  tickLabelStyle: {
+                    angle: -30,
+                    textAnchor: "end",
+                    fontSize: 11,
+                  },
+                },
+              ]}
+              yAxis={[
+                {
+                  valueFormatter: (value: number | null) =>
+                    typeof value === "number" && !Number.isNaN(value)
+                      ? compactNumberFormatter.format(value)
+                      : "",
+                },
+              ]}
+              series={[
+                {
+                  data: chartData.map((entry) => entry.value),
+                  showMark: true,
+                },
+              ]}
+              onAxisClick={(_event, data) => {
+                if (!data) {
+                  return;
+                }
+
+                const selected = chartData.at(data.dataIndex);
+                if (!selected) {
+                  return;
+                }
+
+                onSnapshotClick(selected.id);
+              }}
+              margin={{ left: 72, right: 28, top: 20, bottom: 16 }}
+              sx={{ width: "100%", height: "100%" }}
+            />
+          </Box>
         )}
       </Box>
     </Paper>
@@ -585,32 +597,54 @@ export default function Dashboard() {
       <Box
         sx={{
           flex: 3,
+          width: 0,
           display: "flex",
           flexDirection: "column",
           gap: 3,
+          minHeight: 0,
           minWidth: 0,
+          overflowY: "auto",
         }}
       >
         {/* Top Chart */}
-        <MoneyChart
-          snapshots={inventorySnapshots}
-          loading={loadingInventorySnapshots}
-          error={inventorySnapshotsError}
-          onSnapshotClick={(snapshotId) => {
-            setRequestedSnapshotId(snapshotId);
+        <Box
+          sx={{
+            flex: "3 1 0",
+            minHeight: "16rem",
+            minWidth: 0,
+            width: "100%",
+            display: "flex",
+            overflow: "hidden",
           }}
-        />
+        >
+          <MoneyChart
+            snapshots={inventorySnapshots}
+            loading={loadingInventorySnapshots}
+            error={inventorySnapshotsError}
+            onSnapshotClick={(snapshotId) => {
+              setRequestedSnapshotId(snapshotId);
+            }}
+          />
+        </Box>
 
         {/* Bottom Section */}
-        <ViewHistoryTabs
-          onOpenSettings={handleOpenSettings}
-          isSyncing={isSyncing}
-          handleSync={handleSync}
-          requestedSnapshotId={requestedSnapshotId}
-          onRequestedSnapshotHandled={() => {
-            setRequestedSnapshotId(null);
+        <Box
+          sx={{
+            flex: "2 1 0",
+            minHeight: "18rem",
+            display: "flex",
           }}
-        />
+        >
+          <ViewHistoryTabs
+            onOpenSettings={handleOpenSettings}
+            isSyncing={isSyncing}
+            handleSync={handleSync}
+            requestedSnapshotId={requestedSnapshotId}
+            onRequestedSnapshotHandled={() => {
+              setRequestedSnapshotId(null);
+            }}
+          />
+        </Box>
       </Box>
 
       {/* Right Side */}
@@ -620,6 +654,7 @@ export default function Dashboard() {
           minWidth: "18.75rem",
           display: "flex",
           flexDirection: "column",
+          minHeight: 0,
         }}
       >
         <Paper
