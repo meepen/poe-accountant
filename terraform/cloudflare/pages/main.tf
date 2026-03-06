@@ -40,6 +40,12 @@ resource "cloudflare_pages_project" "frontend" {
       environment_variables = var.environment_variables
     }
   }
+
+  lifecycle {
+    ignore_changes = [
+      deployment_configs
+    ]
+  }
 }
 
 resource "cloudflare_pages_domain" "frontend" {
