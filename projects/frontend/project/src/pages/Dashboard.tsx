@@ -218,6 +218,7 @@ function MoneyChart({
               ]}
               yAxis={[
                 {
+                  min: 0,
                   valueFormatter: (value: number | null) =>
                     typeof value === "number" && !Number.isNaN(value)
                       ? compactNumberFormatter.format(value)

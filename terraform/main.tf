@@ -164,7 +164,7 @@ module "api" {
     PATHOFEXILE_CLIENT_SECRET = var.pathofexile_client_secret
 
     ASSETS_S3_ACCESS_KEY_ID     = module.r2.access_key_id
-    ASSETS_S3_SECRET_ACCESS_KEY = sha256(module.r2.secret_access_key)
+    ASSETS_S3_SECRET_ACCESS_KEY = module.r2.secret_access_key
   }
 
   hyperdrive_configs = {
