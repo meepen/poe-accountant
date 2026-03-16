@@ -42,6 +42,7 @@ interface ProcessedEdge {
   recencyRatio: number;
   lastUpdate: number;
   friction: number;
+  isVendor: boolean;
 }
 
 export interface RateResult {
@@ -90,11 +91,11 @@ export class CurrencyGraph {
 
   private minTimestamp: number = Date.now();
   private maxTimestamp: number = Date.now();
-  private readonly vendorRecipes: readonly VendorRecipe[];
 
-  constructor(markets: MarketInput[], vendorRecipes: readonly VendorRecipe[]) {
-    this.vendorRecipes = vendorRecipes;
-
+  constructor(
+    markets: MarketInput[],
+    private readonly vendorRecipes: readonly VendorRecipe[],
+  ) {
     console.time("CurrencyGraph:RawDataCollection");
 
     const rawEdges = new Map<string, Map<string, EdgeData>>();
@@ -380,13 +381,19 @@ export class CurrencyGraph {
 
           const priceScore = -Math.log(edge.vwap);
           const edgeFriction = edge.friction;
+          const isVendor = edge.isVendor;
 
-          const newCost = cost + priceScore + edgeFriction * 0.1;
+          // Penalize friction based on depth to prefer shorter paths (exponential falloff)
+          // Vendor recipes don't contribute to depth penalty accumulation
+          const depthPenalty = isVendor ? 1 : Math.pow(1.5, depth - 1);
+          const effectiveFriction = edgeFriction * depthPenalty;
+
+          const newCost = cost + priceScore + effectiveFriction;
           if (!Number.isFinite(newCost)) {
             continue;
           }
 
-          const newFriction = friction + edgeFriction;
+          const newFriction = friction + effectiveFriction;
           const newIsSafe = 1 / (1 + newFriction) >= ReliabilityThreshold;
           const newCostKey = `${sourceCurrency}:${newIsSafe ? "safe" : "unsafe"}`;
 
@@ -405,6 +412,9 @@ export class CurrencyGraph {
           const newOldestUpdate =
             edge.lastUpdate < oldestUpdate ? edge.lastUpdate : oldestUpdate;
 
+          // Don't increment depth for vendor recipes
+          const nextDepth = isVendor ? depth : depth + 1;
+
           queue.push({
             cost: newCost,
             currency: sourceCurrency,
@@ -413,7 +423,7 @@ export class CurrencyGraph {
             minLiquidity: newLiquidity,
             oldestUpdate: newOldestUpdate,
             friction: newFriction,
-            depth: depth + 1,
+            depth: nextDepth,
           });
         }
       }
@@ -482,6 +492,7 @@ export class CurrencyGraph {
     let totalWeightedFromVolume = 0;
     let totalFromVolumeRaw = 0n;
     let latestEdgeTime = 0;
+    let edgeIsVendor = false;
 
     const timeRange = this.maxTimestamp - this.minTimestamp;
     const hasTimeRange = timeRange > 0;
@@ -494,6 +505,10 @@ export class CurrencyGraph {
 
       if (!isIncluded) {
         continue;
+      }
+
+      if (isVendor) {
+        edgeIsVendor = true;
       }
 
       const entryTime = data.times[i];
@@ -536,6 +551,7 @@ export class CurrencyGraph {
       vwap,
       recencyRatio,
       lastUpdate: latestEdgeTime,
+      isVendor: edgeIsVendor,
     };
   }
 
@@ -545,6 +561,7 @@ export class CurrencyGraph {
       vwap: 0,
       recencyRatio: 0,
       lastUpdate: 0,
+      isVendor: false,
     };
   }
 

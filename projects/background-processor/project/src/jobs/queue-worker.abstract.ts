@@ -22,6 +22,8 @@ export abstract class QueueWorker<
     return {
       connection: valkeyForBullMQ,
       concurrency: this.concurrency,
+      removeOnComplete: { count: 100 },
+      removeOnFail: { count: 100 },
     };
   }
 
