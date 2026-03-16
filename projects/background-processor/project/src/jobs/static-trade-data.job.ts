@@ -2,7 +2,6 @@ import type { JobProcess } from "../job-process.interface.js";
 import { TradeApi, type StaticTradeData } from "../connections/trade-api.js";
 import {
   StaticTradeDataSnapshotRedisKey,
-  StaticTradeDataSnapshotRedisTtlSeconds,
   type StaticTradeDataSnapshot,
 } from "@meepen/poe-accountant-api-schema";
 import { valkey } from "../connections/valkey.js";
@@ -154,12 +153,7 @@ export class StaticTradeDataJob implements JobProcess {
       refreshedAt: new Date().toISOString(),
       data: tradeData,
     };
-    await valkey.set(
-      StaticTradeDataSnapshotRedisKey,
-      JSON.stringify(snapshot),
-      "EX",
-      StaticTradeDataSnapshotRedisTtlSeconds,
-    );
+    await valkey.set(StaticTradeDataSnapshotRedisKey, JSON.stringify(snapshot));
     console.log(
       "[static-trade-data] Static trade data snapshot stored in cache with TTL.",
     );
